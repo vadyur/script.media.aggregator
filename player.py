@@ -44,8 +44,9 @@ def load_settings():
 	print settings
 	return settings
 	
-def is_played(item):
-	return True
+def is_playable(name):
+	filename, file_extension = os.path.splitext(name)
+	return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts']
 	
 def play_torrent(path, episodeNumber = None):
 	if episodeNumber != None:
@@ -89,14 +90,9 @@ def play_torrent(path, episodeNumber = None):
 	#info_hash = torr_data['info_hash']
 	
 	index = 0
-	item = {'index': 0, 'name': '', 'size': ''}
 	for file in torr_data['files']:
-		item['index'] 	= index
-		item['name'] 	= file[0]
-		item['size']	= file[1]
-		if is_played(item):
-			files.append({'index': index, 'name': file[0], 'size': file[1]})
-			print item
+		if is_playable(file[0]):
+			files.append({'index': index, 'name': file[0], 'size': long(file[1])})
 		index = index + 1
 	#except:
 	#	return
