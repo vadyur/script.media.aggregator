@@ -1,1 +1,3 @@
 standalone.py
+*.pyo
+*.pyc
