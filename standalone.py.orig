@@ -1,0 +1,15 @@
+#----------------------------------------------------------------
+
+hdclub_passkey 		= ''
+base_path			= '../media_library'
+
+#----------------------------------------------------------------
+
+import anidub
+import hdclub
+import settings
+
+settings = settings.Settings(base_path, hdclub_passkey=hdclub_passkey)
+
+anidub.run(settings)
+hdclub.run(settings)

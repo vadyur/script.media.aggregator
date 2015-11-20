@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+    <category label="General">
+        <setting label="Base path" 			type="folder" id="base_path" 		default="Base"/>
+        <setting label="Movies subpath" 	type="text"   id="movies_path" 		default="Movies"/>
+        <setting label="Animation subpath" 	type="text"   id="animation_path" 	default="Animation"/>
+        <setting label="Documentary subpath" type="text"  id="documentary_path" default="Documentary"/>
+        <setting label="Anime subpath" 		type="text"   id="anime_path" 		default="Anime"/>
+    </category>
+	
+    <category label="Anidub">
+        <setting label="Login" type="text"   id="anidub_login" default=""/>
+        <setting label="Password" type="text"   id="anidub_password" option="hidden"  default=""/>
+    </category>
+    <category label="HDClub">
+        <setting label="Passkey" type="text"   id="hdclub_passkey" default=""/>
+    </category>
+</settings>
