@@ -39,7 +39,7 @@ def load_settings():
 	hdclub_passkey		= _addon.getSetting('hdclub_passkey')
 	anidub_login		= _addon.getSetting('anidub_login')
 	anidub_password		= _addon.getSetting('anidub_password')
-
+	
 	settings 			= Settings(base_path, hdclub_passkey = hdclub_passkey, anidub_login = anidub_login, anidub_password = anidub_password)
 	#print settings
 	return settings
@@ -176,12 +176,21 @@ if 'torrent' in params:
 		play_torrent(url)
 else:
 	dialog = xbmcgui.Dialog()
-	rep = dialog.select('Choose an Option:', [	'Parse sites and create .strm and .nfo Files',
-												'-SETTINGS',
-												'Exit'])
+	rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
+												u'-НАСТРОЙКИ',
+												u'Выход'])
 	if rep == 0:
-		anidub.run(settings)
-		hdclub.run(settings)
+		anidub_enable		= _addon.getSetting('anidub_enable')
+		hdclub_enable		= _addon.getSetting('hdclub_enable')
+		
+		if anidub_enable:
+			anidub.run(settings)
+		if hdclub_enable:
+			hdclub.run(settings)
+		if not (_anidub_enable or _hdclub_enable):
+			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
+			rep = 1
+			
 	if rep == 1:
 		_addon.openSettings()
 		settings = load_settings()
