@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='UTF-8' standalone='yes'?>
-<addon id='script.media.aggregator' version='0.1.1.0' name='Media Aggregator' provider-name='-=Vd=-'>
+<addon id='script.media.aggregator' version='0.1.2.0' name='Media Aggregator' provider-name='-=Vd=-'>
   <requires>
     <import addon='xbmc.python' version='2.1.0'/>
 	<import addon="script.module.beautifulsoup4" version="4.3.0"/>

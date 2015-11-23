@@ -170,6 +170,9 @@ if 'torrent' in params:
 			play_torrent(path, params.get('episodeNumber', None))
 	elif 'hdclub' in params['torrent']:
 		url = urllib.unquote(params['torrent']).replace('details.php', 'download.php')
+		if not 'passkey' in url:
+			url += '&passkey=' + _addon.getSetting('hdclub_passkey')
+		
 		play_torrent(url)
 	else:
 		url = urllib.unquote(params['torrent'])
