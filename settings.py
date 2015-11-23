@@ -22,7 +22,8 @@ class Settings:
 		
 	def __repr__(self):
 		attrs = vars(self)
-		return ', \n'.join("%s: %s" % item for item in attrs.items())
+		#return ', \n'.join("%s: %s" % item for item in attrs.items() )
+		return ''
 	
 	def movies_path(self):
 		return os.path.join(self.base_path, self.__movies_path)
@@ -32,4 +33,5 @@ class Settings:
 		return os.path.join(self.base_path, self.__documentary_path)
 	def anime_tvshow_path(self):
 		return os.path.join(self.base_path, self.__anime_tvshow_path)
+		
 		

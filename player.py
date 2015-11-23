@@ -31,7 +31,7 @@ def get_params():
             if (len(splitparams))==2:
                 param[splitparams[0]]=splitparams[1]
 
-	print param
+	#print param
     return param
 	
 def load_settings():
@@ -41,7 +41,7 @@ def load_settings():
 	anidub_password		= _addon.getSetting('anidub_password')
 
 	settings 			= Settings(base_path, hdclub_passkey = hdclub_passkey, anidub_login = anidub_login, anidub_password = anidub_password)
-	print settings
+	#print settings
 	return settings
 	
 def is_playable(name):
@@ -51,9 +51,11 @@ def is_playable(name):
 def play_torrent(path, episodeNumber = None):
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
+	'''
 		print 'play_torrent: %s (%d)' % (path, episodeNumber)
 	else:
 		print 'play_torrent: %s' % path
+	'''
 
 		
 	'''
@@ -162,7 +164,7 @@ settings	= load_settings()
 
 if 'torrent' in params:
 	if 'anidub' in params['torrent']:
-		path = os.path.join(xbmc.translatePath('special://temp'), 'temp.torrent')
+		path = os.path.join(xbmc.translatePath('special://temp'), 'temp.anidub.media-aggregator.torrent')
 		print path
 		if anidub.download_torrent(params['torrent'], path, settings):
 			play_torrent(path, params.get('episodeNumber', None))
@@ -174,7 +176,7 @@ if 'torrent' in params:
 		play_torrent(url)
 else:
 	dialog = xbmcgui.Dialog()
-	rep = dialog.select('Choose an Option:', [	'Read [COLOR ffff9900]RSS[/COLOR] lists and create .strm Files in',
+	rep = dialog.select('Choose an Option:', [	'Parse sites and create .strm and .nfo Files',
 												'-SETTINGS',
 												'Exit'])
 	if rep == 0:
