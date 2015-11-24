@@ -178,24 +178,28 @@ if 'torrent' in params:
 		url = urllib.unquote(params['torrent'])
 		play_torrent(url)
 else:
-	dialog = xbmcgui.Dialog()
-	rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
-												u'-НАСТРОЙКИ',
-												u'Выход'])
-	if rep == 0:
-		anidub_enable		= _addon.getSetting('anidub_enable')
-		hdclub_enable		= _addon.getSetting('hdclub_enable')
-		
-		if anidub_enable:
-			anidub.run(settings)
-		if hdclub_enable:
-			hdclub.run(settings)
-		if not (_anidub_enable or _hdclub_enable):
-			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
-			rep = 1
+	while True:
+		dialog = xbmcgui.Dialog()
+		rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
+													u'-НАСТРОЙКИ',
+													u'Выход'])
+		if rep == 0:
+			anidub_enable		= _addon.getSetting('anidub_enable')
+			hdclub_enable		= _addon.getSetting('hdclub_enable')
 			
-	if rep == 1:
-		_addon.openSettings()
-		settings = load_settings()
+			if anidub_enable:
+				anidub.run(settings)
+			if hdclub_enable:
+				hdclub.run(settings)
+			if not (anidub_enable or hdclub_enable):
+				xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
+				rep = 1
+				
+		if rep == 1:
+			_addon.openSettings()
+			settings = load_settings()
+			
+		if rep == 2:
+			break
 		
 

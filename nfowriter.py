@@ -85,7 +85,7 @@ class NFOWriter:
 		tmdb_id = ''
 		if imdb_id != '':
 			movie_api = MovieAPI(imdb_id)
-			self.make_imdbid_info(root, movie_api)
+			self.make_imdbid_info(root, movie_api) 
 		elif root_tag=='tvshow':
 			self.make_tvshow_info(root, tvshow_api, desc_parser)
 				
@@ -99,10 +99,13 @@ class NFOWriter:
 			
 		tree = ET.ElementTree(root)
 		fn = make_fullpath(filename, '.nfo')
-		
-		with open(fn, 'wb') as f:
-			tree.write(f, encoding="UTF-8", xml_declaration=True)		
-		
+
+		try:
+			with open(fn, 'wb') as f:
+				tree.write(f, encoding="UTF-8", xml_declaration=True)		
+		except IOError as e:
+			print "I/O error({0}): {1}".format(e.errno, e.strerror)		
+	
 		if tmdb_id != '':
 			with open(fn, "a") as myfile:
 				myfile.write('\n' + 'http://www.themoviedb.org/movie/' + str(tmdb_id))
