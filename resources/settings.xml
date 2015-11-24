@@ -17,6 +17,7 @@
     </category>
     <category label="HDClub">
 		<setting label="Enable" type="bool" id="hdclub_enable" default="false"/>
-        <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-1,true)" option="hidden" default=""/>
+		<setting label="Получить Passkey можно перейдя на 'http://hdclub.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
+        <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
     </category>
 </settings>
