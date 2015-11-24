@@ -1,3 +1,4 @@
 standalone.py
 *.pyo
 *.pyc
+/test_login.py
