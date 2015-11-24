@@ -10,6 +10,7 @@ from base import *
 from movieapi import *
 from nfowriter import *
 from strmwriter import *
+import requests
 
 KB = 1024
 MB = KB * KB
@@ -153,3 +154,31 @@ def run(settings):
 	write_movie(settings.animation_url, settings.animation_path())
 	write_movie(settings.documentary_url, settings.documentary_path())
 	write_movie(settings.movies_url, settings.movies_path())
+
+class Login(object):	
+	def __init__(self, login, password):
+		self.login 		= login
+		self.password	= password
+		self.session	= requests.Session()
+		page = self.session.get('http://hdclub.org/login.php')
+		soup = BeautifulSoup(page.text, 'html.parser')
+		img = soup.select('#captcha')
+		try:
+			self.captcha = 'http://hdclub.org/' + img[0]['src']
+			self.imagehash = self.captcha.split('imagehash=')[1]
+		except:
+			pass
+			
+	def get_captcha(self):
+		return self.captcha
+		
+	def Login(self, captcha_code):
+		request = self.session.post('http://hdclub.org/takelogin.php', data = {'username': self.login, 'password': self.password, 'imagestring': str(captcha_code), 'imagehash': self.imagehash})
+		print request.url
+		print request.status_code
+		print request.headers
+		print request.cookies
+		print request.history
+		
+		
+	
