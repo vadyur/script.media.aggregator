@@ -1,7 +1,17 @@
-import xml.etree.cElementTree as ET
+import xml.etree.ElementTree as ET
 from base import *
 from tvshowapi import *
 from movieapi import *
+
+def write_tree(fn, root):
+	try:
+		with open(fn, 'w') as f:
+			f.write("<?xml version='1.0' encoding='UTF-8'?>\n")
+			xml_text = ET.tostring(root).encode('utf-8')
+			f.write(xml_text)
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)		
+	
 
 class NFOWriter:
 	def add_element_copy(self, parent, tagname, parser):
@@ -62,11 +72,8 @@ class NFOWriter:
 		except:
 			pass
 		
-		tree = ET.ElementTree(root)
 		fn = make_fullpath(filename, '.nfo')
-		
-		with open(fn, 'wb') as f:
-			tree.write(f, encoding="UTF-8", xml_declaration=True)	
+		write_tree(fn, root)
 		
 	def write(self, desc_parser, filename, root_tag='movie', tvshow_api=None):
 		root = ET.Element(root_tag)
@@ -97,14 +104,8 @@ class NFOWriter:
 		if desc_parser.get_value('gold'):
 			ET.SubElement(root, 'gold')
 			
-		tree = ET.ElementTree(root)
 		fn = make_fullpath(filename, '.nfo')
-
-		try:
-			with open(fn, 'wb') as f:
-				tree.write(f, encoding="UTF-8", xml_declaration=True)		
-		except IOError as e:
-			print "I/O error({0}): {1}".format(e.errno, e.strerror)		
+		write_tree(fn, root)
 	
 		if tmdb_id != '':
 			with open(fn, "a") as myfile:
