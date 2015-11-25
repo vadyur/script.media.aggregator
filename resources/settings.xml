@@ -6,7 +6,7 @@
         <setting label="Фильмы" 		type="text"   id="movies_path" 		default="Movies"/>
         <setting label="Мультфильмы" 	type="text"   id="animation_path" 	default="Animation"/>
         <setting label="Документальное" type="text"  id="documentary_path" default="Documentary"/>
-        <setting label="Анимэ" 			type="text"   id="anime_path" 		default="Anime"/>
+        <setting label="Аниме" 			type="text"   id="anime_path" 		default="Anime"/>
     </category>
 	
     <category label="Anidub">
