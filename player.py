@@ -199,7 +199,7 @@ else:
 			_addon.openSettings()
 			settings = load_settings()
 			
-		if rep == 2:
+		if rep > 1 or rep < 0:
 			break
 		
 
