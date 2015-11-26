@@ -101,7 +101,7 @@ def play_torrent(path, episodeNumber = None):
 		
 	print files
 
-	if episodeNumber == None:
+	if episodeNumber != None:
 		files.sort(key=operator.itemgetter('name'))		
 	else:
 		files.sort(key=operator.itemgetter('size'), reverse=True)
