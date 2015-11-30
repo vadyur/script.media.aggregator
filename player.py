@@ -192,6 +192,8 @@ def main():
 				if not (anidub_enable or hdclub_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 1
+				else:
+					xbmc.executebuiltin('UpdateLibrary("video")')
 					
 			if rep == 1:
 				_addon.openSettings()

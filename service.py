@@ -25,6 +25,9 @@ def update_service():
 		anidub.run(settings)
 	if hdclub_enable:
 		hdclub.run(settings)
+	
+	if anidub_enable or hdclub_enable:
+		xbmc.executebuiltin('UpdateLibrary("video")')
 
 
 previous_time = time()
