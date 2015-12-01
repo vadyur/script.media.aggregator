@@ -7,6 +7,7 @@ import urllib, os, requests
 import time
 import operator
 from settings import Settings
+from nforeader import NFOReader
 
 # Определяем параметры плагина
 _ADDON_NAME =   'script.media.aggregator'
@@ -46,7 +47,7 @@ def is_playable(name):
 	filename, file_extension = os.path.splitext(name)
 	return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts']
 	
-def play_torrent(path, episodeNumber = None):
+def play_torrent(path, episodeNumber = None, nfoReader = None):
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
 	'''
@@ -87,7 +88,7 @@ def play_torrent(path, episodeNumber = None):
 	#try:
 	torr_data = r.json()['result']
 	print torr_data
-	#info_hash = torr_data['info_hash']
+	info_hash = torr_data['info_hash']
 	
 	index = 0
 	for file in torr_data['files']:
@@ -127,7 +128,11 @@ def play_torrent(path, episodeNumber = None):
 	Check buffering status using check_buffering_complete method. You can also get buffering progress via 
 	get_buffer_percent method to show some feedback to a plugin user.
 	'''
-	while True:
+	info_dialog = xbmcgui.DialogProgress()
+	info_dialog.create('Media Aggregator: буфферизация')
+	info_dialog.update(0)
+
+	while not info_dialog.iscanceled():
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_buffering_complete"})
 		print 'check_buffering_complete'
 		try:
@@ -135,7 +140,17 @@ def play_torrent(path, episodeNumber = None):
 				break
 		except:
 			pass
+		
+		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_buffer_percent"})
+		try:
+			info_dialog.update(r.json()['result'])
+		except:
+			pass
+		
 		time.sleep(1)
+		
+	info_dialog.close()
+		
 	
 	'''
 	As soon as check_buffering_complete returns true, construct a playable URL by combining a Kodi machine hostname 
@@ -152,29 +167,41 @@ def play_torrent(path, episodeNumber = None):
 	print playable_url
 	
 	handle = int(sys.argv[1])
-	list_item = xbmcgui.ListItem(path=playable_url)
+	if nfoReader != None:
+		list_item = nfoReader.make_list_item(playable_url)
+	else:
+		list_item = xbmcgui.ListItem(path=playable_url)
+		
 	xbmcplugin.setResolvedUrl(handle, True, list_item)
 			
-
 def main():			
 	params 		= get_params()
 	settings	= load_settings()
+	
+	xbmc.log(settings.base_path())
 
 	if 'torrent' in params:
+		reader = None
+		if 'path' in params and 'nfo' in params:
+			base_path = settings.base_path().encode('utf-8')
+			rel_path = urllib.unquote(params['path'])
+			filename = urllib.unquote(params['nfo'])
+			reader = NFOReader(NFOReader.make_path(base_path, rel_path, filename), xbmc.translatePath('special://temp'))
+		
 		if 'anidub' in params['torrent']:
 			path = os.path.join(xbmc.translatePath('special://temp'), 'temp.anidub.media-aggregator.torrent')
 			print path
 			if anidub.download_torrent(params['torrent'], path, settings):
-				play_torrent(path, params.get('episodeNumber', None))
+				play_torrent(path, params.get('episodeNumber', None), nfoReader = reader)
 		elif 'hdclub' in params['torrent']:
 			url = urllib.unquote(params['torrent']).replace('details.php', 'download.php')
 			if not 'passkey' in url:
 				url += '&passkey=' + _addon.getSetting('hdclub_passkey')
 			
-			play_torrent(url)
+			play_torrent(url, nfoReader = reader)
 		else:
 			url = urllib.unquote(params['torrent'])
-			play_torrent(url)
+			play_torrent(url, nfoReader = reader)
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()

@@ -115,7 +115,7 @@ def get_rank(item, parser):
 	else:
 		return 1
 		
-def write_movie(content, path):
+def write_movie(content, path, settings):
 	
 	original_dir = os.getcwd()
 	
@@ -142,7 +142,7 @@ def write_movie(content, path):
 			filename = parser.get_value('title') + ' # ' + parser.get_value('originaltitle') + ' (' + parser.get_value('year') + ')'
 			
 			print filename.encode('utf-8')
-			STRMWriter(item).write(filename, rank = get_rank(item, parser))
+			STRMWriter(item).write(filename, rank = get_rank(item, parser), settings = settings)
 			NFOWriter().write(parser, filename)
 		else:
 			skipped(item)
@@ -150,6 +150,6 @@ def write_movie(content, path):
 	os.chdir(original_dir)
 
 def run(settings):
-	write_movie(settings.animation_url, settings.animation_path())
-	write_movie(settings.documentary_url, settings.documentary_path())
-	write_movie(settings.movies_url, settings.movies_path())
+	write_movie(settings.animation_url, settings.animation_path(), settings)
+	write_movie(settings.documentary_url, settings.documentary_path(), settings)
+	write_movie(settings.movies_url, settings.movies_path(), settings)

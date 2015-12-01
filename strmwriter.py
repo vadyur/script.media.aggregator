@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
 from base import *
-import os, urllib2
+import os, urllib2, sys
+
+def get_filesystem_encoding():
+    return sys.getfilesystemencoding() if os.name == 'nt' else 'utf-8'
 
 class STRMWriter(STRMWriterBase):
 	def __init__(self, item):
 		self.item = item
 		
-	def write(self, filename, episodeNumber = None, rank = 0):
+	def write(self, filename, episodeNumber = None, rank = 0, settings = None):
 		fname = make_fullpath(filename, '.strm')
 		
 		#------------------------------------------
@@ -29,6 +32,13 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 			
 		link += u'&nfo=' + urllib2.quote(make_fullpath(filename, '.nfo').encode('utf-8'))
+		
+		#------------------------------------------
+		if settings != None:
+			path = os.path.relpath(os.getcwd(), settings.base_path())
+			path = unicode(path, get_filesystem_encoding())
+			print path.encode('utf-8')
+			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 
 		#------------------------------------------
 		if os.path.exists(fname):

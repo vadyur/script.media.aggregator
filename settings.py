@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 import os
 
 class Settings:
@@ -10,13 +11,13 @@ class Settings:
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
 		
-		self.base_path				= base_path
-		self.__movies_path 			= 'Movies'
-		self.__animation_path 		= 'Animation'
-		self.__documentary_path 	= 'Documentary'
+		self.__base_path			= os.path.abspath(base_path).decode('utf-8')
+		self.__movies_path 			= u'Movies'
+		self.__animation_path 		= u'Animation'
+		self.__documentary_path 	= u'Documentary'
 	
 		self.anidub_url				= 'http://tr.anidub.com/rss.xml'
-		self.__anime_tvshow_path 	= 'Anime'
+		self.__anime_tvshow_path 	= u'Anime'
 		self.anidub_login 			= anidub_login
 		self.anidub_password 		= anidub_password
 		
@@ -25,13 +26,15 @@ class Settings:
 		#return ', \n'.join("%s: %s" % item for item in attrs.items() )
 		return ''
 	
+	def base_path(self):
+		return self.__base_path.decode('utf-8')
 	def movies_path(self):
-		return os.path.join(self.base_path, self.__movies_path)
+		return os.path.join(self.__base_path, self.__movies_path).decode('utf-8')
 	def animation_path(self):
-		return os.path.join(self.base_path, self.__animation_path)
+		return os.path.join(self.__base_path, self.__animation_path).decode('utf-8')
 	def documentary_path(self):
-		return os.path.join(self.base_path, self.__documentary_path)
+		return os.path.join(self.__base_path, self.__documentary_path).decode('utf-8')
 	def anime_tvshow_path(self):
-		return os.path.join(self.base_path, self.__anime_tvshow_path)
+		return os.path.join(self.__base_path, self.__anime_tvshow_path).decode('utf-8')
 		
 		

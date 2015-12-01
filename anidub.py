@@ -150,7 +150,7 @@ def write_tvshow_nfo(parser, tvshow_api):
 	return
 
 ###################################################################################################
-def write_tvshow(content, path):
+def write_tvshow(content, path, settings):
 	original_dir = os.getcwd()
 	
 	if not os.path.exists(path):
@@ -205,7 +205,7 @@ def write_tvshow(content, path):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
 					
-					STRMWriter(item).write(filename, episodeNumber)
+					STRMWriter(item).write(filename, episodeNumber, settings = settings)
 					NFOWriter().write_episode(episode, filename, tvshow_api)
 				
 			os.chdir(save_path)
@@ -252,5 +252,5 @@ def download_torrent(url, path, settings):
 
 ###################################################################################################
 def run(settings):
-	write_tvshow(settings.anidub_url, settings.anime_tvshow_path())
+	write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
 
