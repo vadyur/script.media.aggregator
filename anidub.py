@@ -205,21 +205,10 @@ def write_tvshow(content, path, settings):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
 					
-					STRMWriter(item).write(filename, episodeNumber, settings = settings)
+					STRMWriter(item.link).write(filename, episodeNumber, settings = settings)
 					NFOWriter().write_episode(episode, filename, tvshow_api)
 				
 			os.chdir(save_path)
-
-				
-			
-			'''
-			if '720p' in item.title and os.path.exists(make_fullpath(filename, '.strm')):
-				skipped(item)
-			else:
-				print filename.encode('utf-8')
-				STRMWriter(item).write(filename)
-				NFOWriter().write(parser, filename)
-			'''
 		else:
 			skipped(item)
 			

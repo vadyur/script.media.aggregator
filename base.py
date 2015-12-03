@@ -2,12 +2,58 @@
 
 import os
 from bs4 import BeautifulSoup
+import urllib
+
+KB = 1024
+MB = KB * KB
+GB = KB * MB
 
 def make_fullpath(title, ext):
 	return title.replace(':', '').replace('/', '#').replace('?', '') + ext
 def skipped(item):
 	print item.title.encode('utf-8') + '\t\t\t[Skipped]'
 
+def get_rank(full_title, parser):
+	
+	preffered_size = 7 * GB
+	preffered_resolution_h = 1920
+	preffered_resolution_v = 1080
+	
+	rank = 0.0
+	conditions = 0
+	
+	if parser.get_value('gold'):
+		rank += 0.8
+		conditions += 1
+		
+	res_v = 1080
+	if '720p' in full_title:
+		res_v = 720
+		
+	if abs(preffered_resolution_v - res_v) > 0:
+		rank += 2
+		conditions += 1
+		
+	size = parser.get_value('size')
+	if size != '':
+		if int(size) > preffered_size:
+			rank += int(size) / preffered_size
+		else:
+			rank += preffered_size / int(size)
+		conditions += 1
+		
+	if parser.get_value('format') == 'MKV':
+		rank += 0.6
+		conditions += 1
+		
+	if 'ISO' in parser.get_value('format'):
+		rank += 100
+		conditions += 1
+	
+	if conditions != 0:
+		return rank / conditions
+	else:
+		return 1
 	
 class STRMWriterBase:
 	def make_alternative(self, fname, link, rank = 0):
@@ -44,6 +90,16 @@ class STRMWriterBase:
 							line = line.decode('utf-8')
 							link = line.replace(u'\r', u'').replace(u'\n', u'')
 		return link
+		
+	@staticmethod
+	def has_link(fname, link):
+		fname_alt = fname + '.alternative'
+		if os.path.isfile(fname_alt):
+			with open(fname_alt, "r") as alternative:
+				for line in alternative:
+					if link in urllib.unquote(line):
+						return True
+		return False
 				
 	
 class DescriptionParserBase:

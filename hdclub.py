@@ -11,10 +11,6 @@ from movieapi import *
 from nfowriter import *
 from strmwriter import *
 
-KB = 1024
-MB = KB * KB
-GB = KB * MB
-
 class DescriptionParser(DescriptionParserBase):
 				
 	def get_tag(self, x):
@@ -72,50 +68,7 @@ class DescriptionParser(DescriptionParserBase):
 				
 		return True
 		
-		
-def get_rank(item, parser):
-	
-	preffered_size = 7 * GB
-	preffered_resolution_h = 1920
-	preffered_resolution_v = 1080
-	
-	rank = 0.0
-	conditions = 0
-	
-	if parser.get_value('gold'):
-		rank += 0.8
-		conditions += 1
-		
-	res_v = 1080
-	if '720p' in item.title:
-		res_v = 720
-		
-	if abs(preffered_resolution_v - res_v) > 0:
-		rank += 2
-		conditions += 1
-		
-	size = parser.get_value('size')
-	if size != '':
-		if int(size) > preffered_size:
-			rank += int(size) / preffered_size
-		else:
-			rank += preffered_size / int(size)
-		conditions += 1
-		
-	if parser.get_value('format') == 'MKV':
-		rank += 0.6
-		conditions += 1
-		
-	if 'ISO' in parser.get_value('format'):
-		rank += 100
-		conditions += 1
-	
-	if conditions != 0:
-		return rank / conditions
-	else:
-		return 1
-		
-def write_movie(content, path, settings):
+def write_movies(content, path, settings):
 	
 	original_dir = os.getcwd()
 	
@@ -142,7 +95,7 @@ def write_movie(content, path, settings):
 			filename = parser.get_value('title') + ' # ' + parser.get_value('originaltitle') + ' (' + parser.get_value('year') + ')'
 			
 			print filename.encode('utf-8')
-			STRMWriter(item).write(filename, rank = get_rank(item, parser), settings = settings)
+			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser), settings = settings)
 			NFOWriter().write(parser, filename)
 		else:
 			skipped(item)
@@ -150,6 +103,6 @@ def write_movie(content, path, settings):
 	os.chdir(original_dir)
 
 def run(settings):
-	write_movie(settings.animation_url, settings.animation_path(), settings)
-	write_movie(settings.documentary_url, settings.documentary_path(), settings)
-	write_movie(settings.movies_url, settings.movies_path(), settings)
+	write_movies(settings.animation_url, settings.animation_path(), settings)
+	write_movies(settings.documentary_url, settings.documentary_path(), settings)
+	write_movies(settings.movies_url, settings.movies_path(), settings)

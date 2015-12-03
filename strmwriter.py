@@ -7,8 +7,8 @@ def get_filesystem_encoding():
     return sys.getfilesystemencoding() if os.name == 'nt' else 'utf-8'
 
 class STRMWriter(STRMWriterBase):
-	def __init__(self, item):
-		self.item = item
+	def __init__(self, link):
+		self.link = link
 		
 	def write(self, filename, episodeNumber = None, rank = 0, settings = None):
 		fname = make_fullpath(filename, '.strm')
@@ -16,7 +16,7 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 
 		link = u'plugin://script.media.aggregator/?action=play&torrent='
-		link += urllib2.quote(self.item.link.encode('utf-8'))
+		link += urllib2.quote(self.link.encode('utf-8'))
 		if episodeNumber != None:
 			link += u'&episodeNumber=' + str(episodeNumber - 1)
 
