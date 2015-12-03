@@ -1,14 +1,19 @@
 import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
 from base import *
 from tvshowapi import *
 from movieapi import *
 
+def prettify(xml_text):
+    reparsed = minidom.parseString(xml_text)
+    return reparsed.toprettyxml(indent="\t", encoding="utf-8")
+
 def write_tree(fn, root):
 	try:
 		with open(fn, 'w') as f:
-			f.write("<?xml version='1.0' encoding='UTF-8'?>\n")
-			xml_text = ET.tostring(root).encode('utf-8')
-			f.write(xml_text)
+			xml_text = "<?xml version='1.0' encoding='UTF-8'?>\n"
+			xml_text += ET.tostring(root).encode('utf-8')
+			f.write(prettify(xml_text))
 	except IOError as e:
 		print "I/O error({0}): {1}".format(e.errno, e.strerror)		
 	
@@ -107,9 +112,11 @@ class NFOWriter:
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
 	
+		'''
 		if tmdb_id != '':
 			with open(fn, "a") as myfile:
 				myfile.write('\n' + 'http://www.themoviedb.org/movie/' + str(tmdb_id))
 		elif imdb_id != '':
 			with open(fn, "a") as myfile:
 				myfile.write('\n' + 'http://www.imdb.com/title/' + imdb_id + '/')
+		'''
