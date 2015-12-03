@@ -6,7 +6,7 @@ class Settings:
 	
 	base_url 			= 'http://hdclub.org/rss.php'
 	
-	def __init__(self, base_path, hdclub_passkey = '', anidub_login = '', anidub_password = ''):
+	def __init__(self, base_path, hdclub_passkey = '', anidub_login = '', anidub_password = '', nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1):
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
@@ -20,6 +20,12 @@ class Settings:
 		self.__anime_tvshow_path 	= u'Anime'
 		self.anidub_login 			= anidub_login
 		self.anidub_password 		= anidub_password
+
+		self.nnmclub_login 			= nnmclub_login
+		self.nnmclub_password 		= nnmclub_password
+		
+		self.nnmclub_pages			= nnmclub_pages
+
 		
 	def __repr__(self):
 		attrs = vars(self)

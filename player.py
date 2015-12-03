@@ -2,7 +2,7 @@
 
 import sys
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
-import anidub, hdclub
+import anidub, hdclub, nnmclub
 import urllib, os, requests
 import time
 import operator
@@ -39,13 +39,23 @@ def load_settings():
 	anidub_login		= _addon.getSetting('anidub_login')
 	anidub_password		= _addon.getSetting('anidub_password')
 	
-	settings 			= Settings(base_path, hdclub_passkey = hdclub_passkey, anidub_login = anidub_login, anidub_password = anidub_password)
+	nnmclub_pages		= int(_addon.getSetting('nnmclub_pages'))
+	nnmclub_login		= _addon.getSetting('nnmclub_login')
+	nnmclub_password	= _addon.getSetting('nnmclub_password')
+	
+	settings 			= Settings(	base_path, 
+									hdclub_passkey = hdclub_passkey, 
+									anidub_login = anidub_login, 
+									anidub_password = anidub_password, 
+									nnmclub_pages = nnmclub_pages,
+									nnmclub_login = nnmclub_login,
+									nnmclub_password = nnmclub_password	)
 	#print settings
 	return settings
 	
 def is_playable(name):
 	filename, file_extension = os.path.splitext(name)
-	return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts']
+	return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
 	
 def play_torrent(path, episodeNumber = None, nfoReader = None):
 	if episodeNumber != None:
@@ -55,6 +65,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	else:
 		print 'play_torrent: %s' % path
 	'''
+	print path
 
 		
 	'''
@@ -68,14 +79,19 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	Periodically check if the torrent has been added to YATP using check_torrent_added method. 
 	Usually, .torrent files are added almost instantaneously, but processing magnet links takes some time.
 	'''
-	for i in range(10):
+	added = False
+	for i in range(20):
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_torrent_added"})
 		try:
 			if r.json()['result']:
+				added = True
 				break
 		except:
 			pass
 		time.sleep(1)
+		
+	if not added:
+		return
 		
 	'''
 	As soon as check_torrent_added returns true, get added torrent data using get_last_added_torrent method. 
@@ -88,7 +104,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	#try:
 	torr_data = r.json()['result']
 	print torr_data
-	info_hash = torr_data['info_hash']
+	#info_hash = torr_data['info_hash']
 	
 	index = 0
 	for file in torr_data['files']:
@@ -176,6 +192,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 			
 def main():			
 	params 		= get_params()
+	print params
 	settings	= load_settings()
 	
 	xbmc.log(settings.base_path())
@@ -199,6 +216,14 @@ def main():
 				url += '&passkey=' + _addon.getSetting('hdclub_passkey')
 			
 			play_torrent(url, nfoReader = reader)
+		elif 'nnm-club' in params['torrent']:
+			path = os.path.join(xbmc.translatePath('special://temp'), 'temp.nnm-club.media-aggregator.torrent')
+			print path
+			if nnmclub.download_torrent(params['torrent'], path, settings):
+				play_torrent(path, nfoReader = reader)
+			else:
+				url = nnmclub.get_magnet_link(urllib.unquote(params['torrent']))
+				play_torrent(url, nfoReader = reader)
 		else:
 			url = urllib.unquote(params['torrent'])
 			play_torrent(url, nfoReader = reader)
@@ -211,12 +236,15 @@ def main():
 			if rep == 0:
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 				
 				if anidub_enable:
 					anidub.run(settings)
 				if hdclub_enable:
 					hdclub.run(settings)
-				if not (anidub_enable or hdclub_enable):
+				if nnmclub_enable:
+					nnmclub.run(settings)
+				if not (anidub_enable or hdclub_enable or nnmclub_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 1
 				else:
