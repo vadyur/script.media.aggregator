@@ -9,8 +9,7 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import anidub
-import hdclub
+import anidub, hdclub, nnmclub
 from player import load_settings
 
 _ADDON_NAME =   'script.media.aggregator'
@@ -19,14 +18,17 @@ _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 def update_service():
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	settings			= load_settings()
 	
 	if anidub_enable:
 		anidub.run(settings)
 	if hdclub_enable:
 		hdclub.run(settings)
+	if nnmclub_enable:
+		nnmclub.run(settings)
 	
-	if anidub_enable or hdclub_enable:
+	if anidub_enable or hdclub_enable or nnmclub_enable:
 		xbmc.executebuiltin('UpdateLibrary("video")')
 
 

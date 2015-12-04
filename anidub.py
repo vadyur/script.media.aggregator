@@ -230,6 +230,12 @@ def download_torrent(url, path, settings):
 		print s.headers
 		r = s.get(href, headers={'Referer': url})
 		print r.headers
+		
+		# 'Content-Type': 'application/x-bittorrent'
+		if 'Content-Type' in r.headers:
+			if not 'torrent' in r.headers['Content-Type']:
+				return False
+		
 		try:
 			with open(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):

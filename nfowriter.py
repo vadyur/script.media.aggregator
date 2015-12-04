@@ -80,6 +80,11 @@ class NFOWriter:
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
 		
+	def add_actors(self, root, desc_parser):
+		for name in desc_parser.get_value('actor').split(', '):
+			actor = ET.SubElement(root, 'actor')
+			ET.SubElement(actor, 'name').text = name
+		
 	def write(self, desc_parser, filename, root_tag='movie', tvshow_api=None):
 		root = ET.Element(root_tag)
 		
@@ -93,6 +98,8 @@ class NFOWriter:
 		self.add_element_split(root, 'genre', desc_parser)
 		self.add_element_split(root, 'country', desc_parser)
 		self.add_element_split(root, 'studio', desc_parser)
+		
+		self.add_actors(root, desc_parser)
 			
 		tmdb_id = ''
 		if imdb_id != '':
@@ -112,11 +119,3 @@ class NFOWriter:
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
 	
-		'''
-		if tmdb_id != '':
-			with open(fn, "a") as myfile:
-				myfile.write('\n' + 'http://www.themoviedb.org/movie/' + str(tmdb_id))
-		elif imdb_id != '':
-			with open(fn, "a") as myfile:
-				myfile.write('\n' + 'http://www.imdb.com/title/' + imdb_id + '/')
-		'''

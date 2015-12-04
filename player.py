@@ -60,13 +60,6 @@ def is_playable(name):
 def play_torrent(path, episodeNumber = None, nfoReader = None):
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
-	'''
-		print 'play_torrent: %s (%d)' % (path, episodeNumber)
-	else:
-		print 'play_torrent: %s' % path
-	'''
-	print path
-
 		
 	'''
 	Send a torrent to YATP usign add_torrent method. YATP accepts local and remote (http/https) 
@@ -82,6 +75,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	added = False
 	for i in range(20):
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_torrent_added"})
+		print r.json()
 		try:
 			if r.json()['result']:
 				added = True
@@ -91,7 +85,8 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 		time.sleep(1)
 		
 	if not added:
-		return
+		print 'Torrent not added'
+		return False
 		
 	'''
 	As soon as check_torrent_added returns true, get added torrent data using get_last_added_torrent method. 
@@ -165,7 +160,11 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 		
 		time.sleep(1)
 		
+	canceled = info_dialog.iscanceled()
 	info_dialog.close()
+	
+	if canceled:
+		return false
 		
 	
 	'''
@@ -178,7 +177,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	'''
 	playable_url 	= 'http://localhost:8668/stream/'
 	file_path 		= playable_item['name'].replace('\\', '/').encode('utf-8')
-	playable_url	+= file_path
+	playable_url	+= urllib.quote(file_path)
 	
 	print playable_url
 	
@@ -218,11 +217,12 @@ def main():
 			play_torrent(url, nfoReader = reader)
 		elif 'nnm-club' in params['torrent']:
 			path = os.path.join(xbmc.translatePath('special://temp'), 'temp.nnm-club.media-aggregator.torrent')
-			print path
-			if nnmclub.download_torrent(params['torrent'], path, settings):
+			if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(params['torrent'], path, settings):
+				print 'Download torrent %s' % path
 				play_torrent(path, nfoReader = reader)
 			else:
 				url = nnmclub.get_magnet_link(urllib.unquote(params['torrent']))
+				print 'Download magnet %s' % url
 				play_torrent(url, nfoReader = reader)
 		else:
 			url = urllib.unquote(params['torrent'])
