@@ -36,6 +36,7 @@ class NFOReader(object):
 		info = {}
 
 		cast = []
+		castandrole = []
 		for child in root:
 			#print child.tag, child.text
 			if child.tag in string_items:
@@ -45,11 +46,20 @@ class NFOReader(object):
 			if child.tag in float_items:
 				info[child.tag] = float(child.text)
 			if 'actor' in child.tag:
-				for name in child:
-					cast.append(name.text)
+				for item in child:
+					name = ''
+					role = ''
+					if 'name' in item.tag:
+						name = item.text
+					if 'role' in item.tag:
+						role = item.text
+					cast.append(name)
+					castandrole.append((name, role))
 					
 		if len(cast) > 0:
 			info['cast'] = cast
+		if len(castandrole) > 0:
+			info['castandrole'] = castandrole
 				
 				
 		print info

@@ -81,9 +81,22 @@ class NFOWriter:
 		write_tree(fn, root)
 		
 	def add_actors(self, root, desc_parser):
-		for name in desc_parser.get_value('actor').split(', '):
-			actor = ET.SubElement(root, 'actor')
-			ET.SubElement(actor, 'name').text = name
+		kp_id = desc_parser.get_value('kp_id')
+		if kp_id != '':
+			movie_api = MovieAPI(kinopoisk=kp_id)
+			index = 0
+			for actorInfo in movie_api.Actors():
+				if actorInfo['ru_name'] in desc_parser.get_value('actor'):
+					actor = ET.SubElement(root, 'actor')
+					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
+					ET.SubElement(actor, 'role').text = actorInfo['role']
+					ET.SubElement(actor, 'order').text = str(index)
+					ET.SubElement(actor, 'thumb').text = actorInfo['photo']
+					index += 1
+		else:
+			for name in desc_parser.get_value('actor').split(', '):
+				actor = ET.SubElement(root, 'actor')
+				ET.SubElement(actor, 'name').text = name
 		
 	def write(self, desc_parser, filename, root_tag='movie', tvshow_api=None):
 		root = ET.Element(root_tag)

@@ -1,6 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 
-import os
+import os, re
 from bs4 import BeautifulSoup
 import urllib
 
@@ -18,6 +18,8 @@ def get_rank(full_title, parser):
 	preffered_size = 7 * GB
 	preffered_resolution_h = 1920
 	preffered_resolution_v = 1080
+	
+	preffered_bitrate	= 10000
 	
 	rank = 0.0
 	conditions = 0
@@ -41,6 +43,43 @@ def get_rank(full_title, parser):
 		else:
 			rank += preffered_size / int(size)
 		conditions += 1
+
+	video = parser.get_value('video')
+	for part in video.split(', '):
+		multiplier = 0
+		if 'kbps' in part \
+			or 'kbs' in part \
+			or 'Kbps' in part \
+			or u'Кбит/сек' in part \
+			or u'Кбит/с' in part \
+			or 'Kb/s' in part \
+			or '~' in part:
+				multiplier = 1
+		if 'mbps' in part \
+			or 'mbs' in part \
+			or 'Mbps' in part \
+			or u'Мбит/сек' in part \
+			or u'Mбит/с' in part \
+			or u'Мбит/с' in part \
+			or 'Mb/s' in part:
+				multiplier = 1000
+		if multiplier != 0:
+			find = re.findall('[\d\.,]', part.split('(')[0])
+			bitrate = ''.join(find).replace(',', '.')
+			if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
+				print 'bitrate: %d kbps' % int(float(bitrate) * multiplier)
+				if float(bitrate) * multiplier > preffered_bitrate:
+					rank += float(bitrate) * multiplier / preffered_bitrate
+				else:
+					rank += preffered_bitrate / float(bitrate) * multiplier
+				conditions += 1
+			else:
+				rank += 10
+				conditions += 1
+				print 'bitrate: not parsed'
+		else:
+			rank += 2
+			conditions += 1
 		
 	if parser.get_value('format') == 'MKV':
 		rank += 0.6
@@ -122,10 +161,11 @@ class DescriptionParserBase:
 	def parse(self):	
 		raise NotImplementedError("def parse(self): not imlemented.\nPlease Implement this method")
 		
-	def __init__(self, content):
+	def __init__(self, content, settings = None):
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(html_doc, 'html.parser')
+		self.settings = settings
 		self.OK = self.parse()
 		
 		

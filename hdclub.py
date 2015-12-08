@@ -55,6 +55,11 @@ class DescriptionParser(DescriptionParserBase):
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
 					self.dict['imdb_id'] = components[4]
+				
+				if self.settings:
+					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru':
+						self.dict['kp_id'] = href
+
 			except:
 				pass
 				
@@ -88,7 +93,7 @@ def write_movies(content, path, settings):
 	print d.entries[0].link
 	'''
 	for item in d.entries:
-		parser = DescriptionParser(item.description)
+		parser = DescriptionParser(item.description, settings = settings)
 		print '-------------------------------------------------------------------------'
 		
 		if parser.parsed():
@@ -106,3 +111,4 @@ def run(settings):
 	write_movies(settings.animation_url, settings.animation_path(), settings)
 	write_movies(settings.documentary_url, settings.documentary_path(), settings)
 	write_movies(settings.movies_url, settings.movies_path(), settings)
+

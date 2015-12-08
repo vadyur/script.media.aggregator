@@ -16,8 +16,9 @@ _ITEMS_ON_PAGE=15
 
 class DescriptionParser(DescriptionParserBase):
 	
-	def __init__(self, content):
+	def __init__(self, content, settings = None):
 		self.content = content
+		self.settings = settings
 		self.OK = self.parse()
 		
 	def get_tag(self, x):
@@ -106,7 +107,7 @@ class DescriptionParser(DescriptionParserBase):
 								self.dict[tag] = unicode(span.next_sibling).strip()
 							else:
 								self.dict[tag] = unicode(span.next_sibling.next_sibling).strip()
-							print self.dict[tag].encode('utf-8')
+							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self.dict[tag].encode('utf-8'))
 					except: pass
 						
 				for a in self.soup.select('#imdb_id'):
@@ -131,6 +132,11 @@ class DescriptionParser(DescriptionParserBase):
 					self.dict['country'] = parts[0]
 					if len(parts) > 1:
 						self.dict['studio'] = parts[1]
+
+				if self.settings:
+					if self.settings.use_kinopoisk:
+						for kp_id in self.soup.select('#kp_id'):
+							self.dict['kp_id'] = kp_id['href']
 				
 				return True
 		return False
@@ -171,7 +177,7 @@ def write_movies(content, path, settings):
 		enumerator.process_page(_HD_PORTAL_URL + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))
 
 	for post in enumerator.items():
-		parser = DescriptionParser(post)
+		parser = DescriptionParser(post, settings = settings)
 		if parser.parsed():
 			filename = parser.make_filename()
 			if filename == '':
