@@ -15,23 +15,24 @@ _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 _addon_path =   _addon.getAddonInfo('path').decode('utf-8')
 
 def get_params():
-    param=[]
-    paramstring=sys.argv[2]
-    if len(paramstring)>=2:
-        params=sys.argv[2]
-        cleanedparams=params.replace('?','')
-        if (params[len(params)-1]=='/'):
-            params=params[0:len(params)-2]
-        pairsofparams=cleanedparams.split('&')
-        param={}
-        for i in range(len(pairsofparams)):
-            splitparams={}
-            splitparams=pairsofparams[i].split('=')
-            if (len(splitparams))==2:
-                param[splitparams[0]]=splitparams[1]
+	param=[]
+	
+	paramstring=sys.argv[2]
+	if len(paramstring)>=2:
+		params=sys.argv[2]
+		cleanedparams=params.replace('?','')
+		if (params[len(params)-1]=='/'):
+			params=params[0:len(params)-2]
+		pairsofparams=cleanedparams.split('&')
+		param={}
+		for i in range(len(pairsofparams)):
+			splitparams={}
+			splitparams=pairsofparams[i].split('=')
+			if (len(splitparams))==2:
+				param[splitparams[0]]=splitparams[1]
 
 	#print param
-    return param
+	return param
 	
 def load_settings():
 	base_path 			= _addon.getSetting('base_path')
@@ -189,10 +190,11 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 		
 	xbmcplugin.setResolvedUrl(handle, True, list_item)
 			
-def main():			
+def main():
 	params 		= get_params()
 	print params
 	settings	= load_settings()
+	#print settings
 	
 	xbmc.log(settings.base_path())
 
