@@ -25,12 +25,21 @@ class Settings:
 		self.nnmclub_password 		= nnmclub_password
 		
 		self.nnmclub_pages			= nnmclub_pages
+		self.use_kinopoisk			= True
 
 		
 	def __repr__(self):
 		attrs = vars(self)
 		#return ', \n'.join("%s: %s" % item for item in attrs.items() )
-		return ''
+		result = ''
+		for key, value in attrs.items():
+			if 'pass' in key:
+				continue
+			if result != '':
+				result += '\n'
+			key = key.replace('_Settings__', '')
+			result += "%s: %s" % (key, value)
+		return result
 	
 	def base_path(self):
 		return self.__base_path.decode('utf-8')
