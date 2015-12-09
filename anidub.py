@@ -132,6 +132,16 @@ class DescriptionParser(DescriptionParserBase):
 				print self.dict['thumbnail']
 			except:
 				pass
+				
+		fanart = []
+		for a in self.soup.select('ul.clr li a'):
+			try:
+				print a['href']
+				fanart.append(a['href'])
+			except:
+				pass
+		if len(fanart) != 0:
+			self.dict['fanart'] = fanart
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:

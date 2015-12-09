@@ -66,14 +66,19 @@ def get_rank(full_title, parser):
 		if multiplier != 0:
 			find = re.findall('[\d\.,]', part.split('(')[0])
 			bitrate = ''.join(find).replace(',', '.')
-			if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
-				print 'bitrate: %d kbps' % int(float(bitrate) * multiplier)
-				if float(bitrate) * multiplier > preffered_bitrate:
-					rank += float(bitrate) * multiplier / preffered_bitrate
+			try:
+				if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
+					print 'bitrate: %d kbps' % int(float(bitrate) * multiplier)
+					if float(bitrate) * multiplier > preffered_bitrate:
+						rank += float(bitrate) * multiplier / preffered_bitrate
+					else:
+						rank += preffered_bitrate / float(bitrate) * multiplier
+					conditions += 1
 				else:
-					rank += preffered_bitrate / float(bitrate) * multiplier
-				conditions += 1
-			else:
+					rank += 10
+					conditions += 1
+					print 'bitrate: not parsed'
+			except:
 				rank += 10
 				conditions += 1
 				print 'bitrate: not parsed'
@@ -160,6 +165,12 @@ class DescriptionParserBase:
 
 	def parse(self):	
 		raise NotImplementedError("def parse(self): not imlemented.\nPlease Implement this method")
+		
+	def fanart(self):
+		if 'fanart' in self.dict:
+			return self.dict['fanart']
+		else:
+			return None
 		
 	def __init__(self, content, settings = None):
 		self.content = content

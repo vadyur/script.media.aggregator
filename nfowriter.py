@@ -41,6 +41,12 @@ class NFOWriter:
 			
 		self.add_element_copy(parent, 'rating', desc_parser)
 		
+		fanart = ET.SubElement(parent, 'fanart')
+		if desc_parser.fanart():
+			for item in desc_parser.fanart():
+				thumb = ET.SubElement(fanart, "thumb")
+				thumb.text = item
+		
 	def make_imdbid_info(self, parent, movie_api):
 		try:
 			tmdb_id = movie_api[u'id']
