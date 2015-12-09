@@ -1,4 +1,6 @@
-import json
+﻿# -*- coding: utf-8 -*-
+
+import json, re
 import urllib2, requests
 from bs4 import BeautifulSoup
 
@@ -78,3 +80,35 @@ class MovieAPI:
 							role 		= role.split(',')[0]
 							actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
 		return actors
+		
+	def __trailer(self, element):
+		for parent in element.parents:
+			#print parent.tag
+			if parent.name == 'tr':
+				for tr in parent.next_siblings:
+					if not hasattr(tr, 'select'):
+						continue
+					if tr.name != 'tr':
+						continue
+					for a_cont in tr.select('a.continue'):
+						if u'Высокое качество' in a_cont.get_text():
+							trailer = a_cont['href']
+							trailer = re.search('link=(.+?)$', trailer).group(1)
+							print 'trailer: ' + trailer
+							return trailer
+		return None
+		
+	def Trailer(self):
+		if self.kinopoisk:
+			trailer_page = self.kinopoisk + 'video/type/1/'
+			r = requests.get(trailer_page)
+			if r.status_code == requests.codes.ok:
+				soup = BeautifulSoup(r.text, 'html.parser')
+				for div in soup.select('tr td div div.flag2'):
+					trailer = self.__trailer(div)
+					if trailer:
+						return trailer
+				for a in soup.select('a.all'):
+					return self.__trailer(a)
+		return None
+		

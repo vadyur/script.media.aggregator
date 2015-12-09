@@ -103,6 +103,14 @@ class NFOWriter:
 			for name in desc_parser.get_value('actor').split(', '):
 				actor = ET.SubElement(root, 'actor')
 				ET.SubElement(actor, 'name').text = name
+				
+	def add_trailer(self, root, desc_parser):
+		kp_id = desc_parser.get_value('kp_id')
+		if kp_id != '':
+			movie_api = MovieAPI(kinopoisk=kp_id)
+			trailer = movie_api.Trailer()
+			if trailer:
+				ET.SubElement(root, 'trailer').text = trailer
 		
 	def write(self, desc_parser, filename, root_tag='movie', tvshow_api=None):
 		root = ET.Element(root_tag)
@@ -119,6 +127,7 @@ class NFOWriter:
 		self.add_element_split(root, 'studio', desc_parser)
 		
 		self.add_actors(root, desc_parser)
+		self.add_trailer(root, desc_parser)
 			
 		tmdb_id = ''
 		if imdb_id != '':
