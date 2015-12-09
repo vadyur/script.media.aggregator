@@ -97,7 +97,7 @@ def write_movies(content, path, settings):
 		print '-------------------------------------------------------------------------'
 		
 		if parser.parsed():
-			filename = parser.get_value('title') + ' # ' + parser.get_value('originaltitle') + ' (' + parser.get_value('year') + ')'
+			filename = parser.make_filename()
 			
 			print filename.encode('utf-8')
 			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser), settings = settings)

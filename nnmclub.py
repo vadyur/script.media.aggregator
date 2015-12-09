@@ -41,12 +41,19 @@ class DescriptionParser(DescriptionParserBase):
 		
 	def get_title(self, full_title):
 		try:
-			found = re.search('^(.+?) /', full_title).group(1)
+			sep = '/'
+			if not ' / ' in full_title:
+				sep = '\('
+				
+			found = re.search('^(.+?) ' + sep, full_title).group(1)
 			return self.clean( found)
 		except AttributeError:
 			return full_title
 	
 	def get_original_title(self, full_title):
+		if not ' / ' in full_title:
+			return self.get_title(full_title)
+			
 		try:
 			found = re.search('^.+? / (.+) \(', full_title).group(1)
 			return self.clean(found)
@@ -60,14 +67,6 @@ class DescriptionParser(DescriptionParserBase):
 		except AttributeError:
 			return 0
 			
-	def make_filename(self):
-		try:
-			filename = self.dict['title'] + ' # ' + self.dict['originaltitle'] 
-			filename += ' (' + self.dict['year'] + ')'
-		finally:
-			return filename
-
-		
 	def parse(self):
 		for a in self.content.select('.substr a.pgenmed'):
 			self.__link = _BASE_URL + a['href']

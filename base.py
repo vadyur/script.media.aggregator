@@ -109,9 +109,12 @@ class STRMWriterBase:
 				s_alt = alternative.read().decode('utf-8')
 	
 		if not (link in s_alt):
-			with open(fname_alt, "a+") as alternative:
-				alternative.write('#rank=' + str(rank) + '\n')
-				alternative.write(link.encode('utf-8') + '\n')
+			try:
+				with open(fname_alt, "a+") as alternative:
+					alternative.write('#rank=' + str(rank) + '\n')
+					alternative.write(link.encode('utf-8') + '\n')
+			except:
+				pass
 				
 	def get_link_with_min_rank(self, fname):
 		fname_alt = fname + '.alternative'
@@ -178,6 +181,21 @@ class DescriptionParserBase:
 		self.soup = BeautifulSoup(html_doc, 'html.parser')
 		self.settings = settings
 		self.OK = self.parse()
+		
+	def make_filename(self):
+		filename = None
+		try:
+			title 			= self.dict['title']
+			originaltitle 	= self.dict['originaltitle']
+			
+			if title == originaltitle:
+				filename = title
+			else:
+				filename 		= title + ' # ' + originaltitle 
+				
+			filename 		+= ' (' + self.dict['year'] + ')'
+		finally:
+			return filename		
 		
 		
 		
