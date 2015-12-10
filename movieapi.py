@@ -54,6 +54,15 @@ class MovieAPI:
 
 	def __getitem__(self, key):
 		return self.tmdb_data[key]
+
+	@staticmethod
+	def clean_html(page):
+		pattern = r"(?is)<script[^>]*>(.*?)</script>"
+		#'<script.*?</script>'
+		r = re.compile(pattern, flags = re.M)
+		page = r.sub('', page)
+		print page.encode('utf-8')
+		return page		
 		
 	def Actors(self):
 		actors = []
@@ -61,7 +70,7 @@ class MovieAPI:
 			cast_url = self.kinopoisk + 'cast/'
 			r = requests.get(cast_url)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(r.text, 'html.parser')
+				soup = BeautifulSoup(MovieAPI.clean_html(r.text), 'html.parser')
 				for a in soup.select('a[name="actor"]'):
 					for sibling in a.next_siblings:
 						if not hasattr(sibling, 'tag'):
