@@ -159,7 +159,7 @@ class PostsEnumerator(object):
 
 	def process_page(self, url):
 		request = self.__s.get(url)
-		self.soup = BeautifulSoup(request.text, 'html.parser')
+		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		print url
 		
 		for tbl in self.soup.select('table.pline'):

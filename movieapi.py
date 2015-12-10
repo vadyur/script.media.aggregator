@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 
-import json, re
+import json, re, base
 import urllib2, requests
 from bs4 import BeautifulSoup
 
@@ -55,24 +55,13 @@ class MovieAPI:
 	def __getitem__(self, key):
 		return self.tmdb_data[key]
 
-	@staticmethod
-	def clean_html(page):
-		#pattern = r"(?is)<script[^>]*>(.*?)</script>"
-		#pattern = r'<script(.*?)</script>'
-		#flags = re.M + re.S + re.I
-		#r = re.compile(pattern, flags=flags)
-		#print r
-		#page = r.sub('', page)
-		#print page.encode('utf-8')
-		return page.replace("</sc'+'ript>", "")
-		
 	def Actors(self):
 		actors = []
 		if self.kinopoisk:
 			cast_url = self.kinopoisk + 'cast/'
 			r = requests.get(cast_url)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(MovieAPI.clean_html(r.text), 'html.parser')
+				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 				#soup = BeautifulSoup(r.text, 'html5lib', from_encoding = "utf-8")
 				for a in soup.select('a[name="actor"]'):
 					for sibling in a.next_siblings:
@@ -115,7 +104,7 @@ class MovieAPI:
 			trailer_page = self.kinopoisk + 'video/type/1/'
 			r = requests.get(trailer_page)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(MovieAPI.clean_html(r.text), 'html.parser')
+				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 				for div in soup.select('tr td div div.flag2'):
 					trailer = self.__trailer(div)
 					if trailer:

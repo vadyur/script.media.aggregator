@@ -12,6 +12,17 @@ def make_fullpath(title, ext):
 	return title.replace(':', '').replace('/', '#').replace('?', '') + ext
 def skipped(item):
 	print item.title.encode('utf-8') + '\t\t\t[Skipped]'
+	
+def clean_html(page):
+	#pattern = r"(?is)<script[^>]*>(.*?)</script>"
+	#pattern = r'<script(.*?)</script>'
+	#flags = re.M + re.S + re.I
+	#r = re.compile(pattern, flags=flags)
+	#print r
+	#page = r.sub('', page)
+	#print page.encode('utf-8')
+	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '')
+	
 
 def get_rank(full_title, parser):
 	
