@@ -189,7 +189,7 @@ class DescriptionParserBase:
 	def __init__(self, content, settings = None):
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
-		self.soup = BeautifulSoup(html_doc, 'html.parser')
+		self.soup = BeautifulSoup(clean_html(html_doc), 'html.parser')
 		self.settings = settings
 		self.OK = self.parse()
 		

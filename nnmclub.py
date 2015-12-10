@@ -90,7 +90,7 @@ class DescriptionParser(DescriptionParserBase):
 			
 			r = requests.get(self.__link)
 			if r.status_code == requests.codes.ok:
-				self.soup = BeautifulSoup(r.text, 'html.parser')
+				self.soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 				
 				tag = u''
 				self.dict['gold'] = False
@@ -202,7 +202,7 @@ def run(settings):
 def get_magnet_link(url):
 	r = requests.get(url)
 	if r.status_code == requests.codes.ok:
-		soup = BeautifulSoup(r.text, 'html.parser')
+		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
 			print a['href']
 			return a['href']
@@ -217,7 +217,7 @@ def download_torrent(url, path, settings):
 	#with open('log-get.html', 'w+') as f:
 	#	f.write(r.text.encode('cp1251'))
 	
-	soup = BeautifulSoup(r.text, 'html.parser')
+	soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 	
 	for inp in soup.select('input[name="code"]'):
 		code = inp['value']
@@ -237,7 +237,7 @@ def download_torrent(url, path, settings):
 	page = s.get(url)
 	#print page.text.encode('cp1251')
 	
-	soup = BeautifulSoup(page.text, 'html.parser')
+	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 	a = soup.select('td.gensmall > span.genmed > b > a')
 	if len(a) > 0:
 		href = 'http://nnm-club.me/forum/' + a[0]['href']

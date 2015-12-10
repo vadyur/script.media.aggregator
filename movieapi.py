@@ -62,7 +62,6 @@ class MovieAPI:
 			r = requests.get(cast_url)
 			if r.status_code == requests.codes.ok:
 				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
-				#soup = BeautifulSoup(r.text, 'html5lib', from_encoding = "utf-8")
 				for a in soup.select('a[name="actor"]'):
 					for sibling in a.next_siblings:
 						if not hasattr(sibling, 'tag'):
