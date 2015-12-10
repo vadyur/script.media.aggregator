@@ -61,7 +61,8 @@ class MovieAPI:
 		#'<script.*?</script>'
 		r = re.compile(pattern, flags = re.M)
 		page = r.sub('', page)
-		print page.encode('utf-8')
+		#print page.encode('utf-8')
+		page = page.replace("</sc'+'ript>", "")
 		return page		
 		
 	def Actors(self):
