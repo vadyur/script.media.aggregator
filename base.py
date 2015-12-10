@@ -21,7 +21,7 @@ def clean_html(page):
 	#print r
 	#page = r.sub('', page)
 	#print page.encode('utf-8')
-	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '')
+	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 	
 
 def get_rank(full_title, parser):
