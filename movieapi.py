@@ -59,8 +59,9 @@ class MovieAPI:
 	def clean_html(page):
 		#pattern = r"(?is)<script[^>]*>(.*?)</script>"
 		pattern = r'<script.*?</script>'
-		#r = re.compile(pattern, flags = re.M | re.)
-		page = re.sub(pattern, '', page, flags = re.M + re.S + re.I)
+		flags = re.M + re.S + re.I
+		r = re.compile(pattern, flags=flags)
+		page = r.sub('', page)
 		#print page.encode('utf-8')
 		return page		
 		
