@@ -57,12 +57,11 @@ class MovieAPI:
 
 	@staticmethod
 	def clean_html(page):
-		pattern = r"(?is)<script[^>]*>(.*?)</script>"
-		#'<script.*?</script>'
-		r = re.compile(pattern, flags = re.M)
-		page = r.sub('', page)
+		#pattern = r"(?is)<script[^>]*>(.*?)</script>"
+		pattern = r'<script.*?</script>'
+		#r = re.compile(pattern, flags = re.M | re.)
+		page = re.sub(pattern, '', page, flags = re.M + re.S + re.I)
 		#print page.encode('utf-8')
-		page = page.replace("</sc'+'ript>", "")
 		return page		
 		
 	def Actors(self):
