@@ -115,7 +115,7 @@ class MovieAPI:
 			trailer_page = self.kinopoisk + 'video/type/1/'
 			r = requests.get(trailer_page)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(r.text, 'html.parser')
+				soup = BeautifulSoup(MovieAPI.clean_html(r.text), 'html.parser')
 				for div in soup.select('tr td div div.flag2'):
 					trailer = self.__trailer(div)
 					if trailer:
