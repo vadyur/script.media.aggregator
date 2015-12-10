@@ -195,7 +195,21 @@ class DescriptionParserBase:
 				
 			filename 		+= ' (' + self.dict['year'] + ')'
 		finally:
-			return filename		
+			return filename
+			
+	def need_skipped(self, full_title):
+		
+		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'[Season', u'Half-SBS']:
+			if phrase in full_title:
+				print 'Skipped by: ' + phrase.encode('utf-8')
+				return True
+		
+				
+			if re.search('\(\d\d\d\d[-/]', full_title.encode('utf-8')):
+				print 'Skipped by: Year'
+				return True
+		
+		return False
 		
 		
 		

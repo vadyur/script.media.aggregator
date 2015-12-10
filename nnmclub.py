@@ -74,17 +74,18 @@ class DescriptionParser(DescriptionParserBase):
 
 			full_title = a.get_text()
 			print 'full_title: ' + full_title.encode('utf-8')
-			if '[EN]' in full_title:
-				return False
 						
 			self.dict['full_title'] = full_title
 			self.dict['title'] = self.get_title(full_title)
 			self.dict['originaltitle'] = self.get_original_title(full_title)
 			self.dict['year'] = self.get_year(full_title)
 			
+			if self.need_skipped(full_title):
+				return False
+			
 			fname = make_fullpath(self.make_filename(), '.strm')
 			if STRMWriterBase.has_link(fname, self.__link):
-				print 'Skipped'
+				print 'Already exists'
 				return False
 			
 			r = requests.get(self.__link)
@@ -108,15 +109,20 @@ class DescriptionParser(DescriptionParserBase):
 								self.dict[tag] = unicode(span.next_sibling.next_sibling).strip()
 							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self.dict[tag].encode('utf-8'))
 					except: pass
-						
+
+				count_id = 0
 				for a in self.soup.select('#imdb_id'):
 					try:
 						href = a['href']
 						components = href.split('/')
 						if components[2] == u'www.imdb.com' and components[3] == u'title':
 							self.dict['imdb_id'] = components[4]
+							count_id += 1
 					except:
 						pass
+						
+				if count_id > 1:
+					return False
 
 				for img in self.soup.select('img.postImg'):
 					try:

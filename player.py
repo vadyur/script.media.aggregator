@@ -165,7 +165,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None):
 	info_dialog.close()
 	
 	if canceled:
-		return false
+		return False
 		
 	
 	'''

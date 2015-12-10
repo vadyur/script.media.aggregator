@@ -49,12 +49,14 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 				
+		count_id = 0
 		for a in self.soup.select('a'):
 			try:
 				href = a['href']
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
 					self.dict['imdb_id'] = components[4]
+					count_id += 1
 				
 				if self.settings:
 					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru':
@@ -62,6 +64,9 @@ class DescriptionParser(DescriptionParserBase):
 
 			except:
 				pass
+				
+		if count_id > 1:
+			return False
 				
 		for img in self.soup.select('img[src*="thumbnail.php"]'):
 			try:
@@ -96,10 +101,15 @@ def write_movies(content, path, settings):
 		parser = DescriptionParser(item.description, settings = settings)
 		print '-------------------------------------------------------------------------'
 		
+		full_title = item.title
+		print 'full_title: ' + full_title.encode('utf-8')
+		if parser.need_skipped(full_title):
+			continue
+		
 		if parser.parsed():
 			filename = parser.make_filename()
 			
-			print filename.encode('utf-8')
+			print 'filename: ' +  filename.encode('utf-8')
 			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser), settings = settings)
 			NFOWriter().write(parser, filename)
 		else:
