@@ -109,6 +109,8 @@ class DescriptionParser(DescriptionParserBase):
 								self.dict[tag] = unicode(span.next_sibling.next_sibling).strip()
 							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self.dict[tag].encode('utf-8'))
 					except: pass
+				if 'genre' in self.dict:
+					self.dict['genre'] = self.dict['genre'].lower()
 
 				count_id = 0
 				for a in self.soup.select('#imdb_id'):
