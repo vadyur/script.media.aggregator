@@ -1,3 +1,4 @@
+import sys
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
 from xml.dom.minidom import *
@@ -32,8 +33,10 @@ def fixed_writexml(self, writer, indent="", addindent="", newl=""):
 		writer.write("%s</%s>%s" % (indent,self.tagName,newl))
 	else:
 		writer.write("/>%s"%(newl))
-# replace minidom's function with ours
-xml.dom.minidom.Element.writexml = fixed_writexml
+		
+if sys.version_info < (2, 7):		
+	# replace minidom's function with ours
+	xml.dom.minidom.Element.writexml = fixed_writexml
 
 def prettify(xml_text):
     reparsed = minidom.parseString(xml_text)
