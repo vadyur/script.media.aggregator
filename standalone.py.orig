@@ -5,11 +5,12 @@ base_path			= '../media_library'
 
 #----------------------------------------------------------------
 
-import anidub
-import hdclub
+import anidub, hdclub, nnmclub
 import settings
 
 settings = settings.Settings(base_path, hdclub_passkey=hdclub_passkey)
+print settings
 
 anidub.run(settings)
 hdclub.run(settings)
+nnmclub.run(settings)

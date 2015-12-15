@@ -1,18 +1,34 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <settings>
-    <category label="General">
-        <setting label="Base path" 			type="folder" id="base_path" 		default="Base"/>
-        <setting label="Movies subpath" 	type="text"   id="movies_path" 		default="Movies"/>
-        <setting label="Animation subpath" 	type="text"   id="animation_path" 	default="Animation"/>
-        <setting label="Documentary subpath" type="text"  id="documentary_path" default="Documentary"/>
-        <setting label="Anime subpath" 		type="text"   id="anime_path" 		default="Anime"/>
+    <category label="Основные">
+        <setting label="Путь к медиатеке"	type="folder" id="base_path" 		default="Videos"/>
+		<setting label="Субдиректории" type="lsep"/>
+        <setting label="Фильмы" 		type="text"   id="movies_path" 		default="Movies"/>
+        <setting label="Мультфильмы" 	type="text"   id="animation_path" 	default="Animation"/>
+        <setting label="Документальное" type="text"  id="documentary_path" default="Documentary"/>
+        <setting label="Аниме" 			type="text"   id="anime_path" 		default="Anime"/>
+		<setting label="Автоматическая генерация" type="lsep"/>
+		<setting label="При запуске" type="bool" id="service_startup" default="false"/>
+		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false"/>
+		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
     </category>
 	
     <category label="Anidub">
-        <setting label="Login" type="text"   id="anidub_login" default=""/>
-        <setting label="Password" type="text"   id="anidub_password" option="hidden"  default=""/>
+		<setting label="Enable" type="bool" id="anidub_enable" default="false"/>
+		<setting label="Учётные данные сайта tr.anidub.com (необходима регистрация на сайте)" type="lsep"/>
+        <setting label="Login" type="text"   id="anidub_login" enable="eq(-2,true)" default=""/>
+        <setting label="Password" type="text"   id="anidub_password" enable="eq(-3,true)" option="hidden"  default=""/>
     </category>
     <category label="HDClub">
-        <setting label="Passkey" type="text"   id="hdclub_passkey" default=""/>
+		<setting label="Enable" type="bool" id="hdclub_enable" default="false"/>
+		<setting label="Получить Passkey можно перейдя на 'http://hdclub.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
+        <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
+    </category>
+    <category label="nnm-club">
+		<setting label="Enable" type="bool" id="nnmclub_enable" default="false"/>
+		<setting label="Количество страниц портала для парсинга" type="number" id="nnmclub_pages" enable="eq(-1,true)" default="3"/>
+		<setting label="Учётные данные сайта nnm-club.me (необходима регистрация на сайте)" type="lsep"/>
+        <setting label="Login" type="text"   id="nnmclub_login" enable="eq(-3,true)" default=""/>
+        <setting label="Password" type="text"   id="nnmclub_password" enable="eq(-4,true)" option="hidden"  default=""/>
     </category>
 </settings>

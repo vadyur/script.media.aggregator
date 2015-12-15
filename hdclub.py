@@ -10,11 +10,6 @@ from base import *
 from movieapi import *
 from nfowriter import *
 from strmwriter import *
-import requests
-
-KB = 1024
-MB = KB * KB
-GB = KB * MB
 
 class DescriptionParser(DescriptionParserBase):
 				
@@ -54,14 +49,24 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 				
+		count_id = 0
 		for a in self.soup.select('a'):
 			try:
 				href = a['href']
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
 					self.dict['imdb_id'] = components[4]
+					count_id += 1
+				
+				if self.settings:
+					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru':
+						self.dict['kp_id'] = href
+
 			except:
 				pass
+				
+		if count_id > 1:
+			return False
 				
 		for img in self.soup.select('img[src*="thumbnail.php"]'):
 			try:
@@ -73,50 +78,7 @@ class DescriptionParser(DescriptionParserBase):
 				
 		return True
 		
-		
-def get_rank(item, parser):
-	
-	preffered_size = 7 * GB
-	preffered_resolution_h = 1920
-	preffered_resolution_v = 1080
-	
-	rank = 0.0
-	conditions = 0
-	
-	if parser.get_value('gold'):
-		rank += 0.8
-		conditions += 1
-		
-	res_v = 1080
-	if '720p' in item.title:
-		res_v = 720
-		
-	if abs(preffered_resolution_v - res_v) > 0:
-		rank += 2
-		conditions += 1
-		
-	size = parser.get_value('size')
-	if size != '':
-		if int(size) > preffered_size:
-			rank += int(size) / preffered_size
-		else:
-			rank += preffered_size / int(size)
-		conditions += 1
-		
-	if parser.get_value('format') == 'MKV':
-		rank += 0.6
-		conditions += 1
-		
-	if 'ISO' in parser.get_value('format'):
-		rank += 100
-		conditions += 1
-	
-	if conditions != 0:
-		return rank / conditions
-	else:
-		return 1
-		
-def write_movie(content, path):
+def write_movies(content, path, settings):
 	
 	original_dir = os.getcwd()
 	
@@ -136,14 +98,19 @@ def write_movie(content, path):
 	print d.entries[0].link
 	'''
 	for item in d.entries:
-		parser = DescriptionParser(item.description)
+		parser = DescriptionParser(item.description, settings = settings)
 		print '-------------------------------------------------------------------------'
 		
+		full_title = item.title
+		print 'full_title: ' + full_title.encode('utf-8')
+		if parser.need_skipped(full_title):
+			continue
+		
 		if parser.parsed():
-			filename = parser.get_value('title') + ' # ' + parser.get_value('originaltitle') + ' (' + parser.get_value('year') + ')'
+			filename = parser.make_filename()
 			
-			print filename.encode('utf-8')
-			STRMWriter(item).write(filename, rank = get_rank(item, parser))
+			print 'filename: ' +  filename.encode('utf-8')
+			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser), settings = settings)
 			NFOWriter().write(parser, filename)
 		else:
 			skipped(item)
@@ -151,34 +118,7 @@ def write_movie(content, path):
 	os.chdir(original_dir)
 
 def run(settings):
-	write_movie(settings.animation_url, settings.animation_path())
-	write_movie(settings.documentary_url, settings.documentary_path())
-	write_movie(settings.movies_url, settings.movies_path())
+	write_movies(settings.animation_url, settings.animation_path(), settings)
+	write_movies(settings.documentary_url, settings.documentary_path(), settings)
+	write_movies(settings.movies_url, settings.movies_path(), settings)
 
-class Login(object):	
-	def __init__(self, login, password):
-		self.login 		= login
-		self.password	= password
-		self.session	= requests.Session()
-		page = self.session.get('http://hdclub.org/login.php')
-		soup = BeautifulSoup(page.text, 'html.parser')
-		img = soup.select('#captcha')
-		try:
-			self.captcha = 'http://hdclub.org/' + img[0]['src']
-			self.imagehash = self.captcha.split('imagehash=')[1]
-		except:
-			pass
-			
-	def get_captcha(self):
-		return self.captcha
-		
-	def Login(self, captcha_code):
-		request = self.session.post('http://hdclub.org/takelogin.php', data = {'username': self.login, 'password': self.password, 'imagestring': str(captcha_code), 'imagehash': self.imagehash})
-		print request.url
-		print request.status_code
-		print request.headers
-		print request.cookies
-		print request.history
-		
-		
-	

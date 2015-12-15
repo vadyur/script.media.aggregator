@@ -132,6 +132,16 @@ class DescriptionParser(DescriptionParserBase):
 				print self.dict['thumbnail']
 			except:
 				pass
+				
+		fanart = []
+		for a in self.soup.select('ul.clr li a'):
+			try:
+				print a['href']
+				fanart.append(a['href'])
+			except:
+				pass
+		if len(fanart) != 0:
+			self.dict['fanart'] = fanart
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
@@ -150,7 +160,7 @@ def write_tvshow_nfo(parser, tvshow_api):
 	return
 
 ###################################################################################################
-def write_tvshow(content, path):
+def write_tvshow(content, path, settings):
 	original_dir = os.getcwd()
 	
 	if not os.path.exists(path):
@@ -205,21 +215,10 @@ def write_tvshow(content, path):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
 					
-					STRMWriter(item).write(filename, episodeNumber)
+					STRMWriter(item.link).write(filename, episodeNumber, settings = settings)
 					NFOWriter().write_episode(episode, filename, tvshow_api)
 				
 			os.chdir(save_path)
-
-				
-			
-			'''
-			if '720p' in item.title and os.path.exists(make_fullpath(filename, '.strm')):
-				skipped(item)
-			else:
-				print filename.encode('utf-8')
-				STRMWriter(item).write(filename)
-				NFOWriter().write(parser, filename)
-			'''
 		else:
 			skipped(item)
 			
@@ -241,6 +240,12 @@ def download_torrent(url, path, settings):
 		print s.headers
 		r = s.get(href, headers={'Referer': url})
 		print r.headers
+		
+		# 'Content-Type': 'application/x-bittorrent'
+		if 'Content-Type' in r.headers:
+			if not 'torrent' in r.headers['Content-Type']:
+				return False
+		
 		try:
 			with open(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
@@ -252,5 +257,5 @@ def download_torrent(url, path, settings):
 
 ###################################################################################################
 def run(settings):
-	write_tvshow(settings.anidub_url, settings.anime_tvshow_path())
+	write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
 

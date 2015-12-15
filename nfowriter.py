@@ -1,7 +1,56 @@
-import xml.etree.cElementTree as ET
+import sys
+import xml.etree.ElementTree as ET
+import xml.dom.minidom as minidom
+from xml.dom.minidom import *
 from base import *
 from tvshowapi import *
 from movieapi import *
+
+def fixed_writexml(self, writer, indent="", addindent="", newl=""):
+	# indent = current indentation
+	# addindent = indentation to add to higher levels
+	# newl = newline string
+	writer.write(indent+"<" + self.tagName)
+
+	attrs = self._get_attributes()
+	a_names = attrs.keys()
+	a_names.sort()
+
+	for a_name in a_names:
+		writer.write(" %s=\"" % a_name)
+		xml.dom.minidom._write_data(writer, attrs[a_name].value)
+		writer.write("\"")
+	if self.childNodes:
+		if len(self.childNodes) == 1 \
+		  and self.childNodes[0].nodeType == xml.dom.minidom.Node.TEXT_NODE:
+			writer.write(">")
+			self.childNodes[0].writexml(writer, "", "", "")
+			writer.write("</%s>%s" % (self.tagName, newl))
+			return
+		writer.write(">%s"%(newl))
+		for node in self.childNodes:
+			node.writexml(writer,indent+addindent,addindent,newl)
+		writer.write("%s</%s>%s" % (indent,self.tagName,newl))
+	else:
+		writer.write("/>%s"%(newl))
+		
+if sys.version_info < (2, 7):		
+	# replace minidom's function with ours
+	xml.dom.minidom.Element.writexml = fixed_writexml
+
+def prettify(xml_text):
+    reparsed = minidom.parseString(xml_text)
+    return reparsed.toprettyxml(indent=" "*2, encoding="utf-8")
+
+def write_tree(fn, root):
+	try:
+		with open(fn, 'w') as f:
+			xml_text = "<?xml version='1.0' encoding='UTF-8'?>\n"
+			xml_text += ET.tostring(root).encode('utf-8')
+			f.write(prettify(xml_text))
+	except IOError as e:
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)		
+	
 
 class NFOWriter:
 	def add_element_copy(self, parent, tagname, parser):
@@ -25,6 +74,12 @@ class NFOWriter:
 			return
 			
 		self.add_element_copy(parent, 'rating', desc_parser)
+		
+		fanart = ET.SubElement(parent, 'fanart')
+		if desc_parser.fanart():
+			for item in desc_parser.fanart():
+				thumb = ET.SubElement(fanart, "thumb")
+				thumb.text = item
 		
 	def make_imdbid_info(self, parent, movie_api):
 		try:
@@ -62,11 +117,34 @@ class NFOWriter:
 		except:
 			pass
 		
-		tree = ET.ElementTree(root)
 		fn = make_fullpath(filename, '.nfo')
+		write_tree(fn, root)
 		
-		with open(fn, 'wb') as f:
-			tree.write(f, encoding="UTF-8", xml_declaration=True)	
+	def add_actors(self, root, desc_parser):
+		kp_id = desc_parser.get_value('kp_id')
+		if kp_id != '':
+			movie_api = MovieAPI(kinopoisk=kp_id)
+			index = 0
+			for actorInfo in movie_api.Actors():
+				if actorInfo['ru_name'] in desc_parser.get_value('actor'):
+					actor = ET.SubElement(root, 'actor')
+					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
+					ET.SubElement(actor, 'role').text = actorInfo['role']
+					ET.SubElement(actor, 'order').text = str(index)
+					ET.SubElement(actor, 'thumb').text = actorInfo['photo']
+					index += 1
+		else:
+			for name in desc_parser.get_value('actor').split(', '):
+				actor = ET.SubElement(root, 'actor')
+				ET.SubElement(actor, 'name').text = name
+				
+	def add_trailer(self, root, desc_parser):
+		kp_id = desc_parser.get_value('kp_id')
+		if kp_id != '':
+			movie_api = MovieAPI(kinopoisk=kp_id)
+			trailer = movie_api.Trailer()
+			if trailer:
+				ET.SubElement(root, 'trailer').text = trailer
 		
 	def write(self, desc_parser, filename, root_tag='movie', tvshow_api=None):
 		root = ET.Element(root_tag)
@@ -81,6 +159,9 @@ class NFOWriter:
 		self.add_element_split(root, 'genre', desc_parser)
 		self.add_element_split(root, 'country', desc_parser)
 		self.add_element_split(root, 'studio', desc_parser)
+		
+		self.add_actors(root, desc_parser)
+		self.add_trailer(root, desc_parser)
 			
 		tmdb_id = ''
 		if imdb_id != '':
@@ -97,18 +178,6 @@ class NFOWriter:
 		if desc_parser.get_value('gold'):
 			ET.SubElement(root, 'gold')
 			
-		tree = ET.ElementTree(root)
 		fn = make_fullpath(filename, '.nfo')
-
-		try:
-			with open(fn, 'wb') as f:
-				tree.write(f, encoding="UTF-8", xml_declaration=True)		
-		except IOError as e:
-			print "I/O error({0}): {1}".format(e.errno, e.strerror)		
+		write_tree(fn, root)
 	
-		if tmdb_id != '':
-			with open(fn, "a") as myfile:
-				myfile.write('\n' + 'http://www.themoviedb.org/movie/' + str(tmdb_id))
-		elif imdb_id != '':
-			with open(fn, "a") as myfile:
-				myfile.write('\n' + 'http://www.imdb.com/title/' + imdb_id + '/')
