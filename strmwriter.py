@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from base import *
-import os, urllib2, sys
-
-def get_filesystem_encoding():
-    return sys.getfilesystemencoding() if os.name == 'nt' else 'utf-8'
+import os, urllib2, sys, filesystem
 
 class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
@@ -35,13 +32,13 @@ class STRMWriter(STRMWriterBase):
 		
 		#------------------------------------------
 		if settings != None:
-			path = os.path.relpath(os.getcwd(), settings.base_path())
-			path = unicode(path, get_filesystem_encoding())
+			path = filesystem.relpath(filesystem.getcwd(), settings.base_path())
+			path = unicode(path, filesystem.get_filesystem_encoding())
 			print path.encode('utf-8')
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 
 		#------------------------------------------
-		if os.path.exists(fname):
+		if filesystem.exists(fname):
 			with open(fname, 'r') as f:
 				old_link = f.read()
 				if old_link.decode('utf-8') == link:

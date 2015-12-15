@@ -1,5 +1,5 @@
 ﻿# -*- coding: utf-8 -*-
-import os
+import os, filesystem
 
 class Settings:
 	# feed=dl&
@@ -11,7 +11,7 @@ class Settings:
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
 		
-		self.__base_path			= os.path.abspath(base_path).decode('utf-8')
+		self.__base_path			= filesystem.abspath(base_path).decode('utf-8')
 		self.__movies_path 			= u'Movies'
 		self.__animation_path 		= u'Animation'
 		self.__documentary_path 	= u'Documentary'
@@ -42,14 +42,14 @@ class Settings:
 		return result
 	
 	def base_path(self):
-		return self.__base_path.decode('utf-8')
+		return self.__base_path.decode(filesystem.get_filesystem_encoding())
 	def movies_path(self):
-		return os.path.join(self.__base_path, self.__movies_path).decode('utf-8')
+		return os.path.join(self.__base_path, self.__movies_path).decode(filesystem.get_filesystem_encoding())
 	def animation_path(self):
-		return os.path.join(self.__base_path, self.__animation_path).decode('utf-8')
+		return os.path.join(self.__base_path, self.__animation_path).decode(filesystem.get_filesystem_encoding())
 	def documentary_path(self):
-		return os.path.join(self.__base_path, self.__documentary_path).decode('utf-8')
+		return os.path.join(self.__base_path, self.__documentary_path).decode(filesystem.get_filesystem_encoding())
 	def anime_tvshow_path(self):
-		return os.path.join(self.__base_path, self.__anime_tvshow_path).decode('utf-8')
+		return os.path.join(self.__base_path, self.__anime_tvshow_path).decode(filesystem.get_filesystem_encoding())
 		
 		

@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 
-import os, re
+import os, re, filesystem
 from bs4 import BeautifulSoup
 import urllib
 
@@ -115,7 +115,7 @@ class STRMWriterBase:
 		fname_alt = fname + '.alternative'
 			
 		s_alt = u''
-		if os.path.isfile(fname_alt):
+		if filesystem.isfile(fname_alt):
 			with open(fname_alt, "r") as alternative:
 				s_alt = alternative.read().decode('utf-8')
 	
@@ -131,7 +131,7 @@ class STRMWriterBase:
 		fname_alt = fname + '.alternative'
 		rank = 99999
 		link = ''
-		if os.path.isfile(fname_alt):
+		if filesystem.isfile(fname_alt):
 			with open(fname_alt, "r") as alternative:
 				while True:
 					line = alternative.readline()
@@ -152,7 +152,7 @@ class STRMWriterBase:
 	@staticmethod
 	def has_link(fname, link):
 		fname_alt = fname + '.alternative'
-		if os.path.isfile(fname_alt):
+		if filesystem.isfile(fname_alt):
 			with open(fname_alt, "r") as alternative:
 				for line in alternative:
 					if link in urllib.unquote(line):

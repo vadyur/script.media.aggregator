@@ -172,12 +172,12 @@ class PostsEnumerator(object):
 
 def write_movies(content, path, settings):
 	
-	original_dir = os.getcwd()
+	original_dir = filesystem.getcwd()
 	
-	if not os.path.exists(path):
-		os.makedirs(path)
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
 		
-	os.chdir(path)
+	filesystem.chdir(path)
 	# ---------------------------------------------
 	enumerator = PostsEnumerator()
 	for i in range(settings.nnmclub_pages):
@@ -195,7 +195,7 @@ def write_movies(content, path, settings):
 
 		
 	# ---------------------------------------------
-	os.chdir(original_dir)
+	filesystem.chdir(original_dir)
 
 
 def run(settings):

@@ -6,7 +6,7 @@ import feedparser, urllib2, re
 from bs4 import BeautifulSoup
 from nfowriter import *
 from strmwriter import *
-import requests
+import requests, filesystem
 
 ###################################################################################################
 class DescriptionParser(DescriptionParserBase):
@@ -155,18 +155,18 @@ class DescriptionParser(DescriptionParserBase):
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
-	print os.getcwd()
+	print filesystem.getcwd()
 	NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
 	return
 
 ###################################################################################################
 def write_tvshow(content, path, settings):
-	original_dir = os.getcwd()
+	original_dir = filesystem.getcwd()
 	
-	if not os.path.exists(path):
-		os.makedirs(path)
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
 		
-	os.chdir(path)
+	filesystem.chdir(path)
 	
 	d = feedparser.parse(content)
 	
@@ -185,25 +185,25 @@ def write_tvshow(content, path, settings):
 			
 			print 'Episodes: ' + str(parser.get_value('episodes'))
 			
-			save_path = os.getcwd()
+			save_path = filesystem.getcwd()
 			
 			tvshow_path = make_fullpath(title, '')
 			print tvshow_path.encode('utf-8')
 			
-			if not os.path.exists(tvshow_path):
-				os.makedirs(tvshow_path)
+			if not filesystem.exists(tvshow_path):
+				filesystem.makedirs(tvshow_path)
 			
-			os.chdir(tvshow_path)
+			filesystem.chdir(tvshow_path)
 			
 			tvshow_api = TVShowAPI(originaltitle, title)
 			write_tvshow_nfo(parser, tvshow_api)
-			os.chdir(save_path)
+			filesystem.chdir(save_path)
 			
 			season_path = os.path.join(make_fullpath(title, ''), 'Season ' + str(season))
-			if not os.path.exists(season_path):
-				os.makedirs(season_path)
+			if not filesystem.exists(season_path):
+				filesystem.makedirs(season_path)
 
-			os.chdir(season_path)
+			filesystem.chdir(season_path)
 				
 			episodes = tvshow_api.episodes(season)
 			for episode in episodes:
@@ -218,11 +218,11 @@ def write_tvshow(content, path, settings):
 					STRMWriter(item.link).write(filename, episodeNumber, settings = settings)
 					NFOWriter().write_episode(episode, filename, tvshow_api)
 				
-			os.chdir(save_path)
+			filesystem.chdir(save_path)
 		else:
 			skipped(item)
 			
-	os.chdir(original_dir)
+	filesystem.chdir(original_dir)
 	
 def download_torrent(url, path, settings):
 	url = urllib2.unquote(url)
