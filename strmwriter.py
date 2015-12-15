@@ -33,7 +33,7 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(filesystem.getcwd(), settings.base_path())
-			path = unicode(path, filesystem.get_filesystem_encoding())
+			#path = unicode(path, filesystem.get_filesystem_encoding())
 			print path.encode('utf-8')
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 

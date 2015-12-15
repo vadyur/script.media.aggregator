@@ -155,7 +155,7 @@ class DescriptionParser(DescriptionParserBase):
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
-	print filesystem.getcwd()
+	print filesystem.getcwd().encode('utf-8')
 	NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
 	return
 

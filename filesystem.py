@@ -17,7 +17,7 @@ def exists(path):
 	return os.path.exists(get_path(path))
 	
 def getcwd():
-	return os.getcwd()
+	return ensure_unicode(os.getcwd(), get_filesystem_encoding())
 	
 def makedirs(path):
 	os.makedirs(get_path(path))
@@ -29,10 +29,10 @@ def isfile(path):
 	return os.path.isfile(get_path(path))
 	
 def abspath(path):
-	return os.path.abspath(get_path(path))
+	return ensure_unicode(os.path.abspath(get_path(path)), get_filesystem_encoding())
 
 def relpath(path, start=os.curdir):
-	return os.path.relpath(get_path(path), get_path(start))
+	return ensure_unicode(os.path.relpath(get_path(path), get_path(start)), get_filesystem_encoding())
 	
 def fopen(path, mode):
 	return open(get_path(path), mode)
