@@ -172,12 +172,12 @@ class PostsEnumerator(object):
 
 def write_movies(content, path, settings):
 	
-	original_dir = os.getcwd()
+	original_dir = filesystem.getcwd()
 	
-	if not os.path.exists(path):
-		os.makedirs(path)
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
 		
-	os.chdir(path)
+	filesystem.chdir(path)
 	# ---------------------------------------------
 	enumerator = PostsEnumerator()
 	for i in range(settings.nnmclub_pages):
@@ -195,7 +195,7 @@ def write_movies(content, path, settings):
 
 		
 	# ---------------------------------------------
-	os.chdir(original_dir)
+	filesystem.chdir(original_dir)
 
 
 def run(settings):
@@ -216,7 +216,7 @@ def download_torrent(url, path, settings):
 	s = requests.Session()
 	
 	r = s.get("http://nnm-club.me/forum/login.php")
-	#with open('log-get.html', 'w+') as f:
+	#with filesystem.fopen('log-get.html', 'w+') as f:
 	#	f.write(r.text.encode('cp1251'))
 	
 	soup = BeautifulSoup(clean_html(r.text), 'html.parser')
@@ -228,7 +228,7 @@ def download_torrent(url, path, settings):
 	data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password, 
 																"autologin": "on", "code": code, "redirect": "", "login": "" }
 	login = s.post("http://nnm-club.me/forum/login.php", data = data, headers={'Referer': "http://nnm-club.me/forum/login.php"})
-	#with open('log-post.html', 'w+') as f:
+	#with filesystem.fopen('log-post.html', 'w+') as f:
 	#	f.write(login.text.encode('cp1251'))
 		
 	#print login.headers
@@ -253,7 +253,7 @@ def download_torrent(url, path, settings):
 				return False
 		
 		try:
-			with open(path, 'wb') as torr:
+			with filesystem.fopen(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
 					torr.write(chunk)
 			return True

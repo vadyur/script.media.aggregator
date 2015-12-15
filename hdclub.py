@@ -1,6 +1,6 @@
 ﻿# coding: utf-8
 
-import feedparser
+import feedparser, filesystem
 import xml.etree.cElementTree as ET
 from bs4 import BeautifulSoup
 import urllib2
@@ -80,12 +80,12 @@ class DescriptionParser(DescriptionParserBase):
 		
 def write_movies(content, path, settings):
 	
-	original_dir = os.getcwd()
+	original_dir = filesystem.getcwd()
 	
-	if not os.path.exists(path):
-		os.makedirs(path)
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
 		
-	os.chdir(path)
+	filesystem.chdir(path)
 	
 	d = feedparser.parse(content)
 	'''
@@ -115,7 +115,7 @@ def write_movies(content, path, settings):
 		else:
 			skipped(item)
 			
-	os.chdir(original_dir)
+	filesystem.chdir(original_dir)
 
 def run(settings):
 	write_movies(settings.animation_url, settings.animation_path(), settings)

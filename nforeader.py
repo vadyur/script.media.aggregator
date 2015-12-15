@@ -1,13 +1,13 @@
 import os, xbmcgui
 import xml.etree.ElementTree as ET
-import requests
+import requests, filesystem
 
 class NFOReader(object):
 	def __init__(self, path, temp_path):
 		self.__path = path
 		self.__temp_path = temp_path
 		
-		with open(path, 'r') as f:
+		with filesystem.fopen(path, 'r') as f:
 			content = f.read()
 			try:
 				i = content.index('</movie>')
@@ -74,7 +74,7 @@ class NFOReader(object):
 			
 			print 'Start download: ' + filename + ' from ' + url
 			
-			with open(filename, 'wb') as f:
+			with filesystem.fopen(filename, 'wb') as f:
 				for chunk in r.iter_content(100000):
 					f.write(chunk)
 					
