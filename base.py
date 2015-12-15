@@ -116,12 +116,12 @@ class STRMWriterBase:
 			
 		s_alt = u''
 		if filesystem.isfile(fname_alt):
-			with open(fname_alt, "r") as alternative:
+			with filesystem.fopen(fname_alt, "r") as alternative:
 				s_alt = alternative.read().decode('utf-8')
 	
 		if not (link in s_alt):
 			try:
-				with open(fname_alt, "a+") as alternative:
+				with filesystem.fopen(fname_alt, "a+") as alternative:
 					alternative.write('#rank=' + str(rank) + '\n')
 					alternative.write(link.encode('utf-8') + '\n')
 			except:
@@ -132,7 +132,7 @@ class STRMWriterBase:
 		rank = 99999
 		link = ''
 		if filesystem.isfile(fname_alt):
-			with open(fname_alt, "r") as alternative:
+			with filesystem.fopen(fname_alt, "r") as alternative:
 				while True:
 					line = alternative.readline()
 					if not line:
@@ -153,7 +153,7 @@ class STRMWriterBase:
 	def has_link(fname, link):
 		fname_alt = fname + '.alternative'
 		if filesystem.isfile(fname_alt):
-			with open(fname_alt, "r") as alternative:
+			with filesystem.fopen(fname_alt, "r") as alternative:
 				for line in alternative:
 					if link in urllib.unquote(line):
 						return True

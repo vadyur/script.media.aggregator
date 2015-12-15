@@ -39,13 +39,13 @@ class STRMWriter(STRMWriterBase):
 
 		#------------------------------------------
 		if filesystem.exists(fname):
-			with open(fname, 'r') as f:
+			with filesystem.fopen(fname, 'r') as f:
 				old_link = f.read()
 				if old_link.decode('utf-8') == link:
 					return
 		
 		#------------------------------------------
-		with open(fname, 'w') as f:
+		with filesystem.fopen(fname, 'w') as f:
 			f.write(link.encode('utf-8'))
 
 

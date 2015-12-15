@@ -247,7 +247,7 @@ def download_torrent(url, path, settings):
 				return False
 		
 		try:
-			with open(path, 'wb') as torr:
+			with filesystem.fopen(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
 					torr.write(chunk)
 			return True

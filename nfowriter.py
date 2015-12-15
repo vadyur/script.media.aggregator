@@ -44,7 +44,7 @@ def prettify(xml_text):
 
 def write_tree(fn, root):
 	try:
-		with open(fn, 'w') as f:
+		with filesystem.fopen(fn, 'w') as f:
 			xml_text = "<?xml version='1.0' encoding='UTF-8'?>\n"
 			xml_text += ET.tostring(root).encode('utf-8')
 			f.write(prettify(xml_text))

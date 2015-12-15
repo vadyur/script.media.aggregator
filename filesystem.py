@@ -33,3 +33,6 @@ def abspath(path):
 
 def relpath(path, start=os.curdir):
 	return os.path.relpath(get_path(path), get_path(start))
+	
+def fopen(path, mode):
+	return open(get_path(path), mode)
