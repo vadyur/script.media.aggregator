@@ -2,6 +2,7 @@
 
 import os, re, filesystem
 from bs4 import BeautifulSoup
+from settings import *
 import urllib
 
 KB = 1024
@@ -9,7 +10,8 @@ MB = KB * KB
 GB = KB * MB
 
 def make_fullpath(title, ext):
-	return title.replace(':', '').replace('/', '#').replace('?', '') + ext
+	return unicode(title.replace(':', '').replace('/', '#').replace('?', '') + ext)
+	
 def skipped(item):
 	print item.title.encode('utf-8') + '\t\t\t[Skipped]'
 	
@@ -24,13 +26,15 @@ def clean_html(page):
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 	
 
-def get_rank(full_title, parser):
+def get_rank(full_title, parser, settings):
 	
 	preffered_size = 7 * GB
-	preffered_resolution_h = 1920
-	preffered_resolution_v = 1080
+	#preffered_resolution_h = 1920
+	preffered_resolution_v = 1080 if settings.preffered_type == QulityType.Q1080 else 720
+	preffered_bitrate	= settings.preffered_bitrate
 	
-	preffered_bitrate	= 10000
+	print 'preffered_type: %s' % settings.preffered_type
+	print 'preffered_bitrate: %d' % preffered_bitrate
 	
 	rank = 0.0
 	conditions = 0

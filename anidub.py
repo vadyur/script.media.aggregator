@@ -199,7 +199,8 @@ def write_tvshow(content, path, settings):
 			write_tvshow_nfo(parser, tvshow_api)
 			filesystem.chdir(save_path)
 			
-			season_path = os.path.join(make_fullpath(title, ''), 'Season ' + str(season))
+			season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
+			print season_path.encode('utf-8')
 			if not filesystem.exists(season_path):
 				filesystem.makedirs(season_path)
 

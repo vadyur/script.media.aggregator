@@ -13,6 +13,11 @@
 		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
     </category>
 	
+    <category label="Предпочтения">
+		<setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>
+		<setting label="Качество" id="preffered_type" type="select" values="720p|1080" default="1080" />
+    </category>
+	
     <category label="Anidub">
 		<setting label="Enable" type="bool" id="anidub_enable" default="false"/>
 		<setting label="Учётные данные сайта tr.anidub.com (необходима регистрация на сайте)" type="lsep"/>
