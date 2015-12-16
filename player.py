@@ -2,7 +2,7 @@
 
 import sys
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
-import anidub, hdclub, nnmclub
+import anidub, hdclub, nnmclub, filesystem
 import urllib, os, requests
 import time
 import operator
@@ -35,7 +35,13 @@ def get_params():
 	return param
 	
 def load_settings():
-	base_path 			= _addon.getSetting('base_path')
+	base_path 			= _addon.getSetting('base_path').decode('utf-8')
+	
+	movies_path			= _addon.getSetting('movies_path').decode('utf-8')
+	animation_path		= _addon.getSetting('animation_path').decode('utf-8')
+	documentary_path	= _addon.getSetting('documentary_path').decode('utf-8')
+	anime_path			= _addon.getSetting('anime_path').decode('utf-8')
+	
 	hdclub_passkey		= _addon.getSetting('hdclub_passkey')
 	anidub_login		= _addon.getSetting('anidub_login')
 	anidub_password		= _addon.getSetting('anidub_password')
@@ -44,13 +50,22 @@ def load_settings():
 	nnmclub_login		= _addon.getSetting('nnmclub_login')
 	nnmclub_password	= _addon.getSetting('nnmclub_password')
 	
+	preffered_bitrate 	= int(_addon.getSetting('preffered_bitrate'))
+	preffered_type 		= _addon.getSetting('preffered_type')
+	
 	settings 			= Settings(	base_path, 
-									hdclub_passkey = hdclub_passkey, 
-									anidub_login = anidub_login, 
-									anidub_password = anidub_password, 
-									nnmclub_pages = nnmclub_pages,
-									nnmclub_login = nnmclub_login,
-									nnmclub_password = nnmclub_password	)
+									movies_path			= movies_path,
+									animation_path		= animation_path,
+									documentary_path	= documentary_path,
+									anime_path			= anime_path,
+									hdclub_passkey 		= hdclub_passkey, 
+									anidub_login 		= anidub_login, 
+									anidub_password 	= anidub_password, 
+									nnmclub_pages 		= nnmclub_pages,
+									nnmclub_login 		= nnmclub_login,
+									nnmclub_password 	= nnmclub_password,
+									preffered_bitrate 	= preffered_bitrate,
+									preffered_type 		= preffered_type)
 	#print settings
 	return settings
 	
@@ -197,17 +212,19 @@ def main():
 	#print settings
 	
 	xbmc.log(settings.base_path())
-
 	if 'torrent' in params:
+		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+		print tempPath
+		
 		reader = None
 		if 'path' in params and 'nfo' in params:
 			base_path = settings.base_path().encode('utf-8')
 			rel_path = urllib.unquote(params['path'])
 			filename = urllib.unquote(params['nfo'])
-			reader = NFOReader(NFOReader.make_path(base_path, rel_path, filename), xbmc.translatePath('special://temp'))
+			reader = NFOReader(NFOReader.make_path(base_path, rel_path, filename), tempPath)
 		
 		if 'anidub' in params['torrent']:
-			path = os.path.join(xbmc.translatePath('special://temp'), 'temp.anidub.media-aggregator.torrent')
+			path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
 			print path
 			if anidub.download_torrent(params['torrent'], path, settings):
 				play_torrent(path, params.get('episodeNumber', None), nfoReader = reader)
@@ -218,7 +235,7 @@ def main():
 			
 			play_torrent(url, nfoReader = reader)
 		elif 'nnm-club' in params['torrent']:
-			path = os.path.join(xbmc.translatePath('special://temp'), 'temp.nnm-club.media-aggregator.torrent')
+			path = filesystem.join(tempPath, u'temp.nnm-club.media-aggregator.torrent')
 			if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(params['torrent'], path, settings):
 				print 'Download torrent %s' % path
 				play_torrent(path, nfoReader = reader)
