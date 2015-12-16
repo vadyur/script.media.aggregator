@@ -8,7 +8,7 @@ class STRMWriter(STRMWriterBase):
 		self.link = link
 		
 	def write(self, filename, episodeNumber = None, rank = 0, settings = None):
-		fname = make_fullpath(filename, '.strm')
+		fname = make_fullpath(filename, u'.strm')
 		
 		#------------------------------------------
 
@@ -33,7 +33,6 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(filesystem.getcwd(), settings.base_path())
-			#path = unicode(path, filesystem.get_filesystem_encoding())
 			print path.encode('utf-8')
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 

@@ -20,7 +20,7 @@ class NFOReader(object):
 	@staticmethod
 	def make_path(base_path, rel_path, filename):
 		# params is utf-8
-		path = os.path.join(base_path.decode('utf-8'), rel_path.decode('utf-8'), filename.decode('utf-8'))
+		path = filesystem.join(base_path.decode('utf-8'), rel_path.decode('utf-8'), filename.decode('utf-8'))
 		return path
 		
 	def get_info(self):
@@ -70,7 +70,7 @@ class NFOReader(object):
 		print r.headers
 		
 		if r.headers[ 'Content-Type'] == 'image/jpeg':
-			filename = os.path.join(self.__temp_path, 'temp.anidub.media-aggregator.' + type + '.jpg')
+			filename = filesystem.join(self.__temp_path, 'temp.anidub.media-aggregator.' + type + '.jpg')
 			
 			print 'Start download: ' + filename + ' from ' + url
 			
