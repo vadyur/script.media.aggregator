@@ -190,7 +190,7 @@ def write_movies(content, path, settings):
 			if filename == '':
 				continue
 			print filename.encode('utf-8')
-			STRMWriter(parser.link()).write(filename, rank = get_rank(parser.get_value('full_title'), parser), settings = settings)
+			STRMWriter(parser.link()).write(filename, rank = get_rank(parser.get_value('full_title'), parser, settings), settings = settings)
 			NFOWriter().write(parser, filename)
 
 		

@@ -110,7 +110,7 @@ def write_movies(content, path, settings):
 			filename = parser.make_filename()
 			
 			print 'filename: ' +  filename.encode('utf-8')
-			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser), settings = settings)
+			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)
 			NFOWriter().write(parser, filename)
 		else:
 			skipped(item)
