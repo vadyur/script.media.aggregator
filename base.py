@@ -191,6 +191,7 @@ class DescriptionParserBase:
 			return None
 		
 	def __init__(self, content, settings = None):
+		self.dict.clear()
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(clean_html(html_doc), 'html.parser')
