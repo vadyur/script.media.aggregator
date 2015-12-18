@@ -117,6 +117,8 @@ def write_movies(content, path, settings):
 		else:
 			skipped(item)
 			
+		del parser
+			
 	filesystem.chdir(original_dir)
 
 def run(settings):
