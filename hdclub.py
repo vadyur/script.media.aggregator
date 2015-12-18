@@ -44,7 +44,7 @@ class DescriptionParser(DescriptionParserBase):
 				if tag == u'':
 					tag = self.get_tag(text)
 				else:
-					self.dict[tag] = text
+					self.dict[tag] = text.strip(' \t\n\r')
 					tag = u''
 			except:
 				pass
@@ -108,6 +108,8 @@ def write_movies(content, path, settings):
 		
 		if parser.parsed():
 			filename = parser.make_filename()
+			if not filename:
+				continue
 			
 			print 'filename: ' +  filename.encode('utf-8')
 			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)

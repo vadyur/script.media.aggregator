@@ -37,7 +37,7 @@ class DescriptionParser(DescriptionParserBase):
 		}.get(x.strip(), u'')
 		
 	def clean(self, title):
-		return title
+		return title.strip(' \t\n\r')
 		
 	def get_title(self, full_title):
 		try:
@@ -72,7 +72,7 @@ class DescriptionParser(DescriptionParserBase):
 			self.__link = _BASE_URL + a['href']
 			print self.__link
 
-			full_title = a.get_text()
+			full_title = a.get_text().strip(' \t\n\r')
 			print 'full_title: ' + full_title.encode('utf-8')
 						
 			self.dict['full_title'] = full_title

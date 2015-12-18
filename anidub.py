@@ -17,6 +17,7 @@ class DescriptionParser(DescriptionParserBase):
 	
 	#==============================================================================================
 	def __init__(self, url):
+		self.dict.clear()
 		self.content = self.get_content(url)
 		#html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(self.content, 'html.parser')
@@ -41,7 +42,7 @@ class DescriptionParser(DescriptionParserBase):
 			title = title.split(u' [')[0]
 		except:
 			pass
-		return title
+		return title.strip()
 	
 	#==============================================================================================	
 	def get_title(self, full_title):
@@ -99,7 +100,7 @@ class DescriptionParser(DescriptionParserBase):
 				tag = self.get_tag(text)
 				if tag != '':
 					span = b.find_next_sibling('span')
-					self.dict[tag] = span.get_text()
+					self.dict[tag] = span.get_text().strip()
 			except:
 				pass
 				
@@ -128,7 +129,7 @@ class DescriptionParser(DescriptionParserBase):
 				
 		for img in self.soup.select('span.poster img'):
 			try:
-				self.dict['thumbnail'] = img['src']
+				self.dict['thumbnail'] = img['src'].strip()
 				print self.dict['thumbnail']
 			except:
 				pass
@@ -137,7 +138,7 @@ class DescriptionParser(DescriptionParserBase):
 		for a in self.soup.select('ul.clr li a'):
 			try:
 				print a['href']
-				fanart.append(a['href'])
+				fanart.append(a['href'].strip())
 			except:
 				pass
 		if len(fanart) != 0:
@@ -145,7 +146,7 @@ class DescriptionParser(DescriptionParserBase):
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
-				self.dict['studio'] = img['alt']
+				self.dict['studio'] = img['alt'].strip()
 				print self.dict['studio']
 			except:
 				pass
@@ -222,6 +223,8 @@ def write_tvshow(content, path, settings):
 			filesystem.chdir(save_path)
 		else:
 			skipped(item)
+			
+		del parser
 			
 	filesystem.chdir(original_dir)
 	
