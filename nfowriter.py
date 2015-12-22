@@ -83,7 +83,6 @@ class NFOWriter:
 		
 	def make_imdbid_info(self, parent, movie_api):
 		try:
-			tmdb_id = movie_api[u'id']
 			thumb = ET.SubElement(parent, "thumb", aspect='poster', preview='http://image.tmdb.org/t/p/w500' + movie_api[u'poster_path'])
 			thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'poster_path']
 			
@@ -123,7 +122,7 @@ class NFOWriter:
 	def add_actors(self, root, desc_parser):
 		kp_id = desc_parser.get_value('kp_id')
 		if kp_id != '':
-			movie_api = MovieAPI(kinopoisk=kp_id)
+			movie_api = desc_parser.movie_api()
 			index = 0
 			for actorInfo in movie_api.Actors():
 				if actorInfo['ru_name'] in desc_parser.get_value('actor'):
@@ -141,7 +140,7 @@ class NFOWriter:
 	def add_trailer(self, root, desc_parser):
 		kp_id = desc_parser.get_value('kp_id')
 		if kp_id != '':
-			movie_api = MovieAPI(kinopoisk=kp_id)
+			movie_api = desc_parser.movie_api()
 			trailer = movie_api.Trailer()
 			if trailer:
 				ET.SubElement(root, 'trailer').text = trailer
@@ -163,9 +162,8 @@ class NFOWriter:
 		self.add_actors(root, desc_parser)
 		self.add_trailer(root, desc_parser)
 			
-		tmdb_id = ''
 		if imdb_id != '':
-			movie_api = MovieAPI(imdb_id)
+			movie_api = desc_parser.movie_api()
 			self.make_imdbid_info(root, movie_api) 
 		elif root_tag=='tvshow':
 			self.make_tvshow_info(root, tvshow_api, desc_parser)

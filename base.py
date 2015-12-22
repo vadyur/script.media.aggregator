@@ -4,13 +4,14 @@ import os, re, filesystem
 from bs4 import BeautifulSoup
 from settings import *
 import urllib
+from movieapi import *
 
 KB = 1024
 MB = KB * KB
 GB = KB * MB
 
 def make_fullpath(title, ext):
-	return unicode(title.replace(':', '').replace('/', '#').replace('?', '') + ext)
+	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
 	
 def skipped(item):
 	print item.title.encode('utf-8') + '\t\t\t[Skipped]'
@@ -162,19 +163,50 @@ class STRMWriterBase:
 					if link in urllib.unquote(line):
 						return True
 		return False
-				
+
+class Informer(object):
+	def __init__(self):
+		self.__movie_api = None
+		
+	def make_movie_api(self, imdb_id, kp_id):
+		self.__movie_api = MovieAPI(imdb_id, kp_id)
+		
+	def movie_api(self):
+		return self.__movie_api
+		
+	def filename_with(self, title, originaltitle, year):
+		if title == originaltitle:
+			filename = title
+		else:
+			filename = title + ' # ' + originaltitle 
+			
+		filename += ' (' + year + ')'
+		
+		return filename
+		
+	def make_filename_imdb(self):
+		if self.__movie_api:
+			title 			= self.__movie_api['title']
+			originaltitle	= self.__movie_api['original_title']
+			year			= self.__movie_api['release_date'].split('-')[0]
+			
+			return self.filename_with(title, originaltitle, year)
+			
+		return None
+		
+		
 	
-class DescriptionParserBase:
-	dict = {}
+class DescriptionParserBase(Informer):
+	_dict = {}
 
 	def Dump(self):
 		print '-------------------------------------------------------------------------'
-		for key, value in self.dict.iteritems():
+		for key, value in self._dict.iteritems():
 			print key.encode('utf-8') + '\t: ' + value.encode('utf-8')
 	
 	def get_value(self, tag):
 		try:
-			return self.dict[tag]
+			return self._dict[tag]
 		except:
 			return u''
 
@@ -185,33 +217,35 @@ class DescriptionParserBase:
 		raise NotImplementedError("def parse(self): not imlemented.\nPlease Implement this method")
 		
 	def fanart(self):
-		if 'fanart' in self.dict:
-			return self.dict['fanart']
+		if 'fanart' in self._dict:
+			return self._dict['fanart']
 		else:
 			return None
 		
 	def __init__(self, content, settings = None):
-		self.dict.clear()
+		Informer.__init__(self)
+		
+		self._dict.clear()
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(clean_html(html_doc), 'html.parser')
 		self.settings = settings
 		self.OK = self.parse()
-		
+
 	def make_filename(self):
-		filename = None
+		
 		try:
-			title 			= self.dict['title']
-			originaltitle 	= self.dict['originaltitle']
+			if 'imdb_id' in self._dict:
+				return self.make_filename_imdb()
+		except:
+			pass
 			
-			if title == originaltitle:
-				filename = title
-			else:
-				filename 		= title + ' # ' + originaltitle 
-				
-			filename 		+= ' (' + self.dict['year'] + ')'
-		finally:
-			return filename
+		title 			= self._dict['title']
+		originaltitle 	= self._dict['originaltitle']
+		year			= self._dict['year']
+		
+		return self.filename_with(title, originaltitle, year)
+		#return filename
 			
 	def need_skipped(self, full_title):
 		

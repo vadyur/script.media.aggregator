@@ -17,7 +17,9 @@ class DescriptionParser(DescriptionParserBase):
 	
 	#==============================================================================================
 	def __init__(self, url):
-		self.dict.clear()
+		Informer.__init__(self)
+		
+		self._dict.clear()
 		self.content = self.get_content(url)
 		#html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(self.content, 'html.parser')
@@ -68,7 +70,7 @@ class DescriptionParser(DescriptionParserBase):
 				parts = title.split(u'TV-')
 			if len(parts) > 1:
 				found = re.search('([0-9]+)', parts[1]).group(1)
-				self.dict['season'] = int(found)
+				self._dict['season'] = int(found)
 		except:
 			pass
 	
@@ -83,16 +85,16 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def parse(self):
 		tag = u''
-		self.dict['gold'] = False
-		self.dict['season'] = 1
+		self._dict['gold'] = False
+		self._dict['season'] = 1
 		
 		for title in self.soup.select('#news-title'):
 			full_title = title.get_text()
 			print full_title.encode('utf-8')
-			self.dict['title'] = self.get_title(full_title)
-			self.dict['originaltitle'] = self.get_original_title(full_title)
+			self._dict['title'] = self.get_title(full_title)
+			self._dict['originaltitle'] = self.get_original_title(full_title)
 			self.parse_season_from_title(full_title)
-			self.dict['episodes'] = self.get_episodes_num(full_title)
+			self._dict['episodes'] = self.get_episodes_num(full_title)
 		
 		for b in self.soup.select('div.xfinfodata b'):
 			try:
@@ -100,7 +102,7 @@ class DescriptionParser(DescriptionParserBase):
 				tag = self.get_tag(text)
 				if tag != '':
 					span = b.find_next_sibling('span')
-					self.dict[tag] = span.get_text().strip()
+					self._dict[tag] = span.get_text().strip()
 			except:
 				pass
 				
@@ -111,7 +113,7 @@ class DescriptionParser(DescriptionParserBase):
 				text = text.split(u'Эпизоды')[0]
 				text = text.split(u'Скриншоты')[0]
 				text = text.strip()
-				self.dict['plot'] = text
+				self._dict['plot'] = text
 				#print '---'
 				#print text.encode('utf-8')
 				#print '---'
@@ -122,15 +124,15 @@ class DescriptionParser(DescriptionParserBase):
 			try:
 				text = b.get_text()
 				text = text.split(' ')[0]
-				self.dict['rating'] = float(text) * 2
-				print 'rating: ' + str(self.dict['rating'])
+				self._dict['rating'] = float(text) * 2
+				print 'rating: ' + str(self._dict['rating'])
 			except:
 				pass
 				
 		for img in self.soup.select('span.poster img'):
 			try:
-				self.dict['thumbnail'] = img['src'].strip()
-				print self.dict['thumbnail']
+				self._dict['thumbnail'] = img['src'].strip()
+				print self._dict['thumbnail']
 			except:
 				pass
 				
@@ -142,17 +144,16 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 		if len(fanart) != 0:
-			self.dict['fanart'] = fanart
+			self._dict['fanart'] = fanart
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
-				self.dict['studio'] = img['alt'].strip()
-				print self.dict['studio']
+				self._dict['studio'] = img['alt'].strip()
+				print self._dict['studio']
 			except:
 				pass
 				
 		return True
-
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):

@@ -30,7 +30,7 @@ class DescriptionParser(DescriptionParserBase):
 	def parse(self):
 		#title - Название:
 		tag = u''
-		self.dict['gold'] = False
+		self._dict['gold'] = False
 		for span in self.soup.select('span'):
 			try:
 				text = span.get_text()
@@ -38,13 +38,13 @@ class DescriptionParser(DescriptionParserBase):
 					return False
 				
 				if text == u'Золотая раздача':
-					self.dict['gold'] = True
+					self._dict['gold'] = True
 				
 				#print text.encode('utf-8')
 				if tag == u'':
 					tag = self.get_tag(text)
 				else:
-					self.dict[tag] = text.strip(' \t\n\r')
+					self._dict[tag] = text.strip(' \t\n\r')
 					tag = u''
 			except:
 				pass
@@ -55,12 +55,12 @@ class DescriptionParser(DescriptionParserBase):
 				href = a['href']
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
-					self.dict['imdb_id'] = components[4]
+					self._dict['imdb_id'] = components[4]
 					count_id += 1
 				
 				if self.settings:
 					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru':
-						self.dict['kp_id'] = href
+						self._dict['kp_id'] = href
 
 			except:
 				pass
@@ -70,13 +70,36 @@ class DescriptionParser(DescriptionParserBase):
 				
 		for img in self.soup.select('img[src*="thumbnail.php"]'):
 			try:
-				self.dict['thumbnail'] = img['src']
-				print self.dict['thumbnail']
+				self._dict['thumbnail'] = img['src']
+				print self._dict['thumbnail']
 			except:
 				pass
-			
+
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'))
 				
 		return True
+		
+def write_movie(item, settings):
+	parser = DescriptionParser(item.description, settings = settings)
+	print '-------------------------------------------------------------------------'
+	
+	full_title = item.title
+	print 'full_title: ' + full_title.encode('utf-8')
+	if parser.need_skipped(full_title):
+		return
+	
+	if parser.parsed():
+		filename = parser.make_filename()
+		if not filename:
+			return
+		
+		print 'filename: ' +  filename.encode('utf-8')
+		STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)
+		NFOWriter().write(parser, filename)
+	else:
+		skipped(item)
+		
+	del parser
 		
 def write_movies(content, path, settings):
 	
@@ -98,26 +121,7 @@ def write_movies(content, path, settings):
 	print d.entries[0].link
 	'''
 	for item in d.entries:
-		parser = DescriptionParser(item.description, settings = settings)
-		print '-------------------------------------------------------------------------'
-		
-		full_title = item.title
-		print 'full_title: ' + full_title.encode('utf-8')
-		if parser.need_skipped(full_title):
-			continue
-		
-		if parser.parsed():
-			filename = parser.make_filename()
-			if not filename:
-				continue
-			
-			print 'filename: ' +  filename.encode('utf-8')
-			STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)
-			NFOWriter().write(parser, filename)
-		else:
-			skipped(item)
-			
-		del parser
+		write_movie(item, settings)
 			
 	filesystem.chdir(original_dir)
 
