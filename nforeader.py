@@ -48,23 +48,26 @@ class NFOReader(object):
 		cast = []
 		castandrole = []
 		for child in root:
-			#print child.tag, child.text
-			if child.tag in string_items:
-				info[child.tag] = child.text
-			if child.tag in integer_items:
-				info[child.tag] = int(child.text)
-			if child.tag in float_items:
-				info[child.tag] = float(child.text)
-			if 'actor' in child.tag:
-				for item in child:
-					name = ''
-					role = ''
-					if 'name' in item.tag:
-						name = item.text
-					if 'role' in item.tag:
-						role = item.text
-					cast.append(name)
-					castandrole.append((name, role))
+			try:
+				#print child.tag, child.text
+				if child.tag in string_items:
+					info[child.tag] = child.text
+				if child.tag in integer_items:
+					info[child.tag] = int(child.text)
+				if child.tag in float_items:
+					info[child.tag] = float(child.text)
+				if 'actor' in child.tag:
+					for item in child:
+						name = ''
+						role = ''
+						if 'name' in item.tag:
+							name = item.text
+						if 'role' in item.tag:
+							role = item.text
+						cast.append(name)
+						castandrole.append((name, role))
+			except:
+				pass
 					
 		if len(cast) > 0:
 			info['cast'] = cast
@@ -80,7 +83,7 @@ class NFOReader(object):
 		print r.headers
 		
 		if r.headers[ 'Content-Type'] == 'image/jpeg':
-			filename = filesystem.join(self.__temp_path, 'temp.anidub.media-aggregator.' + type + '.jpg')
+			filename = filesystem.join(self.__temp_path, 'temp.media-aggregator.' + type + '.jpg')
 			
 			print 'Start download: ' + filename + ' from ' + url
 			
@@ -100,10 +103,11 @@ class NFOReader(object):
 		
 		for child in root:
 			if child.tag == 'thumb':
-				path = self.download_image(child.text, 'poster-thumb')
+				path = child.text #self.download_image(child.text, 'poster-thumb')
 				if path != None:
 					art['thumb'] = path
 					art['poster'] = path
+					art['thumbnailImage'] = path
 
 			
 			if child.tag == 'fanart':
@@ -116,9 +120,10 @@ class NFOReader(object):
 		return art
 				
 	def make_list_item(self, playable_url):
-		#item = self.get_art()
 		list_item = xbmcgui.ListItem(path=playable_url)
 		list_item.setInfo('video', self.get_info())
-		#list_item.setArt(item)
+		art = self.get_art()
+		list_item.setArt(art)
+		list_item.setThumbnailImage(art.get('poster', ''))
 		
 		return list_item
