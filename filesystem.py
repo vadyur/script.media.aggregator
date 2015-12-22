@@ -19,6 +19,8 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 def get_path(path):
 	errors='strict'
 	path = ensure_unicode(path)
+	if os.name == 'nt':
+		return path
 	return path.encode(get_filesystem_encoding(), errors)
 
 def exists(path):

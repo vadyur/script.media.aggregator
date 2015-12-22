@@ -4,18 +4,26 @@ import requests, filesystem
 
 class NFOReader(object):
 	def __init__(self, path, temp_path):
+		self.__root = None
 		self.__path = path
 		self.__temp_path = temp_path
 		
-		with filesystem.fopen(path, 'r') as f:
-			content = f.read()
-			try:
-				i = content.index('</movie>')
-				if i >= 0:
-					content = content[0:i + len('</movie>')]
-			except:
-				pass
-			self.__root = ET.fromstring(content)  #ET.parse(self.__path)
+		if not filesystem.exists(path):
+			return
+
+		try:
+			with filesystem.fopen(path, 'r') as f:
+				content = f.read()
+				try:
+					i = content.index('</movie>')
+					if i >= 0:
+						content = content[0:i + len('</movie>')]
+				except:
+					pass
+				self.__root = ET.fromstring(content)  #ET.parse(self.__path)
+		except IOError as e:
+			print "NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror)		
+
 		
 	@staticmethod
 	def make_path(base_path, rel_path, filename):
@@ -26,6 +34,10 @@ class NFOReader(object):
 	def get_info(self):
 		
 		root = self.__root
+
+		info = {}
+		if root == None:
+			return info
 		
 		string_items = ['genre', 'director', 'mpaa', 'plot', 'plotoutline', 'title', 'originaltitle', 'duration',
 						'studio', 'code', 'aired', 'credits', 'album', 'votes', 'trailer', 'thumb']
@@ -33,8 +45,6 @@ class NFOReader(object):
 		
 		float_items = ['rating']
 		
-		info = {}
-
 		cast = []
 		castandrole = []
 		for child in root:

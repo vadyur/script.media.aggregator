@@ -44,7 +44,11 @@ class STRMWriter(STRMWriterBase):
 					return
 		
 		#------------------------------------------
-		with filesystem.fopen(fname, 'w') as f:
-			f.write(link.encode('utf-8'))
+		try:
+			with filesystem.fopen(fname, 'w') as f:
+				f.write(link.encode('utf-8'))
+		except IOError:
+			print 'Error write ' + fname.encode('utf-8')
+			return
 
 

@@ -5,7 +5,7 @@ from settings import Settings
 from base import *
 from nfowriter import *
 from strmwriter import *
-import requests
+import requests, time
 
 
 _RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
@@ -17,6 +17,9 @@ _ITEMS_ON_PAGE=15
 class DescriptionParser(DescriptionParserBase):
 	
 	def __init__(self, content, settings = None):
+		Informer.__init__(self)
+		
+		self._dict.clear()
 		self.content = content
 		self.settings = settings
 		self.OK = self.parse()
@@ -75,10 +78,10 @@ class DescriptionParser(DescriptionParserBase):
 			full_title = a.get_text().strip(' \t\n\r')
 			print 'full_title: ' + full_title.encode('utf-8')
 						
-			self.dict['full_title'] = full_title
-			self.dict['title'] = self.get_title(full_title)
-			self.dict['originaltitle'] = self.get_original_title(full_title)
-			self.dict['year'] = self.get_year(full_title)
+			self._dict['full_title'] = full_title
+			self._dict['title'] = self.get_title(full_title)
+			self._dict['originaltitle'] = self.get_original_title(full_title)
+			self._dict['year'] = self.get_year(full_title)
 			
 			if self.need_skipped(full_title):
 				return False
@@ -93,9 +96,9 @@ class DescriptionParser(DescriptionParserBase):
 				self.soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 				
 				tag = u''
-				self.dict['gold'] = False
+				self._dict['gold'] = False
 				for a in self.soup.select('img[src="images/gold.gif"]'):
-					self.dict['gold'] = True
+					self._dict['gold'] = True
 					print 'gold'
 				
 				for span in self.soup.select('span.postbody span'):
@@ -104,13 +107,13 @@ class DescriptionParser(DescriptionParserBase):
 						tag = self.get_tag(text)
 						if tag != '':
 							if tag != u'plot':
-								self.dict[tag] = unicode(span.next_sibling).strip()
+								self._dict[tag] = unicode(span.next_sibling).strip()
 							else:
-								self.dict[tag] = unicode(span.next_sibling.next_sibling).strip()
-							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self.dict[tag].encode('utf-8'))
+								self._dict[tag] = unicode(span.next_sibling.next_sibling).strip()
+							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8'))
 					except: pass
-				if 'genre' in self.dict:
-					self.dict['genre'] = self.dict['genre'].lower()
+				if 'genre' in self._dict:
+					self._dict['genre'] = self._dict['genre'].lower()
 
 				count_id = 0
 				for a in self.soup.select('#imdb_id'):
@@ -118,7 +121,7 @@ class DescriptionParser(DescriptionParserBase):
 						href = a['href']
 						components = href.split('/')
 						if components[2] == u'www.imdb.com' and components[3] == u'title':
-							self.dict['imdb_id'] = components[4]
+							self._dict['imdb_id'] = components[4]
 							count_id += 1
 					except:
 						pass
@@ -128,22 +131,24 @@ class DescriptionParser(DescriptionParserBase):
 
 				for img in self.soup.select('img.postImg'):
 					try:
-						self.dict['thumbnail'] = img['src']
-						print self.dict['thumbnail']
+						self._dict['thumbnail'] = img['src']
+						print self._dict['thumbnail']
 					except:
 						pass
 				
-				if 'country_studio' in self.dict:
-					parse_string = self.dict['country_studio']
+				if 'country_studio' in self._dict:
+					parse_string = self._dict['country_studio']
 					parts = parse_string.split(' / ')
-					self.dict['country'] = parts[0]
+					self._dict['country'] = parts[0]
 					if len(parts) > 1:
-						self.dict['studio'] = parts[1]
+						self._dict['studio'] = parts[1]
 
 				if self.settings:
 					if self.settings.use_kinopoisk:
 						for kp_id in self.soup.select('#kp_id'):
-							self.dict['kp_id'] = kp_id['href']
+							self._dict['kp_id'] = kp_id['href']
+							
+				self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'))
 				
 				return True
 		return False
@@ -169,6 +174,24 @@ class PostsEnumerator(object):
 		
 	def items(self):
 		return self.__items
+		
+def write_movie(post, settings):
+	print '!-------------------------------------------'
+	parser = DescriptionParser(post, settings = settings)
+	if parser.parsed():
+		print '+-------------------------------------------'
+		full_title = parser.get_value('full_title')
+		filename = parser.make_filename()
+		if filename:
+			print 'full_title: ' + full_title.encode('utf-8')
+			print 'filename: ' + filename.encode('utf-8')
+			print '-------------------------------------------+'
+			STRMWriter(parser.link()).write(filename, rank = get_rank(parser.get_value('full_title'), parser, settings), settings = settings)
+			NFOWriter().write(parser, filename)
+			
+			#time.sleep(1)
+
+	del parser
 
 def write_movies(content, path, settings):
 	
@@ -181,25 +204,17 @@ def write_movies(content, path, settings):
 	# ---------------------------------------------
 	enumerator = PostsEnumerator()
 	for i in range(settings.nnmclub_pages):
-		enumerator.process_page(_HD_PORTAL_URL + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))
+		enumerator.process_page(content + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))
 
 	for post in enumerator.items():
-		parser = DescriptionParser(post, settings = settings)
-		if parser.parsed():
-			filename = parser.make_filename()
-			if filename == '':
-				continue
-			print filename.encode('utf-8')
-			STRMWriter(parser.link()).write(filename, rank = get_rank(parser.get_value('full_title'), parser, settings), settings = settings)
-			NFOWriter().write(parser, filename)
-		del parser
-		
+		write_movie(post, settings)
 	# ---------------------------------------------
 	filesystem.chdir(original_dir)
 
 
 def run(settings):
 	write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
+	#write_movies(_BASE_URL + 'portal.php?c=13', filesystem.join(settings.base_path(), u'Наши'), settings)
 	
 def get_magnet_link(url):
 	r = requests.get(url)
