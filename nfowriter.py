@@ -119,6 +119,20 @@ class NFOWriter:
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
 		
+	@staticmethod
+	def make_name(actorInfo):
+		has_ru_name = actorInfo.get('ru_name', '') != ''
+		has_en_name = actorInfo.get('en_name', '') != ''
+		
+		if has_ru_name and has_en_name:
+			return '%s (%s)' % (actorInfo['ru_name'], actorInfo['en_name'])
+		elif has_ru_name:
+			return actorInfo['ru_name']
+		elif has_en_name:
+			return actorInfo['en_name']
+		else:
+			return ''
+		
 	def add_actors(self, root, desc_parser):
 		kp_id = desc_parser.get_value('kp_id')
 		if kp_id != '':
@@ -127,7 +141,7 @@ class NFOWriter:
 			for actorInfo in movie_api.Actors():
 				if actorInfo['ru_name'] in desc_parser.get_value('actor'):
 					actor = ET.SubElement(root, 'actor')
-					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
+					ET.SubElement(actor, 'name').text = NFOWriter.make_name(actorInfo)
 					ET.SubElement(actor, 'role').text = actorInfo['role']
 					ET.SubElement(actor, 'order').text = str(index)
 					ET.SubElement(actor, 'thumb').text = actorInfo['photo']

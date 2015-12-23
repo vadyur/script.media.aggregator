@@ -75,7 +75,7 @@ class MovieAPI:
 							photo 		= photo.replace('/', '').replace('name', '')
 							photo 		= 'http://st.kp.yandex.net/images/actor_iphone/iphone360_' + photo + '.jpg'
 							ru_name		= actorInfo.select('div.info .name a')[0].get_text()
-							en_name		= actorInfo.select('div.info .name span')[0].get_text()
+							en_name		= actorInfo.select('div.info .name span')[0].get_text().split(' (')[0]
 							role		= actorInfo.select('div.info .role')[0].get_text().replace('... ', '')
 							role 		= role.split(',')[0]
 							actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
