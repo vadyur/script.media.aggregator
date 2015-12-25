@@ -3,6 +3,7 @@
   <requires>
     <import addon='xbmc.python' version='2.1.0'/>
 	<import addon="plugin.video.yatp" optional="false"/>
+	<import addon="script.module.torrent2http" optional="false"/>
 	<import addon="script.module.beautifulsoup4" version="4.3.0"/>
 	<import addon="script.module.requests" optional="false"/>
 	<import addon="script.module.feedparser" optional="false"/>
