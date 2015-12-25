@@ -6,7 +6,7 @@ import anidub, hdclub, nnmclub, filesystem
 import urllib, os, requests
 import time
 import operator
-from settings import Settings
+from settings import *
 from nforeader import NFOReader
 from yatpplayer import *
 from torrent2httpplayer import *
@@ -56,6 +56,10 @@ def load_settings():
 	preffered_bitrate 	= int(_addon.getSetting('preffered_bitrate'))
 	preffered_type 		= _addon.getSetting('preffered_type')
 	
+	torrent_player 		= _addon.getSetting('torrent_player')
+	storage_path		= _addon.getSetting('storage_path')
+	
+	
 	settings 			= Settings(	base_path, 
 									movies_path			= movies_path,
 									animation_path		= animation_path,
@@ -68,7 +72,9 @@ def load_settings():
 									nnmclub_login 		= nnmclub_login,
 									nnmclub_password 	= nnmclub_password,
 									preffered_bitrate 	= preffered_bitrate,
-									preffered_type 		= preffered_type)
+									preffered_type 		= preffered_type,
+									torrent_player 		= torrent_player,
+									storage_path		= storage_path)
 	#print settings
 	return settings
 	
@@ -76,16 +82,25 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
 
+	if settings == None:
+		return
+
 	try:
-		#player = YATPPlayer()
-		player = Torrent2HTTPPlayer()
+		if settings.torrent_player == 'YATP':
+			player = YATPPlayer()
+		elif settings.torrent_player == 'torrent2http':
+			player = Torrent2HTTPPlayer(settings)
+			
 		player.AddTorrent(path)
 
 		added = False
-		for i in range(20):
+		for i in range(200):
 			if player.CheckTorrentAdded():
 				added = True
 				break
+				
+			if xbmc.abortRequested:
+				return
 
 			time.sleep(1)
 			
@@ -161,12 +176,16 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 	
 	except TPError as e:
 		print e
+	finally:
+		player.close()
+
+	try:	
+		info_dialog.update(0)
+		info_dialog.close()
+	except:
+		pass
+	
 		
-	info_dialog.update(0)
-	info_dialog.close()
-		
-	player.close()
-			
 def main():
 	params 		= get_params()
 	print params
