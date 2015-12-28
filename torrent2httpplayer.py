@@ -81,7 +81,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
 							keep_incomplete=False, keep_complete=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
 							log_files_progress=True)
-		self.engine.start()
+		self.engine.start(0)
 		
 	def CheckTorrentAdded(self):
 		status = self.engine.status()		
@@ -121,8 +121,10 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		return { 'info_hash': info_hash, 'files': playable_items }
 		
 	def StartBufferFile(self, fileIndex):
-		##self.engine.start(fileIndex)
-		status = self.engine.file_status(fileIndex)
+		if fileIndex != 0:
+			self.engine.close()
+			self.engine.start(fileIndex)
+		#status = self.engine.file_status(fileIndex)
 		self.file_id = fileIndex
 		
 		self.debug('StartBufferFile: %d' % fileIndex)
