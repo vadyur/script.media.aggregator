@@ -17,6 +17,11 @@
 		<setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>
 		<setting label="Качество" id="preffered_type" type="select" values="720p|1080" default="1080" />
     </category>
+
+    <category label="P2P Сеть">
+		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http" default="YATP" />
+		<setting label="Путь для сохранения видео файлов"	type="folder" id="storage_path"	default="" visible="eq(-1,torrent2http)" />
+	</category>
 	
     <category label="Anidub">
 		<setting label="Enable" type="bool" id="anidub_enable" default="false"/>

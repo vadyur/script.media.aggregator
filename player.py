@@ -6,8 +6,11 @@ import anidub, hdclub, nnmclub, filesystem
 import urllib, os, requests
 import time
 import operator
-from settings import Settings
+from settings import *
 from nforeader import NFOReader
+from yatpplayer import *
+from torrent2httpplayer import *
+from torrent2http import Error as TPError
 
 # Определяем параметры плагина
 _ADDON_NAME =   'script.media.aggregator'
@@ -53,6 +56,10 @@ def load_settings():
 	preffered_bitrate 	= int(_addon.getSetting('preffered_bitrate'))
 	preffered_type 		= _addon.getSetting('preffered_type')
 	
+	torrent_player 		= _addon.getSetting('torrent_player')
+	storage_path		= _addon.getSetting('storage_path')
+	
+	
 	settings 			= Settings(	base_path, 
 									movies_path			= movies_path,
 									animation_path		= animation_path,
@@ -65,146 +72,120 @@ def load_settings():
 									nnmclub_login 		= nnmclub_login,
 									nnmclub_password 	= nnmclub_password,
 									preffered_bitrate 	= preffered_bitrate,
-									preffered_type 		= preffered_type)
+									preffered_type 		= preffered_type,
+									torrent_player 		= torrent_player,
+									storage_path		= storage_path)
 	#print settings
 	return settings
 	
-def is_playable(name):
-	filename, file_extension = os.path.splitext(name)
-	return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
-	
-def play_torrent(path, episodeNumber = None, nfoReader = None):
+def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
-		
-	'''
-	Send a torrent to YATP usign add_torrent method. YATP accepts local and remote (http/https) 
-	paths to .torrent files and magnet links. Warning: paths on networked filesystems (smb/nfs) are not supported!
-	'''
-	r = requests.post('http://localhost:8668/json-rpc', json={"method": "add_torrent", "params": {'torrent': path}})
-	print r.json()
 
-	'''
-	Periodically check if the torrent has been added to YATP using check_torrent_added method. 
-	Usually, .torrent files are added almost instantaneously, but processing magnet links takes some time.
-	'''
-	added = False
-	for i in range(20):
-		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_torrent_added"})
-		print r.json()
-		try:
-			if r.json()['result']:
+	if settings == None:
+		return
+
+	try:
+		if settings.torrent_player == 'YATP':
+			player = YATPPlayer()
+		elif settings.torrent_player == 'torrent2http':
+			player = Torrent2HTTPPlayer(settings)
+			
+		player.AddTorrent(path)
+
+		added = False
+		for i in range(200):
+			if player.CheckTorrentAdded():
 				added = True
 				break
-		except:
-			pass
-		time.sleep(1)
-		
-	if not added:
-		print 'Torrent not added'
-		return False
-		
-	'''
-	As soon as check_torrent_added returns true, get added torrent data using get_last_added_torrent method. 
-	This method will return a JSON object containing a torrent`s info-hash as a string (technically, this is 
-	an info-hash hexdigest) and the list of files in the torrent along with their sizes. The info-hash is used 
-	as a primary torrent ID for other JSON-RPC methods.
-	'''
-	files = []
-	r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_last_added_torrent"})
-	#try:
-	torr_data = r.json()['result']
-	print torr_data
-	#info_hash = torr_data['info_hash']
-	
-	index = 0
-	for file in torr_data['files']:
-		if is_playable(file[0]):
-			files.append({'index': index, 'name': file[0], 'size': long(file[1])})
-		index = index + 1
-	#except:
-	#	return
-		
-	print files
+				
+			if xbmc.abortRequested:
+				return
 
-	if episodeNumber != None:
-		files.sort(key=operator.itemgetter('name'))		
-	else:
-		files.sort(key=operator.itemgetter('size'), reverse=True)
-	print 'sorted_files:'
-	print files
-	
-	
-	'''
-	Select a videofile from the torrent one way or another and send its index to YATP using buffer_file method.
-	'''
-	
-	if episodeNumber == None:
-		index = 0
-		playable_item = files[0]
-	else:
-		playable_item = files[episodeNumber]
-		index = playable_item.get('index')
-		
-	print playable_item
-		
-		
-	r = requests.post('http://localhost:8668/json-rpc', json={"method": "buffer_file", "params": {"file_index": index}})
-	
-	'''
-	Check buffering status using check_buffering_complete method. You can also get buffering progress via 
-	get_buffer_percent method to show some feedback to a plugin user.
-	'''
-	info_dialog = xbmcgui.DialogProgress()
-	info_dialog.create('Media Aggregator: буфферизация')
-	info_dialog.update(0)
-
-	while not info_dialog.iscanceled():
-		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_buffering_complete"})
-		print 'check_buffering_complete'
-		try:
-			if r.json()['result']:
-				break
-		except:
-			pass
-		
-		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_buffer_percent"})
-		try:
-			info_dialog.update(r.json()['result'])
-		except:
-			pass
-		
-		time.sleep(1)
-		
-	canceled = info_dialog.iscanceled()
-	info_dialog.close()
-	
-	if canceled:
-		return False
-		
-	
-	'''
-	As soon as check_buffering_complete returns true, construct a playable URL by combining a Kodi machine hostname 
-	or IP, the YATP server port number (8668 by default), /stream sub-path, and a URL-quoted relative path to the 
-	videofile obtained from get_last_added_torrent method, and then pass this URL for Kodi to play. For example, 
-	if a relative path to a videofile is foo/bar baz.avi then the full playable URL will be:
-		
-		http://<Kodi hostname or IP>:8668/stream/foo/bar%20baz.avi
-	'''
-	playable_url 	= 'http://localhost:8668/stream/'
-	file_path 		= playable_item['name'].replace('\\', '/').encode('utf-8')
-	playable_url	+= urllib.quote(file_path)
-	
-	print playable_url
-	
-	handle = int(sys.argv[1])
-	if nfoReader != None:
-		list_item = nfoReader.make_list_item(playable_url)
-	else:
-		list_item = xbmcgui.ListItem(path=playable_url)
-		
-	xbmcplugin.setResolvedUrl(handle, True, list_item)
+			time.sleep(1)
 			
+		if not added:
+			print 'Torrent not added'
+			return False
+			
+		files = player.GetLastTorrentData()['files']
+		print files
+
+		if episodeNumber != None:
+			files.sort(key=operator.itemgetter('name'))		
+		else:
+			files.sort(key=operator.itemgetter('size'), reverse=True)
+		print 'sorted_files:'
+		print files
+		
+		
+		if episodeNumber == None:
+			index = 0
+			playable_item = files[0]
+		else:
+			playable_item = files[episodeNumber]
+			index = playable_item.get('index')
+			
+		print playable_item
+			
+			
+		player.StartBufferFile(index)
+		
+		info_dialog = xbmcgui.DialogProgress()
+		info_dialog.create('Media Aggregator: буфферизация')
+		info_dialog.update(0)
+
+		while not info_dialog.iscanceled():
+			if player.CheckBufferComplete():
+				break
+			
+			percent = player.GetBufferingProgress()
+			if percent >= 0:
+				info_dialog.update(percent)
+			
+			time.sleep(1)
+			
+		canceled = info_dialog.iscanceled()
+		info_dialog.update(0)
+		info_dialog.close()
+		if canceled:
+			return False
+		
+		playable_url 	= player.GetStreamURL(playable_item)
+		print playable_url
+	
+		handle = int(sys.argv[1])
+		if nfoReader != None:
+			list_item = nfoReader.make_list_item(playable_url)
+		else:
+			list_item = xbmcgui.ListItem(path=playable_url)
+			
+		xbmc_player = xbmc.Player()
+		xbmcplugin.setResolvedUrl(handle, True, list_item)
+	
+		while not xbmc_player.isPlaying():
+			xbmc.sleep(300)
+			
+		print '!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!'
+		
+		# Wait until playing finished or abort requested
+		while not xbmc.abortRequested and xbmc_player.isPlaying():
+			xbmc.sleep(1000)
+			
+		print '!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!'
+	
+	except TPError as e:
+		print e
+	finally:
+		player.close()
+
+	try:	
+		info_dialog.update(0)
+		info_dialog.close()
+	except:
+		pass
+	
+		
 def main():
 	params 		= get_params()
 	print params
@@ -227,25 +208,25 @@ def main():
 			path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
 			print path
 			if anidub.download_torrent(params['torrent'], path, settings):
-				play_torrent(path, params.get('episodeNumber', None), nfoReader = reader)
+				play_torrent(path, params.get('episodeNumber', None), nfoReader = reader, settings = settings)
 		elif 'hdclub' in params['torrent']:
 			url = urllib.unquote(params['torrent']).replace('details.php', 'download.php')
 			if not 'passkey' in url:
 				url += '&passkey=' + _addon.getSetting('hdclub_passkey')
 			
-			play_torrent(url, nfoReader = reader)
+			play_torrent(url, nfoReader = reader, settings = settings)
 		elif 'nnm-club' in params['torrent']:
 			path = filesystem.join(tempPath, u'temp.nnm-club.media-aggregator.torrent')
 			if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(params['torrent'], path, settings):
 				print 'Download torrent %s' % path
-				play_torrent(path, nfoReader = reader)
+				play_torrent(path, nfoReader = reader, settings = settings)
 			else:
 				url = nnmclub.get_magnet_link(urllib.unquote(params['torrent']))
 				print 'Download magnet %s' % url
-				play_torrent(url, nfoReader = reader)
+				play_torrent(url, nfoReader = reader, settings = settings)
 		else:
 			url = urllib.unquote(params['torrent'])
-			play_torrent(url, nfoReader = reader)
+			play_torrent(url, nfoReader = reader, settings = settings)
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()

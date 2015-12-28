@@ -115,7 +115,7 @@ def get_rank(full_title, parser, settings):
 	else:
 		return 1
 	
-class STRMWriterBase:
+class STRMWriterBase(object):
 	def make_alternative(self, fname, link, rank = 0):
 		fname_alt = fname + '.alternative'
 			
@@ -194,8 +194,6 @@ class Informer(object):
 			
 		return None
 		
-		
-	
 class DescriptionParserBase(Informer):
 	_dict = {}
 
@@ -261,5 +259,30 @@ class DescriptionParserBase(Informer):
 		
 		return False
 		
+class TorrentPlayer(object):
+
+	@staticmethod
+	def is_playable(name):
+		filename, file_extension = os.path.splitext(name)
+		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
+	
+	def AddTorrent(self, path):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		
+	def CheckTorrentAdded(self):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		
+	def GetLastTorrentData(self):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		
+	def StartBufferFile(self, fileIndex):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		
+	def CheckBufferComplete(self):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		
+	def GetBufferingProgress(self):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		
+	def GetStreamURL(self, playable_item):
+		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
