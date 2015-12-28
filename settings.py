@@ -4,6 +4,10 @@ import os, filesystem
 class QulityType:
 	Q720p = '720p'
 	Q1080 = '1080'
+	
+class TorrentPlayer:
+	YATP 		= 'YATP'
+	TORR2HTTP	= 'torrent2http'
 
 class Settings:
 	# feed=dl&
@@ -18,7 +22,8 @@ class Settings:
 		hdclub_passkey 		= '', 
 		anidub_login = '', anidub_password = '', 
 		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1,
-		preffered_bitrate = 10000, preffered_type = QulityType.Q1080):
+		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
+		torrent_player = TorrentPlayer.YATP, storage_path = ''):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -42,6 +47,9 @@ class Settings:
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type
+		
+		self.torrent_player 		= torrent_player
+		self.storage_path			= storage_path
 
 		
 	def __repr__(self):
