@@ -180,7 +180,7 @@ class Informer(object):
 		else:
 			filename = title + ' # ' + originaltitle 
 			
-		filename += ' (' + year + ')'
+		filename += ' (' + str(year) + ')'
 		
 		return filename
 		
