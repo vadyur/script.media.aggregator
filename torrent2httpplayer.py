@@ -1,15 +1,21 @@
-from torrent2http import State, Engine, MediaType
+from torrent2http import State, Engine, MediaType, Encryption
 #from contextlib import closing
 from base import TorrentPlayer
 
-import urlparse, urllib, time, filesystem, xbmc
+import urlparse, urllib, time, filesystem, xbmc, xbmcaddon
 
 def path2url(path):
     return urlparse.urljoin('file:', urllib.pathname2url(path))
+	
+_ADDON_NAME =   'script.media.aggregator'
+_addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 
-pre_buffer_bytes = 15*1024*1024
-user_agent 		= 'uTorrent/2200(24683)'
+pre_buffer_bytes 	= 15*1024*1024
+dht_routers 		= ["router.bittorrent.com:6881","router.utorrent.com:6881"]
+user_agent 			= 'uTorrent/2200(24683)'
 
+def getSetting(settings_name):
+	return _addon.getSetting(settings_name)
 
 class Torrent2HTTPPlayer(TorrentPlayer):
 	
@@ -23,6 +29,13 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			print '[Torrent2HTTPPlayer] %s' % msg
 		except:
 			pass
+			
+	def debug_assignment(self, value, varname):
+		try:
+			self.debug('%s: %s' % (varname, str(value)))
+		except:
+			pass
+		return value
 		
 	def __init__(self, settings):
 		self.engine = None
@@ -55,7 +68,21 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			
 		self.debug('download_path: %s' % download_path)	
 		
-		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent)
+		encryption = self.debug_assignment( Encryption.ENABLED if getSetting('encryption') == 'true' else Encryption.DISABLED ,'encryption')
+		upload_limit = self.debug_assignment( int(getSetting("upload_limit")) * 1024 if getSetting("upload_limit") != "" else 0 ,"upload_limit")
+		download_limit = self.debug_assignment( int(getSetting("download_limit")) * 1024 if getSetting("download_limit") != "" else 0 ,"download_limit")
+
+		if getSetting("connections_limit") not in ["",0,"0"]:
+			connections_limit = self.debug_assignment( int(getSetting("connections_limit")), "connections_limit")
+		else:
+			connections_limit = None
+
+		use_random_port = self.debug_assignment( True if getSetting('use_random_port') == 'true' else False, 'use_random_port')
+		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 6881, "listen_port")
+		
+		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
+							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
+							keep_incomplete=False, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port)
 		self.engine.start()
 		
 	def CheckTorrentAdded(self):

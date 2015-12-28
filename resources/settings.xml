@@ -21,6 +21,12 @@
     <category label="P2P Сеть">
 		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http" default="YATP" />
 		<setting label="Путь для сохранения видео файлов"	type="folder" id="storage_path"	default="" visible="eq(-1,torrent2http)" />
+        <setting id="upload_limit"      type="number"   label="Ограничить скорость раздачи МБит/сек (0 - неограничено)" default="0"       visible="eq(-2,torrent2http)"/>
+        <setting id="download_limit"    type="number"   label="Ограничить скорость закачки МБит/сек (0 - неограничено)" default="0"       visible="eq(-3,torrent2http)"/>
+        <setting id="encryption"        type="bool"     label="Шифрование" default="true"    visible="eq(-4,torrent2http)"/>
+        <setting id="connections_limit" type="number"   label="Макс. соединений (0 - безлимит)" default="200"     visible="eq(-5,torrent2http)"/>
+        <setting id="listen_port"       type="number"   label="Порт для входящих соединений" default="6881"    visible="eq(-6,torrent2http)"/>
+        <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
 	</category>
 	
     <category label="Anidub">
