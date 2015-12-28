@@ -10,7 +10,6 @@ def path2url(path):
 _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 
-pre_buffer_bytes 	= 15*1024*1024
 dht_routers 		= ["router.bittorrent.com:6881","router.utorrent.com:6881"]
 user_agent 			= 'uTorrent/2200(24683)'
 
@@ -41,6 +40,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		self.engine = None
 		self.file_id = None
 		self.settings = settings
+		
+		self.pre_buffer_bytes 	= self.debug_assignment(int(getSetting('pre_buffer_bytes'))*1024*1024, 'pre_buffer_bytes') 		
 		
 		self.debug('__init__')
 		
@@ -79,6 +80,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 
 		use_random_port = self.debug_assignment( True if getSetting('use_random_port') == 'true' else False, 'use_random_port')
 		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 6881, "listen_port")
+		
 		
 		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
@@ -135,7 +137,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			# Wait until minimum pre_buffer_bytes downloaded before we resolve URL to XBMC
 			f_status = self.engine.file_status(self.file_id)
 			self.debug('f_status.download %d' % f_status.download)
-			if f_status.download >= pre_buffer_bytes:
+			if f_status.download >= self.pre_buffer_bytes:
 				return True
 
 		return status.state in [State.FINISHED, State.SEEDING]
@@ -144,7 +146,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		f_status = self.engine.file_status(self.file_id)
 		
 		try:
-			progress = int(round(float(f_status.download) / pre_buffer_bytes, 2) * 100)
+			progress = int(round(float(f_status.download) / self.pre_buffer_bytes, 2) * 100)
 			self.debug('GetBufferingProgress: %d' % progress)
 			if progress > 99: 
 				progress = 99
