@@ -95,7 +95,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		return { 'info_hash': info_hash, 'files': playable_items }
 		
 	def StartBufferFile(self, fileIndex):
-		self.engine.start(fileIndex)
+		##self.engine.start(fileIndex)
+		status = self.engine.file_status(fileIndex)
 		self.file_id = fileIndex
 		
 		self.debug('StartBufferFile: %d' % fileIndex)
