@@ -18,11 +18,6 @@ def getSetting(settings_name):
 
 class Torrent2HTTPPlayer(TorrentPlayer):
 	
-	@staticmethod
-	def is_playable(name):
-		filename, file_extension = os.path.splitext(name)
-		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
-		
 	def debug(self, msg):
 		try:
 			print '[Torrent2HTTPPlayer] %s' % msg
@@ -84,7 +79,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		
 		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
-							keep_incomplete=False, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port)
+							keep_incomplete=False, keep_complete=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
+							log_files_progress=True)
 		self.engine.start()
 		
 	def CheckTorrentAdded(self):
@@ -104,7 +100,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			time.sleep(0.2)
 			
 			# Get torrent files list, filtered by video file type only
-			files = self.engine.list(media_types=[MediaType.VIDEO])
+			files = self.engine.list() #(media_types=[MediaType.VIDEO])
 			# If torrent metadata is not loaded yet then continue
 			if files is None:
 				self.debug('files is None')
@@ -119,7 +115,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		info_hash = ''
 		playable_items = []
 		for item in files:
-			playable_items.append({'index': item.index, 'name': item.name, 'size': long(item.size)})
+			if TorrentPlayer.is_playable(item.name):
+				playable_items.append({'index': item.index, 'name': item.name, 'size': long(item.size)})
 		
 		return { 'info_hash': info_hash, 'files': playable_items }
 		
@@ -132,7 +129,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		
 	def CheckBufferComplete(self):
 		status = self.engine.status()
-		self.debug('CheckBufferComplete: ' + str(status.state))
+		self.debug('CheckBufferComplete: ' + str(status.state_str))
 		if status.state == State.DOWNLOADING:
 			# Wait until minimum pre_buffer_bytes downloaded before we resolve URL to XBMC
 			f_status = self.engine.file_status(self.file_id)
