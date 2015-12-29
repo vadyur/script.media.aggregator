@@ -31,21 +31,30 @@ def update_service():
 	if anidub_enable or hdclub_enable or nnmclub_enable:
 		xbmc.executebuiltin('UpdateLibrary("video")')
 
+def main():
+	previous_time = time()
+	every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
 
-previous_time = time()
-every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
+	delay_startup = int(_addon.getSetting('delay_startup')) * 60
 
-if _addon.getSetting('service_startup') == 'true':
-	
-	xbmc.log("Persistent Update Service starting...")
-	print _addon.getSetting('service_startup')
-	update_service()
-	
-while (not xbmc.abortRequested) and _addon.getSetting('service_generate_persistent') == 'true':
-	if time() >= previous_time + every:  # verification
-		previous_time = time()
+	if _addon.getSetting('service_startup') == 'true':
+		
+		for i in range(delay_startup):
+			if xbmc.abortRequested:
+				return
+			sleep(1)
+			
+		xbmc.log("Persistent Update Service starting...")
+		print _addon.getSetting('service_startup')
 		update_service()
-		xbmc.log('Update List at %s' % asctime(localtime(previous_time)))
-		xbmc.log('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
-	sleep(1)
+		
+	while (not xbmc.abortRequested) and _addon.getSetting('service_generate_persistent') == 'true':
+		if time() >= previous_time + every:  # verification
+			previous_time = time()
+			update_service()
+			xbmc.log('Update List at %s' % asctime(localtime(previous_time)))
+			xbmc.log('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+		sleep(1)
 
+if __name__ == '__main__':
+	main()
