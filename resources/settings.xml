@@ -9,6 +9,7 @@
         <setting label="Аниме" 			type="text"   id="anime_path" 		default="Anime"/>
 		<setting label="Автоматическая генерация" type="lsep"/>
 		<setting label="При запуске" type="bool" id="service_startup" default="false"/>
+		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" />
 		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false"/>
 		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
     </category>
