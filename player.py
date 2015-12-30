@@ -11,6 +11,7 @@ from nforeader import NFOReader
 from yatpplayer import *
 from torrent2httpplayer import *
 from torrent2http import Error as TPError
+from kodidb import *
 
 # Определяем параметры плагина
 _ADDON_NAME =   'script.media.aggregator'
@@ -173,6 +174,18 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 			xbmc.sleep(1000)
 			
 		print '!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!'
+		
+		xbmc.sleep(1000)
+		
+		print dir(list_item)
+		
+		params = get_params()
+		rel_path = urllib.unquote(params['path']).decode('utf-8')
+		filename = urllib.unquote(params['nfo']).decode('utf-8')
+		
+		k_db = KodiDB(	filename.replace(u'.nfo', u'.strm'), \
+						rel_path,
+						sys.argv[0] + sys.argv[2])
 	
 	except TPError as e:
 		print e
@@ -232,6 +245,7 @@ def main():
 			dialog = xbmcgui.Dialog()
 			rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
 														u'-НАСТРОЙКИ',
+#														u'-ТЕСТ',
 														u'Выход'])
 			if rep == 0:
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
@@ -253,7 +267,12 @@ def main():
 			if rep == 1:
 				_addon.openSettings()
 				settings = load_settings()
-				
+			'''				
+			if rep == 2:
+				adv_s = AdvancedSettingsReader()
+				print adv_s['type']
+				return
+			'''				
 			if rep > 1 or rep < 0:
 				break
 		
