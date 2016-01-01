@@ -7,6 +7,7 @@
 	<import addon="script.module.beautifulsoup4" version="4.3.0"/>
 	<import addon="script.module.requests" optional="false"/>
 	<import addon="script.module.feedparser" optional="false"/>
+	<import addon="script.module.myconnpy" optional="false"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
 	<provides>video</provides>
