@@ -11,16 +11,20 @@ import requests, time
 _RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
 _BASE_URL = 'http://nnm-club.me/forum/'
 _HD_PORTAL_URL = _BASE_URL + 'portal.php?c=11'
+
+MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
+
 _NEXT_PAGE_SUFFIX='&start='
 _ITEMS_ON_PAGE=15
 
 class DescriptionParser(DescriptionParserBase):
 	
-	def __init__(self, content, settings = None):
+	def __init__(self, content, settings = None, tracker = False):
 		Informer.__init__(self)
 		
 		self._dict.clear()
 		self.content = content
+		self.tracker = tracker
 		self.settings = settings
 		self.OK = self.parse()
 		
@@ -71,7 +75,15 @@ class DescriptionParser(DescriptionParserBase):
 			return 0
 			
 	def parse(self):
-		for a in self.content.select('.substr a.pgenmed'):
+		a = None
+		if self.tracker:
+			a = self.content
+		else:
+			for __a in self.content.select('.substr a.pgenmed'):
+				a = __a
+				break
+				
+		if a != None:
 			self.__link = _BASE_URL + a['href']
 			print self.__link
 
@@ -159,25 +171,34 @@ class DescriptionParser(DescriptionParserBase):
 
 class PostsEnumerator(object):		
 	#==============================================================================================
-	__items = []
+	_items = []
 	
 	def __init__(self):
-		self.__s = requests.Session()
+		self._s = requests.Session()
 
 	def process_page(self, url):
-		request = self.__s.get(url)
+		request = self._s.get(url)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		print url
 		
 		for tbl in self.soup.select('table.pline'):
-			self.__items.append(tbl)
+			self._items.append(tbl)
 		
 	def items(self):
-		return self.__items
+		return self._items
 		
-def write_movie(post, settings):
+class TrackerPostsEnumerator(PostsEnumerator):
+	def process_page(self, url):
+		request = self._s.get(url)
+		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
+		print url
+		
+		for a in self.soup.select('a.topictitle'):
+			self._items.append(a)
+		
+def write_movie(post, settings, tracker):
 	print '!-------------------------------------------'
-	parser = DescriptionParser(post, settings = settings)
+	parser = DescriptionParser(post, settings = settings, tracker = tracker)
 	if parser.parsed():
 		print '+-------------------------------------------'
 		full_title = parser.get_value('full_title')
@@ -193,7 +214,7 @@ def write_movie(post, settings):
 
 	del parser
 
-def write_movies(content, path, settings):
+def write_movies(content, path, settings, tracker = False):
 	
 	original_dir = filesystem.getcwd()
 	
@@ -202,18 +223,22 @@ def write_movies(content, path, settings):
 		
 	filesystem.chdir(path)
 	# ---------------------------------------------
-	enumerator = PostsEnumerator()
+	if tracker:
+		enumerator = TrackerPostsEnumerator()
+	else:
+		enumerator = PostsEnumerator()
 	for i in range(settings.nnmclub_pages):
 		enumerator.process_page(content + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))
 
 	for post in enumerator.items():
-		write_movie(post, settings)
+		write_movie(post, settings, tracker)
 	# ---------------------------------------------
 	filesystem.chdir(original_dir)
 
 
 def run(settings):
 	write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
+	write_movies(MULTHD_URL, settings.animation_path(), settings, tracker = True)
 	#write_movies(_BASE_URL + 'portal.php?c=13', filesystem.join(settings.base_path(), u'Наши'), settings)
 	
 def get_magnet_link(url):
@@ -279,6 +304,6 @@ def download_torrent(url, path, settings):
 	
 
 if __name__ == '__main__':
-	settings = Settings('../media_library', nnmclub_pages = 10)
+	settings = Settings('../../..', nnmclub_pages = 20)
 	run(settings)
 	
