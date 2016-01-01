@@ -53,10 +53,11 @@ class VideoDatabase(object):
 	def __init__(self):
 		try:
 			
-			self.DB_NAME = reader['name'] if reader['name'] is not None else 'MyVideos'
+			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos93'
 			self.DB_USER = reader['user']
 			self.DB_PASS = reader['pass']
-			self.DB_ADDRESS = reader['host'] + ':' + reader['port']
+			self.DB_ADDRESS = reader['host'] #+ ':' + reader['port']
+			self.DB_PORT=reader['port']
 		  
 			if reader['type'] == 'mysql' and \
 							self.DB_ADDRESS is not None and \
@@ -75,8 +76,13 @@ class VideoDatabase(object):
 			
 	def create_connection(self):
 		if self.DB == 'mysql':
-			import mysql.connector as db_mysql
-			return db_mysql.connect(self.DB_NAME, self.DB_USER, self.DB_PASS, self.DB_ADDRESS, buffered=True)
+			import mysql.connector
+			return mysql.connector.connect(	database=self.DB_NAME, \
+											user=self.DB_USER, \
+											password=self.DB_PASS, \
+											host=self.DB_ADDRESS, \
+											port=self.DB_PORT, \
+											buffered=True)
 		else:
 			from sqlite3 import dbapi2 as db_sqlite
 			return db_sqlite.connect(self.db_dir)
@@ -105,9 +111,9 @@ class KodiDB(object):
 		self.debug('strmPath: ' + strmPath)
 		self.debug('pluginUrl: ' + pluginUrl)
 		
+		self.videoDB = VideoDatabase()
+		self.db = self.videoDB.create_connection()
 		try:
-			self.videoDB = VideoDatabase()
-			self.db = self.videoDB.create_connection()
 
 			
 			pluginItem = self.getFileItem(pluginUrl)
@@ -130,9 +136,11 @@ class KodiDB(object):
 	def CopyWatchedStatus(self, pluginItem, strmItem ):
 		cur = self.db.cursor()
 
-		sql = 'UPDATE files'
-		sql += ' SET playCount = ' + str(pluginItem['playCount'])
-		sql += ' WHERE idFile == ' + str(strmItem['idFile'])
+		sql = 	'UPDATE files'
+		sql += 	' SET playCount=' + str(pluginItem['playCount'])
+		sql += 	' WHERE idFile LIKE ' + str(strmItem['idFile'])
+		
+		self.debug('CopyWatchedStatus: ' + sql)
 		
 		cur.execute(sql)
 		self.db.commit()
@@ -145,8 +153,10 @@ class KodiDB(object):
 	def getFileItem(self, strFilename, strPath = None):
 		cur = self.db.cursor()
 		
-		sql = "SELECT idFile, idPath, strFilename, playCount, lastPlayed FROM files WHERE strFilename LIKE '" + strFilename.split('&nfo=')[0] + "%'"
-		cur.execute(sql, ())
+		sql = 	"SELECT idFile, idPath, strFilename, playCount, lastPlayed " + \
+				"FROM files WHERE strFilename " + \
+				"LIKE '" + strFilename.split('&nfo=')[0] + "%'"
+		cur.execute(sql)
 		files = cur.fetchall()
 		
 		if len(files) == 0:
@@ -164,7 +174,7 @@ class KodiDB(object):
 				ids.append( str( item[1]))
 			sql += ', '.join(ids) + ' )'
 			print sql
-			cur.execute(sql, ())
+			cur.execute(sql)
 			paths = cur.fetchall()
 			for path in paths:
 				#pattern = path[1].replace('\\', '/').replace('[', '\\[').replace(']', '\\]')
@@ -180,11 +190,13 @@ class KodiDB(object):
 	def getPathId(self, strPath):
 		cur = self.db.cursor()
 		
-		sql = "SELECT idPath, strPath FROM path WHERE strPath LIKE '%" + strPath.encode('utf-8') + "%'"
+		sql = 	"SELECT idPath, strPath FROM path " + \
+				"WHERE strPath LIKE '%" + strPath.encode('utf-8') + "%'"
 		print sql
-		cur.execute(sql, ())
+		cur.execute(sql)
 		return cur.fetchall()
 		
 	def getFileDataById(self, fileId):
 		return
+		
 		
