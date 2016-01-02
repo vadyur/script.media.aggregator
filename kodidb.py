@@ -95,15 +95,10 @@ class VideoDatabase(object):
 	
 class KodiDB(object):
 	
-	videotype = 'movie'
-	
 	def debug(self, msg):
 		if isinstance(msg, unicode):
 			msg = msg.encode('utf-8')
-		#try:
 		print '[KodiDB] %s' % msg
-		#except:
-		#	pass
 	
 	def __init__(self, strmName, strmPath, pluginUrl):
 		
@@ -111,29 +106,48 @@ class KodiDB(object):
 		self.debug('strmPath: ' + strmPath)
 		self.debug('pluginUrl: ' + pluginUrl)
 		
+		self.timeOffset	= 0
+		
+		self.strmName 	= strmName
+		self.strmPath 	= strmPath
+		self.pluginUrl 	= pluginUrl
+		
 		self.videoDB = VideoDatabase()
+	
+	def PlayerPreProccessing(self):
+		xbmc.sleep(1000)
 		self.db = self.videoDB.create_connection()
 		try:
-
-			
-			pluginItem = self.getFileItem(pluginUrl)
+			self.debug('PlayerPreProccessing: ')
+			strmItem = self.getFileItem(self.strmName, self.strmPath)
+			print strmItem
+			bookmarkItem = self.getBookmarkItem(strmItem['idFile'])
+			print bookmarkItem
+			self.timeOffset = bookmarkItem['timeInSeconds'] if bookmarkItem != None else 0
+			self.debug('timeOffset: ' + str(self.timeOffset / 60) )
+		finally:
+			self.db.close()
+	
+	def PlayerPostProccessing(self):
+		self.db = self.videoDB.create_connection()
+		try:
+			pluginItem = self.getFileItem(self.pluginUrl)
 			print pluginItem
-			strmItem = self.getFileItem(strmName, strmPath)
+			strmItem = self.getFileItem(self.strmName, self.strmPath)
 			print strmItem
 			
 			self.CopyWatchedStatus(pluginItem, strmItem)
-				
-			'''
-			path_ids = self.getPathId(strmPath)
-			for path in path_ids:
-				self.debug('path_id(strm): ' + str(path))
-			'''
+			self.ChangeBookmarkId(pluginItem, strmItem)
 
 		finally:
 			self.db.close()
 		
 		
 	def CopyWatchedStatus(self, pluginItem, strmItem ):
+	
+		if pluginItem['playCount'] is None or strmItem['idFile'] is None:
+			return
+		
 		cur = self.db.cursor()
 
 		sql = 	'UPDATE files'
@@ -145,10 +159,28 @@ class KodiDB(object):
 		cur.execute(sql)
 		self.db.commit()
 		
-		return
+	def ChangeBookmarkId(self, pluginItem, strmItem ):
+		if strmItem['idFile'] is None or pluginItem['idFile'] is None:
+			return
+	
+		cur = self.db.cursor()
+
+		sql =  'UPDATE bookmark SET idFile=' + str(strmItem['idFile'])
+		sql += ' WHERE idFile LIKE ' +  str(pluginItem['idFile'])
+		self.debug('ChangeBookmarkId: ' + sql)
 		
-	def ChangeBookmarkId(self):
-		return
+		cur.execute(sql)
+		self.db.commit()
+		
+	def getBookmarkItem(self, idFile):
+		cur = self.db.cursor()
+		sql =	"SELECT idBookmark, idFile, timeInSeconds, totalTimeInSeconds " + \
+				"FROM bookmark WHERE idFile LIKE " + str(idFile)
+		cur.execute(sql)
+		bookmarks = cur.fetchall()
+		for item in bookmarks:
+			self.debug('Bookmark: ' + item.__repr__())
+			return { 'idBookmark': item[0], 'idFile': item[1], 'timeInSeconds': item[2], 'totalTimeInSeconds': item[3] }
 		
 	def getFileItem(self, strFilename, strPath = None):
 		cur = self.db.cursor()

@@ -161,6 +161,15 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		else:
 			list_item = xbmcgui.ListItem(path=playable_url)
 			
+		params = get_params()
+		rel_path = urllib.unquote(params['path']).decode('utf-8')
+		filename = urllib.unquote(params['nfo']).decode('utf-8')
+		
+		k_db = KodiDB(	filename.replace(u'.nfo', u'.strm'), \
+						rel_path,
+						sys.argv[0] + sys.argv[2])
+		k_db.PlayerPreProccessing()
+			
 		xbmc_player = xbmc.Player()
 		xbmcplugin.setResolvedUrl(handle, True, list_item)
 	
@@ -176,16 +185,9 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		print '!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!'
 		
 		xbmc.sleep(1000)
+		k_db.PlayerPostProccessing()
 		
-		print dir(list_item)
 		
-		params = get_params()
-		rel_path = urllib.unquote(params['path']).decode('utf-8')
-		filename = urllib.unquote(params['nfo']).decode('utf-8')
-		
-		k_db = KodiDB(	filename.replace(u'.nfo', u'.strm'), \
-						rel_path,
-						sys.argv[0] + sys.argv[2])
 	
 	except TPError as e:
 		print e
