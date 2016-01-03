@@ -119,25 +119,28 @@ class KodiDB(object):
 		self.db = self.videoDB.create_connection()
 		try:
 			self.debug('PlayerPreProccessing: ')
-			strmItem = self.getFileItem(self.strmName, self.strmPath)
-			print strmItem
-			bookmarkItem = self.getBookmarkItem(strmItem['idFile'])
-			print bookmarkItem
+			#strmItem = self.getFileItem(self.strmName, self.strmPath)
+			#self.debug('\tstrmItem = ' + str(strmItem))
+			pluginItem = self.getFileItem(self.pluginUrl)
+			self.debug('\tpluginItem = ' + str(pluginItem))
+			bookmarkItem = self.getBookmarkItem(pluginItem['idFile'])
+			self.debug('\tbookmarkItem = ' + str(bookmarkItem))
 			self.timeOffset = bookmarkItem['timeInSeconds'] if bookmarkItem != None else 0
-			self.debug('timeOffset: ' + str(self.timeOffset / 60) )
+			self.debug('\ttimeOffset: ' + str(self.timeOffset / 60) )
 		finally:
 			self.db.close()
 	
 	def PlayerPostProccessing(self):
 		self.db = self.videoDB.create_connection()
 		try:
+			self.debug('PlayerPostProccessing: ')
 			pluginItem = self.getFileItem(self.pluginUrl)
-			print pluginItem
+			self.debug('\tpluginItem = ' + str(pluginItem))
 			strmItem = self.getFileItem(self.strmName, self.strmPath)
-			print strmItem
+			self.debug('\tstrmItem = ' + str(strmItem))
 			
 			self.CopyWatchedStatus(pluginItem, strmItem)
-			self.ChangeBookmarkId(pluginItem, strmItem)
+			##self.ChangeBookmarkId(pluginItem, strmItem)
 
 		finally:
 			self.db.close()
@@ -145,6 +148,9 @@ class KodiDB(object):
 		
 	def CopyWatchedStatus(self, pluginItem, strmItem ):
 	
+		if pluginItem is None or strmItem is None:
+			return
+
 		if pluginItem['playCount'] is None or strmItem['idFile'] is None:
 			return
 		
@@ -181,6 +187,8 @@ class KodiDB(object):
 		for item in bookmarks:
 			self.debug('Bookmark: ' + item.__repr__())
 			return { 'idBookmark': item[0], 'idFile': item[1], 'timeInSeconds': item[2], 'totalTimeInSeconds': item[3] }
+			
+		return None
 		
 	def getFileItem(self, strFilename, strPath = None):
 		cur = self.db.cursor()
@@ -188,11 +196,12 @@ class KodiDB(object):
 		sql = 	"SELECT idFile, idPath, strFilename, playCount, lastPlayed " + \
 				"FROM files WHERE strFilename " + \
 				"LIKE '" + strFilename.split('&nfo=')[0] + "%'"
+		self.debug(sql)
 		cur.execute(sql)
 		files = cur.fetchall()
 		
 		if len(files) == 0:
-			print 'len(files) == 0'
+			self.debug('getFileItem: len(files) == 0')
 			return None
 
 		if strPath is None:
@@ -205,7 +214,7 @@ class KodiDB(object):
 			for item in files:
 				ids.append( str( item[1]))
 			sql += ', '.join(ids) + ' )'
-			print sql
+			self.debug(sql)
 			cur.execute(sql)
 			paths = cur.fetchall()
 			for path in paths:
@@ -216,7 +225,7 @@ class KodiDB(object):
 							self.debug('File: ' + item.__repr__())
 							return { 'idFile': item[0], 'idPath': item[1], 'strFilename': item[2], 'playCount': item[3], 'lastPlayed': item[4] }
 		
-		print 'return None'
+		self.debug('return None')
 		return None
 		
 	def getPathId(self, strPath):
@@ -224,7 +233,7 @@ class KodiDB(object):
 		
 		sql = 	"SELECT idPath, strPath FROM path " + \
 				"WHERE strPath LIKE '%" + strPath.encode('utf-8') + "%'"
-		print sql
+		self.debug(sql)
 		cur.execute(sql)
 		return cur.fetchall()
 		

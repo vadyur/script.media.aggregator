@@ -15,7 +15,6 @@ _HD_PORTAL_URL = _BASE_URL + 'portal.php?c=11'
 MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
 
 _NEXT_PAGE_SUFFIX='&start='
-_ITEMS_ON_PAGE=15
 
 class DescriptionParser(DescriptionParserBase):
 	
@@ -224,8 +223,10 @@ def write_movies(content, path, settings, tracker = False):
 	filesystem.chdir(path)
 	# ---------------------------------------------
 	if tracker:
+		_ITEMS_ON_PAGE = 50
 		enumerator = TrackerPostsEnumerator()
 	else:
+		_ITEMS_ON_PAGE = 15
 		enumerator = PostsEnumerator()
 	for i in range(settings.nnmclub_pages):
 		enumerator.process_page(content + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))

@@ -178,6 +178,9 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 			
 		print '!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!'
 		
+		if k_db.timeOffset != 0:
+			xbmc_player.seekTime(int(k_db.timeOffset))
+		
 		# Wait until playing finished or abort requested
 		while not xbmc.abortRequested and xbmc_player.isPlaying():
 			xbmc.sleep(1000)
