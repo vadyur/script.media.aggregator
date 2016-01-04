@@ -83,8 +83,12 @@ class DescriptionParser(DescriptionParserBase):
 				break
 				
 		if a != None:
-			self.__link = _BASE_URL + a['href']
-			print self.__link
+			try:
+				self.__link = _BASE_URL + a['href']
+				print self.__link
+			except:
+				#print a.__repr__()
+				return False
 
 			full_title = a.get_text().strip(' \t\n\r')
 			print 'full_title: ' + full_title.encode('utf-8')
@@ -305,6 +309,6 @@ def download_torrent(url, path, settings):
 	
 
 if __name__ == '__main__':
-	settings = Settings('../../..', nnmclub_pages = 20)
+	settings = Settings('../../..', nnmclub_pages = 2)
 	run(settings)
 	
