@@ -94,7 +94,10 @@ class MovieAPI:
 						if u'Высокое качество' in a_cont.get_text():
 							trailer = a_cont['href']
 							trailer = re.search('link=(.+?)$', trailer).group(1)
-							print 'trailer: ' + trailer
+							try:
+								print 'trailer: ' + trailer
+							except:
+								pass
 							return trailer
 		return None
 		
