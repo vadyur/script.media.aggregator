@@ -48,6 +48,9 @@ def get_rank(full_title, parser, settings):
 	if '720p' in full_title:
 		res_v = 720
 		
+	if '2160p' in full_title:
+		res_v = 2160
+		
 	if abs(preffered_resolution_v - res_v) > 0:
 		rank += 2
 		conditions += 1
