@@ -87,6 +87,9 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		return
 
 	try:
+		info_dialog = xbmcgui.DialogProgress()
+		info_dialog.create('Media Aggregator')
+		
 		if settings.torrent_player == 'YATP':
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
@@ -102,6 +105,8 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 				
 			if xbmc.abortRequested:
 				return
+				
+			info_dialog.update(i, u'Проверяем файлы', ' ', ' ')
 
 			time.sleep(1)
 			
@@ -132,9 +137,7 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 			
 		player.StartBufferFile(index)
 		
-		info_dialog = xbmcgui.DialogProgress()
-		info_dialog.create('Media Aggregator: буфферизация')
-		info_dialog.update(0)
+		info_dialog.update(0, 'Media Aggregator: буфферизация')
 
 		while not info_dialog.iscanceled():
 			if player.CheckBufferComplete():
@@ -142,8 +145,8 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 			
 			percent = player.GetBufferingProgress()
 			if percent >= 0:
-				info_dialog.update(percent)
-			
+				player.updateDialogInfo(percent, info_dialog)
+				
 			time.sleep(1)
 			
 		canceled = info_dialog.iscanceled()

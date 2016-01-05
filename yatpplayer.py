@@ -81,6 +81,9 @@ class YATPPlayer(TorrentPlayer):
 		print str(result) + '%'
 		return result
 		
+	def updateDialogInfo(self, progress, progressBar):
+		progressBar.update(progress)
+		
 	def GetStreamURL(self, playable_item):
 		'''
 		As soon as check_buffering_complete returns true, construct a playable URL by combining a Kodi machine hostname 
