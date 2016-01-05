@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import requests, urllib
 from base import TorrentPlayer
 
@@ -45,7 +47,8 @@ class YATPPlayer(TorrentPlayer):
 		torr_data = r.json()['result']
 		print torr_data
 		
-		info_hash = torr_data['info_hash']
+		self.info_hash = torr_data['info_hash']
+		
 		
 		index = 0
 		for file in torr_data['files']:
@@ -53,7 +56,7 @@ class YATPPlayer(TorrentPlayer):
 				files.append({'index': index, 'name': file[0], 'size': long(file[1])})
 			index = index + 1
 			
-		return { 'info_hash': info_hash, 'files': files }
+		return { 'info_hash': self.info_hash, 'files': files }
 		
 	def StartBufferFile(self, fileIndex):
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "buffer_file", "params": {"file_index": fileIndex}})
@@ -82,7 +85,19 @@ class YATPPlayer(TorrentPlayer):
 		return result
 		
 	def updateDialogInfo(self, progress, progressBar):
-		progressBar.update(progress)
+		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.info_hash }})
+		
+		try:
+			torrent_info = r.json()['result']
+			#{u'dl_speed': 5429, u'name': u'Prezhde chem my 2014 BDRip 1080p.mkv', u'total_download': 219, u'info_hash': u'11f5a68852de7e2b3a7300adf4522425cb26bf7b', u'completed_time': u'-', u'state': u'downloading', u'ul_speed': 458, u'added_time': u'2016-01-05 19:47:15', u'progress': 82, u'total_upload': 7, u'num_peers': 50, u'num_seeds': 43, u'size': 8151}
+			progressBar.update(progress,
+								   u"Загружено: {0} МБ / {1} МБ.".format(torrent_info['total_download'], torrent_info['size']) + '        ' +
+								   u"Скорость загрузки: {0} КБ/с        Скорость отдачи: {1} КБ/с.".format(torrent_info['dl_speed'], torrent_info['ul_speed']),
+								   u"Сидов: {0} Пиров: {1}.".format(torrent_info['num_seeds'], torrent_info['num_peers']))
+								   
+			#print '[YATP] updateDialogInfo: ' + str(r.json())
+		except:
+			progressBar.update(progress)
 		
 	def GetStreamURL(self, playable_item):
 		'''
