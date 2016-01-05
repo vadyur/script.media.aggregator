@@ -12,6 +12,7 @@ from yatpplayer import *
 from torrent2httpplayer import *
 from torrent2http import Error as TPError
 from kodidb import *
+from afteractions import *
 
 # Определяем параметры плагина
 _ADDON_NAME =   'script.media.aggregator'
@@ -204,6 +205,8 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		info_dialog.close()
 	except:
 		pass
+		
+	#DoAction(path, playable_item.get('name'), nfoReader.getPath())
 	
 		
 def main():

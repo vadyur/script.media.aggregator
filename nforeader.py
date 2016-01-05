@@ -24,6 +24,8 @@ class NFOReader(object):
 		except IOError as e:
 			print "NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror)		
 
+	def getPath(self):
+		return self.__path
 		
 	@staticmethod
 	def make_path(base_path, rel_path, filename):

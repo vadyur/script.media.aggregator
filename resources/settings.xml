@@ -29,6 +29,11 @@
         <setting id="listen_port"       type="number"   label="Порт для входящих соединений" default="6881"    visible="eq(-6,torrent2http)"/>
         <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
         <setting id="pre_buffer_bytes"  type="slider"   label="Загружаемый объем файла до начала просмотра, Мб" default="25"      visible="eq(-8,torrent2http)"  range="5,5,50" option="int"/>
+		<setting label="Действия после просмотра" type="lsep"/>
+		<setting label="Загруженные файлы" id="download_files_action" type="enum" values="ничего|копировать в|переместить в" default="ничего" />
+		<setting label="Новый путь"	type="folder" id="download_files_path"	default="" visible="!eq(-1,0)" />
+		<setting label="Торрент файл" id="torrent_files_action" type="enum" values="ничего|копировать" default="0" />
+		<setting label="Путь для торрент файлов"	type="folder" id="torrent_files_path"	default="" visible="!eq(-1,0)" />
 	</category>
 	
     <category label="Anidub">
