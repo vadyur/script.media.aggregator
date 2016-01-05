@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from torrent2http import State, Engine, MediaType, Encryption
 #from contextlib import closing
 from base import TorrentPlayer
@@ -178,6 +180,22 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		
 	
 		return progress
+
+	def updateDialogInfo(self, progress, progressBar):
+		f_status = self.engine.file_status(self.file_id)
+		status = self.engine.status()
+		
+		if f_status is None or status is None:
+			return
+		
+		dialogText = u'Загружено: ' + "%d MB / %d MB" % \
+													(int(f_status.download / 1024 / 1024), int(f_status.size / 1024 / 1024))
+		peersText = u' [%s: %s; %s: %s]' % (u'Сидов', status.num_seeds, u'Пиров', status.num_peers)
+		speedsText = u'%s: %d Mbit/s; %s: %d Mbit/s' % (
+			u'Загрузка', int(status.download_rate / 1024 * 8),
+			u'Отдача', int(status.upload_rate / 1024 * 8))
+		progressBar.update(progress, dialogText + '          ' + peersText, speedsText)
+
 		
 	def GetStreamURL(self, playable_item):
 		if self.download_path is None:
