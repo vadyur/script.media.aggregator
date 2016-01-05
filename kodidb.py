@@ -69,6 +69,21 @@ class VideoDatabase(object):
 							self.DB_USER is not None and \
 							self.DB_PASS is not None and \
 							self.DB_NAME is not None:
+				'''			
+				conn = mysql.connector.connect(	user=self.DB_USER, \
+											password=self.DB_PASS, \
+											host=self.DB_ADDRESS, \
+											port=self.DB_PORT)
+				try:
+					cur = conn.cursor()
+					cur.execute('SHOW DATABASES')
+					bases = cur.fetchall()
+					for base in bases:
+						print base
+					
+				finally:
+					conn.close()
+				'''
 		  
 				xbmc.log('kodidb: Service: Loading MySQL as DB engine')
 				self.DB = 'mysql'
@@ -173,6 +188,9 @@ class KodiDB(object):
 		self.db.commit()
 		
 	def ChangeBookmarkId(self, pluginItem, strmItem ):
+		if pluginItem is None or strmItem is None:
+			return
+			
 		if strmItem['idFile'] is None or pluginItem['idFile'] is None:
 			return
 	
