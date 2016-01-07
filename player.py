@@ -157,6 +157,13 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			if time.time() > start_time + start_play_max_time:
 				return play_torrent_variant.resultTryNext
 				
+			if time.time() > start_time + search_seed_max_time:
+				info = player.GetTorrentInfo()
+				if 'num_seeds' in info:
+					if info['num_seeds'] == 0:
+						print 'Seeds not found'
+						return play_torrent_variant.resultTryNext
+				
 			xbmc.sleep(1000)
 			
 		canceled = info_dialog.iscanceled()
