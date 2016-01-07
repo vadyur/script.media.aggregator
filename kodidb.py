@@ -228,7 +228,7 @@ class KodiDB(object):
 		
 		sql = 	"SELECT idFile, idPath, strFilename, playCount, lastPlayed " + \
 				"FROM files WHERE strFilename" + \
-				"='" + strFilename	+ "'" #.split('&nfo=')[0] + "%'"
+				"='" + strFilename.replace("'", "''")	+ "'" #.split('&nfo=')[0] + "%'"
 		self.debug(sql, lineno())
 		cur.execute(sql)
 		files = cur.fetchall()
@@ -265,7 +265,7 @@ class KodiDB(object):
 		cur = self.db.cursor()
 		
 		sql = 	"SELECT idPath, strPath FROM path " + \
-				"WHERE strPath LIKE '%" + strPath.encode('utf-8') + "%'"
+				"WHERE strPath LIKE '%" + strPath.encode('utf-8').replace("'", "''") + "%'"
 		self.debug(sql, lineno())
 		cur.execute(sql)
 		return cur.fetchall()
