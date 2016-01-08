@@ -210,6 +210,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		
 		xbmc.sleep(1000)
 		k_db.PlayerPostProccessing()
+		
+		xbmc.executebuiltin('Container.Refresh')
 	
 	except TPError as e:
 		print e
