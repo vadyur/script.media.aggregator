@@ -64,8 +64,8 @@ class NFOWriter:
 			ET.SubElement(parent, tagname).text = unicode(value)
 		
 	def add_element_split(self, parent, tagname, parser):
-		for i in parser.get_value(tagname).split(', '):
-			ET.SubElement(parent, tagname).text = i
+		for i in parser.get_value(tagname).split(','):
+			ET.SubElement(parent, tagname).text = i.strip()
 			
 	def make_tvshow_info(self, parent, tvshow_api, desc_parser):
 		if tvshow_api==None:
@@ -98,6 +98,11 @@ class NFOWriter:
 			ET.SubElement(parent, 'mpaa').text = movie_api.Rated()
 			print 'Collection: ' + movie_api.Collection().encode('utf-8')
 			ET.SubElement(parent, 'set').text = movie_api.Collection()
+			
+			for tag in movie_api.Tags():
+				ET.SubElement(parent, 'tag').text = tag
+				print 'tag: ' + tag.encode('utf-8')
+			
 		except:
 			pass
 		
