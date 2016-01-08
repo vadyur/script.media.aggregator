@@ -5,7 +5,7 @@ from settings import Settings
 from base import *
 from nfowriter import *
 from strmwriter import *
-import requests, time
+import requests, time, countries
 
 
 _RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
@@ -122,13 +122,13 @@ class DescriptionParser(DescriptionParserBase):
 						tag = self.get_tag(text)
 						if tag != '':
 							if tag != u'plot':
-								self._dict[tag] = unicode(span.next_sibling).strip()
+								self._dict[tag] = base.striphtml( unicode(span.next_sibling).strip() )
 							else:
-								self._dict[tag] = unicode(span.next_sibling.next_sibling).strip()
+								self._dict[tag] = base.striphtml( unicode(span.next_sibling.next_sibling).strip() )
 							print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8'))
 					except: pass
 				if 'genre' in self._dict:
-					self._dict['genre'] = self._dict['genre'].lower()
+					self._dict['genre'] = self._dict['genre'].lower().replace('.','')
 
 				count_id = 0
 				for a in self.soup.select('#imdb_id'):
@@ -153,10 +153,22 @@ class DescriptionParser(DescriptionParserBase):
 				
 				if 'country_studio' in self._dict:
 					parse_string = self._dict['country_studio']
+					items = re.split(r'[/,|\(\);\\]', parse_string.replace(' - ', '/'))
+					cntry = []
+					stdio = []
+					for s in items:
+						s = s.strip()
+						if len(s) == 0:
+							continue
+						cntry.append(s) if countries.isCountry(s) else stdio.append(s)
+					self._dict['country'] = ', '.join(cntry)
+					self._dict['studio'] = ', '.join(stdio)
+					'''
 					parts = parse_string.split(' / ')
 					self._dict['country'] = parts[0]
 					if len(parts) > 1:
 						self._dict['studio'] = parts[1]
+					'''
 
 				if self.settings:
 					if self.settings.use_kinopoisk:
@@ -309,6 +321,6 @@ def download_torrent(url, path, settings):
 	
 
 if __name__ == '__main__':
-	settings = Settings('../../..', nnmclub_pages = 2)
+	settings = Settings('../../..', nnmclub_pages = 20)
 	run(settings)
 	

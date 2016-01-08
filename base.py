@@ -27,6 +27,9 @@ def clean_html(page):
 	#print page.encode('utf-8')
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 	
+def striphtml(data):
+	p = re.compile(r'<.*?>')
+	return p.sub('', data)
 
 def get_rank(full_title, parser, settings):
 	

@@ -51,6 +51,20 @@ class MovieAPI:
 			pass
 			
 		return u''
+		
+	def Tags(self):
+		tags = []
+		try:
+			if u'tagline' in self.tmdb_data:
+				tagline = self.tmdb_data[u'tagline']
+				for tag in tagline.split(','):
+					tag = tag.strip()
+					if len(tag) > 0:
+						tags.append(tag)
+		except:
+			pass
+			
+		return tags
 
 	def __getitem__(self, key):
 		return self.tmdb_data[key]
