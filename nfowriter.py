@@ -81,10 +81,14 @@ class NFOWriter:
 				thumb = ET.SubElement(fanart, "thumb")
 				thumb.text = item
 		
-	def make_imdbid_info(self, parent, movie_api):
+	def make_imdbid_info(self, parent, movie_api, tn):
 		try:
 			thumb = ET.SubElement(parent, "thumb", aspect='poster', preview='http://image.tmdb.org/t/p/w500' + movie_api[u'poster_path'])
 			thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'poster_path']
+			
+			if tn != '':
+				ET.SubElement(parent, "thumb", aspect='poster', preview=tn).text = tn
+			
 			
 			fanart = ET.SubElement(parent, 'fanart')
 			thumb = ET.SubElement(fanart, "thumb", preview='http://image.tmdb.org/t/p/w780' + movie_api[u'backdrop_path'])
@@ -104,7 +108,9 @@ class NFOWriter:
 				print 'tag: ' + tag.encode('utf-8')
 			
 		except:
-			pass
+			return False
+			
+		return True
 		
 	def write_episode(self, episode, filename, tvshow_api=None):
 		root_tag='episodedetails'
@@ -167,13 +173,14 @@ class NFOWriter:
 		self.add_actors(root, desc_parser)
 		self.add_trailer(root, desc_parser)
 			
+		tn = desc_parser.get_value('thumbnail')
 		if imdb_id != '':
 			movie_api = desc_parser.movie_api()
-			self.make_imdbid_info(root, movie_api) 
+			if self.make_imdbid_info(root, movie_api, tn):
+				tn = ''
 		elif root_tag=='tvshow':
 			self.make_tvshow_info(root, tvshow_api, desc_parser)
 				
-		tn = desc_parser.get_value('thumbnail')
 		if tn != '':
 			thumb = ET.SubElement(root, "thumb", aspect='poster', preview=tn)
 			thumb.text = tn
