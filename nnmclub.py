@@ -144,10 +144,11 @@ class DescriptionParser(DescriptionParserBase):
 				if count_id > 1:
 					return False
 
-				for img in self.soup.select('img.postImg'):
+				for img in self.soup.select('var.postImg'): 		#('img.postImg'):
 					try:
-						self._dict['thumbnail'] = img['src']
-						print self._dict['thumbnail']
+						self._dict['thumbnail'] = img['title']
+						print '!!!!!!!!!!!!!!thumbnail: ' + self._dict['thumbnail']
+						break
 					except:
 						pass
 				

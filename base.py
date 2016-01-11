@@ -196,10 +196,15 @@ class Informer(object):
 	def filename_with(self, title, originaltitle, year):
 		if title == originaltitle:
 			filename = title
+		elif title == '' and originaltitle != '':
+			filename = originaltitle
+		elif title != '' and originaltitle == '':
+			filename = title
 		else:
 			filename = title + ' # ' + originaltitle 
 			
-		filename += ' (' + str(year) + ')'
+		if year != None or year != '' or year != 0:
+			filename += ' (' + str(year) + ')'
 		
 		return filename
 		
@@ -257,9 +262,9 @@ class DescriptionParserBase(Informer):
 		except:
 			pass
 			
-		title 			= self._dict['title']
-		originaltitle 	= self._dict['originaltitle']
-		year			= self._dict['year']
+		title 			= self._dict.get('title', '')
+		originaltitle 	= self._dict.get('originaltitle', '')
+		year			= self._dict.get('year', '')
 		
 		return self.filename_with(title, originaltitle, year)
 		#return filename
