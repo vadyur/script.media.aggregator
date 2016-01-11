@@ -87,8 +87,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	play_torrent_variant.resultTryNext	= 'TryNext'
 	
 	start_time = time.time()
-	start_play_max_time 	= 60	# 60 seconds
-	search_seed_max_time	= 15	# 15 seconds
+	start_play_max_time 	= int(_addon.getSetting('start_play_max_time'))		# default 60 seconds
+	search_seed_max_time	= int(_addon.getSetting('search_seed_max_time'))	# default 15 seconds
 	
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
@@ -250,6 +250,24 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 		
 	return None
 	
+def openInTorrenter(nfoReader):	
+	try:
+		xbmcaddon.Addon(id = 'plugin.video.torrenter')
+	except:
+		return
+	
+	if not nfoReader is None:
+		info = nfoReader.get_info()
+		ctitle = None
+		if 'title' in info:
+			ctitle = info['title']
+		elif 'originaltitle' in info:
+			ctitle = info['originaltitle']
+		if not ctitle is None:
+			uri = '%s?%s' % ('plugin://plugin.video.torrenter/', urllib.urlencode({'action':'search','url': ctitle.encode('utf-8')}))
+			print 'Search in torrenter: ' + uri
+			xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+	
 def play_torrent(path, episodeNumber, settings, params):
 	info_dialog = xbmcgui.DialogProgress()
 	info_dialog.create('Media Aggregator')
@@ -261,8 +279,9 @@ def play_torrent(path, episodeNumber, settings, params):
 	nfoFullPath 	= NFOReader.make_path(base_path, rel_path, nfoFilename)
 	strmFilename 	= nfoFullPath.replace('.nfo', '.strm')
 	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
-
-	if play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params) == play_torrent_variant.resultTryNext:
+	
+	play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
+	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
 		print strmFilename.encode('utf-8')
 		links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename)
 		tryCount = 1
@@ -289,13 +308,16 @@ def play_torrent(path, episodeNumber, settings, params):
 			if path_or_url_and_episode is None:
 				continue
 			
-			if play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params) != play_torrent_variant.resultTryNext:
+			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params)
+			if play_torrent_variant_result != play_torrent_variant.resultTryNext:
 				break
-		
-			
+
 	info_dialog.update(0, '', '')
 	info_dialog.close()
 
+	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
+		# Open in torrenter
+		openInTorrenter(nfoReader)
 	
 def main():
 	params 		= get_params()
