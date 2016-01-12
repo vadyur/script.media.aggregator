@@ -195,6 +195,27 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			u'Загрузка', int(status.download_rate / 1024 * 8),
 			u'Отдача', int(status.upload_rate / 1024 * 8))
 		progressBar.update(progress, dialogText + '          ' + peersText, speedsText)
+		
+	def GetTorrentInfo(self):
+		f_status = self.engine.file_status(self.file_id)
+		status = self.engine.status()
+		
+		if f_status is None or status is None:
+			return None
+
+		try:
+			return { 	'downloaded' : 	int(f_status.download / 1024 / 1024),
+						'size' : 		int(f_status.size / 1024 / 1024),
+						'dl_speed' : 	int(status.download_rate),
+						'ul_speed' :	int(status.upload_rate),
+						'num_seeds' :	status.num_seeds, 
+						'num_peers' :	status.num_peers
+					}
+		except:
+			pass
+			
+		return None
+		
 
 		
 	def GetStreamURL(self, playable_item):

@@ -12,6 +12,7 @@ from yatpplayer import *
 from torrent2httpplayer import *
 from torrent2http import Error as TPError
 from kodidb import *
+from base import STRMWriterBase
 
 # Определяем параметры плагина
 _ADDON_NAME =   'script.media.aggregator'
@@ -79,17 +80,23 @@ def load_settings():
 	#print settings
 	return settings
 	
-def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
+def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params):
+	
+	play_torrent_variant.resultOK 		= 'OK'
+	play_torrent_variant.resultCancel 	= 'Cancel'
+	play_torrent_variant.resultTryNext	= 'TryNext'
+	
+	start_time = time.time()
+	start_play_max_time 	= int(_addon.getSetting('start_play_max_time'))		# default 60 seconds
+	search_seed_max_time	= int(_addon.getSetting('search_seed_max_time'))	# default 15 seconds
+	
 	if episodeNumber != None:
 		episodeNumber = int(episodeNumber)
 
 	if settings == None:
-		return
+		return play_torrent_variant.resultCancel
 
 	try:
-		info_dialog = xbmcgui.DialogProgress()
-		info_dialog.create('Media Aggregator')
-		
 		if settings.torrent_player == 'YATP':
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
@@ -98,21 +105,21 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		player.AddTorrent(path)
 
 		added = False
-		for i in range(200):
+		for i in range(start_play_max_time):
 			if player.CheckTorrentAdded():
 				added = True
 				break
 				
 			if xbmc.abortRequested:
-				return
+				return play_torrent_variant.resultCancel
 				
 			info_dialog.update(i, u'Проверяем файлы', ' ', ' ')
 
-			time.sleep(1)
+			xbmc.sleep(1000)
 			
 		if not added:
 			print 'Torrent not added'
-			return False
+			return play_torrent_variant.resultTryNext
 			
 		files = player.GetLastTorrentData()['files']
 		print files
@@ -147,13 +154,23 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 			if percent >= 0:
 				player.updateDialogInfo(percent, info_dialog)
 				
-			time.sleep(1)
+			if time.time() > start_time + start_play_max_time:
+				return play_torrent_variant.resultTryNext
+				
+			if time.time() > start_time + search_seed_max_time:
+				info = player.GetTorrentInfo()
+				if 'num_seeds' in info:
+					if info['num_seeds'] == 0:
+						print 'Seeds not found'
+						return play_torrent_variant.resultTryNext
+				
+			xbmc.sleep(1000)
 			
 		canceled = info_dialog.iscanceled()
 		info_dialog.update(0)
 		info_dialog.close()
 		if canceled:
-			return False
+			return play_torrent_variant.resultCancel
 		
 		playable_url 	= player.GetStreamURL(playable_item)
 		print playable_url
@@ -164,7 +181,6 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		else:
 			list_item = xbmcgui.ListItem(path=playable_url)
 			
-		params = get_params()
 		rel_path = urllib.unquote(params['path']).decode('utf-8')
 		filename = urllib.unquote(params['nfo']).decode('utf-8')
 		
@@ -195,20 +211,114 @@ def play_torrent(path, episodeNumber = None, nfoReader = None, settings = None):
 		xbmc.sleep(1000)
 		k_db.PlayerPostProccessing()
 		
-		
+		xbmc.executebuiltin('Container.Refresh')
 	
 	except TPError as e:
 		print e
+		return play_torrent_variant.resultTryNext
+		
 	finally:
 		player.close()
 
-	try:	
-		info_dialog.update(0)
-		info_dialog.close()
-	except:
-		pass
+	return play_torrent_variant.resultOK
 	
+def get_path_or_url_and_episode(settings, params, torrent_source):
+	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+	if 'anidub' in torrent_source:
+		path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
+		print path
+		if anidub.download_torrent(torrent_source, path, settings):
+			return { 'path_or_url': path, 'episode': params.get('episodeNumber', None) }
+	elif 'hdclub' in torrent_source:
+		url = urllib.unquote(torrent_source).replace('details.php', 'download.php')
+		if not 'passkey' in url:
+			url += '&passkey=' + _addon.getSetting('hdclub_passkey')
 		
+		return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
+	elif 'nnm-club' in torrent_source:
+		path = filesystem.join(tempPath, u'temp.nnm-club.media-aggregator.torrent')
+		if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(torrent_source, path, settings):
+			print 'Download torrent %s' % path
+			return { 'path_or_url': path, 'episode': params.get('episodeNumber', None) }
+		else:
+			url = nnmclub.get_magnet_link(urllib.unquote(torrent_source))
+			print 'Download magnet %s' % url
+			return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
+	else:
+		url = urllib.unquote(torrent_source)
+		return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
+		
+	return None
+	
+def openInTorrenter(nfoReader):	
+	try:
+		xbmcaddon.Addon(id = 'plugin.video.torrenter')
+	except:
+		return
+	
+	if not nfoReader is None:
+		info = nfoReader.get_info()
+		ctitle = None
+		if 'title' in info:
+			ctitle = info['title']
+		elif 'originaltitle' in info:
+			ctitle = info['originaltitle']
+		if not ctitle is None:
+			uri = '%s?%s' % ('plugin://plugin.video.torrenter/', urllib.urlencode({'action':'search','url': ctitle.encode('utf-8')}))
+			print 'Search in torrenter: ' + uri
+			xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+	
+def play_torrent(path, episodeNumber, settings, params):
+	info_dialog = xbmcgui.DialogProgress()
+	info_dialog.create('Media Aggregator')
+	
+	tempPath 		= xbmc.translatePath('special://temp').decode('utf-8')
+	base_path 		= settings.base_path().encode('utf-8')
+	rel_path 		= urllib.unquote(params.get('path', ''))
+	nfoFilename 	= urllib.unquote(params.get('nfo', ''))
+	nfoFullPath 	= NFOReader.make_path(base_path, rel_path, nfoFilename)
+	strmFilename 	= nfoFullPath.replace('.nfo', '.strm')
+	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
+	
+	play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
+	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
+		print strmFilename.encode('utf-8')
+		links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename)
+		tryCount = 1
+		for variant in links_with_ranks:
+			tryCount += 1
+			
+			info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
+			print variant
+			
+			#print "variant['link']=" + variant['link']
+			#print sys.argv[0] + sys.argv[2]
+			if variant['link'] in sys.argv[0] + sys.argv[2]:
+				print "variant skipped"
+				tryCount -= 1
+				continue
+
+			torrent_source = variant['link']
+			try:
+				torrent_source = torrent_source.split('torrent=')[1].split('&')[0]
+			except:
+				continue
+				
+			path_or_url_and_episode = get_path_or_url_and_episode(settings, params, torrent_source)
+			if path_or_url_and_episode is None:
+				continue
+			
+			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params)
+			if play_torrent_variant_result != play_torrent_variant.resultTryNext:
+				break
+
+	info_dialog.update(0, '', '')
+	info_dialog.close()
+
+	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
+		# Open in torrenter
+		openInTorrenter(nfoReader)
+	
 def main():
 	params 		= get_params()
 	print params
@@ -217,39 +327,9 @@ def main():
 	
 	xbmc.log(settings.base_path())
 	if 'torrent' in params:
-		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
-		print tempPath
-		
-		reader = None
-		if 'path' in params and 'nfo' in params:
-			base_path = settings.base_path().encode('utf-8')
-			rel_path = urllib.unquote(params['path'])
-			filename = urllib.unquote(params['nfo'])
-			reader = NFOReader(NFOReader.make_path(base_path, rel_path, filename), tempPath)
-		
-		if 'anidub' in params['torrent']:
-			path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
-			print path
-			if anidub.download_torrent(params['torrent'], path, settings):
-				play_torrent(path, params.get('episodeNumber', None), nfoReader = reader, settings = settings)
-		elif 'hdclub' in params['torrent']:
-			url = urllib.unquote(params['torrent']).replace('details.php', 'download.php')
-			if not 'passkey' in url:
-				url += '&passkey=' + _addon.getSetting('hdclub_passkey')
-			
-			play_torrent(url, nfoReader = reader, settings = settings)
-		elif 'nnm-club' in params['torrent']:
-			path = filesystem.join(tempPath, u'temp.nnm-club.media-aggregator.torrent')
-			if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(params['torrent'], path, settings):
-				print 'Download torrent %s' % path
-				play_torrent(path, nfoReader = reader, settings = settings)
-			else:
-				url = nnmclub.get_magnet_link(urllib.unquote(params['torrent']))
-				print 'Download magnet %s' % url
-				play_torrent(url, nfoReader = reader, settings = settings)
-		else:
-			url = urllib.unquote(params['torrent'])
-			play_torrent(url, nfoReader = reader, settings = settings)
+		path_or_url_and_episode = get_path_or_url_and_episode(settings, params, params['torrent'])
+		if not path_or_url_and_episode is None:
+			play_torrent(path_or_url_and_episode['path_or_url'], path_or_url_and_episode['episode'], settings = settings, params = params)
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()
