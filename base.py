@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from settings import *
 import urllib
 from movieapi import *
+import operator
 
 KB = 1024
 MB = KB * KB
@@ -122,49 +123,61 @@ def get_rank(full_title, parser, settings):
 		return 1
 	
 class STRMWriterBase(object):
-	def make_alternative(self, fname, link, rank = 0):
-		fname_alt = fname + '.alternative'
+	def make_alternative(self, strmFilename, link, rank = 0):
+		strmFilename_alt = strmFilename + '.alternative'
 			
 		s_alt = u''
-		if filesystem.isfile(fname_alt):
-			with filesystem.fopen(fname_alt, "r") as alternative:
+		if filesystem.isfile(strmFilename_alt):
+			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				s_alt = alternative.read().decode('utf-8')
 	
 		if not (link in s_alt):
 			try:
-				with filesystem.fopen(fname_alt, "a+") as alternative:
+				with filesystem.fopen(strmFilename_alt, "a+") as alternative:
 					alternative.write('#rank=' + str(rank) + '\n')
 					alternative.write(link.encode('utf-8') + '\n')
 			except:
 				pass
-				
-	def get_link_with_min_rank(self, fname):
-		fname_alt = fname + '.alternative'
-		rank = 99999
-		link = ''
-		if filesystem.isfile(fname_alt):
-			with filesystem.fopen(fname_alt, "r") as alternative:
+
+	@staticmethod
+	def get_links_with_ranks(strmFilename):
+		strmFilename_alt = strmFilename + '.alternative'
+		items = []
+		if filesystem.isfile(strmFilename_alt):
+			with filesystem.fopen(strmFilename_alt, "r") as alternative:
+				curr_rank = 1
 				while True:
 					line = alternative.readline()
 					if not line:
 						break
 					line = line.decode('utf-8')
+					
 					if u'#rank=' in line:
 						curr_rank = float(line.replace(u'#rank=', u''))
-						if curr_rank < rank:
-							rank = curr_rank
-							line = alternative.readline()
-							if not line:
-								break
-							line = line.decode('utf-8')
-							link = line.replace(u'\r', u'').replace(u'\n', u'')
-		return link
+						
+					if not line.startswith('#'):
+						items.append({'rank': curr_rank, 'link': line.replace(u'\r', u'').replace(u'\n', u'')})
+						curr_rank = 1
+						
+		items.sort(key=operator.itemgetter('rank'))
+		print 'Sorded items'
+		print items
+		return items
+
+	@staticmethod
+	def get_link_with_min_rank(strmFilename):
+		items = STRMWriterBase.get_links_with_ranks(strmFilename)
+						
+		if len(items) == 0:
+			return None
+		else:
+			return items[0]['link']
 		
 	@staticmethod
-	def has_link(fname, link):
-		fname_alt = fname + '.alternative'
-		if filesystem.isfile(fname_alt):
-			with filesystem.fopen(fname_alt, "r") as alternative:
+	def has_link(strmFilename, link):
+		strmFilename_alt = strmFilename + '.alternative'
+		if filesystem.isfile(strmFilename_alt):
+			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				for line in alternative:
 					if link in urllib.unquote(line):
 						return True

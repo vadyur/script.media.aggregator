@@ -8,7 +8,7 @@ class STRMWriter(STRMWriterBase):
 		self.link = link
 		
 	def write(self, filename, episodeNumber = None, rank = 0, settings = None):
-		fname = make_fullpath(filename, u'.strm')
+		strmFilename = make_fullpath(filename, u'.strm')
 		
 		#------------------------------------------
 
@@ -19,11 +19,11 @@ class STRMWriter(STRMWriterBase):
 
 		#------------------------------------------
 		if rank != 0:
-			self.make_alternative(fname, link, rank)
+			self.make_alternative(strmFilename, link, rank)
 			print 'rank: ' + str(rank)
 		
-			link_with_min_rank = self.get_link_with_min_rank(fname)
-			if len(link_with_min_rank) > 0:
+			link_with_min_rank = STRMWriterBase.get_link_with_min_rank(strmFilename)
+			if not link_with_min_rank is None:
 				link = link_with_min_rank
 				
 		#------------------------------------------
@@ -37,18 +37,18 @@ class STRMWriter(STRMWriterBase):
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 
 		#------------------------------------------
-		if filesystem.exists(fname):
-			with filesystem.fopen(fname, 'r') as f:
+		if filesystem.exists(strmFilename):
+			with filesystem.fopen(strmFilename, 'r') as f:
 				old_link = f.read()
 				if old_link.decode('utf-8') == link:
 					return
 		
 		#------------------------------------------
 		try:
-			with filesystem.fopen(fname, 'w') as f:
+			with filesystem.fopen(strmFilename, 'w') as f:
 				f.write(link.encode('utf-8'))
 		except IOError:
-			print 'Error write ' + fname.encode('utf-8')
+			print 'Error write ' + strmFilename.encode('utf-8')
 			return
 
 

@@ -98,6 +98,23 @@ class YATPPlayer(TorrentPlayer):
 			#print '[YATP] updateDialogInfo: ' + str(r.json())
 		except:
 			progressBar.update(progress)
+			
+	def GetTorrentInfo(self):
+		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.info_hash }})
+		try:
+			torrent_info = r.json()['result']
+			
+			return { 	'downloaded' : 	torrent_info['total_download'],
+						'size' : 		torrent_info['size'],
+						'dl_speed' : 	torrent_info['dl_speed'],
+						'ul_speed' :	torrent_info['ul_speed'],
+						'num_seeds' :	torrent_info['num_seeds'], 
+						'num_peers' :	torrent_info['num_peers']
+					}
+		except:
+			pass
+			
+		return None
 		
 	def GetStreamURL(self, playable_item):
 		'''
