@@ -218,7 +218,7 @@ def write_tvshow(content, path, settings):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
 					
-					STRMWriter(item.link).write(filename, episodeNumber, settings = settings)
+					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
 					NFOWriter().write_episode(episode, filename, tvshow_api)
 				
 			filesystem.chdir(save_path)

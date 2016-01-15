@@ -7,7 +7,7 @@ class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
 		self.link = link
 		
-	def write(self, filename, episodeNumber = None, rank = 0, settings = None):
+	def write(self, filename, seasonNumber = None, episodeNumber = None, rank = 0, settings = None):
 		strmFilename = make_fullpath(filename, u'.strm')
 		
 		#------------------------------------------
@@ -16,6 +16,8 @@ class STRMWriter(STRMWriterBase):
 		link += urllib2.quote(self.link.encode('utf-8'))
 		if episodeNumber != None:
 			link += u'&episodeNumber=' + str(episodeNumber - 1)
+		if seasonNumber != None:
+			link += u'&seasonNumber=' + str(seasonNumber)
 
 		#------------------------------------------
 		if rank != 0:

@@ -1,11 +1,19 @@
-﻿import urllib2, json
+﻿import urllib2, json, re
 
 class TVShowAPI(object):
 	
 	myshows = None
 	myshows_ep = None
 	
-	def __init__(self, title, ruTitle):
+	def __init__(self, title, ruTitle, imdbId = None):
+		if imdbId:
+			print imdbId
+			try:
+				imdbId = int(re.search('(\d+)', imdbId).group(1))
+				print imdbId
+			except:
+				imdbId = None
+		
 		base_url = 'http://api.myshows.me/shows/search/?q='
 		url = base_url + urllib2.quote(title.encode('utf-8'))
 		self.myshows = json.load(urllib2.urlopen(url))
@@ -15,7 +23,8 @@ class TVShowAPI(object):
 
 		if self.valid():
 			print url
-			id = self.get_myshows_id()
+			#print unicode(json.dumps(self.myshows, sort_keys=True, indent=4, separators=(',', ': ')), 'unicode-escape').encode('utf-8')
+			id = self.get_myshows_id(imdbId)
 			print id
 			if id != 0:
 				url = 'http://api.myshows.me/shows/' + str(id)
@@ -26,12 +35,20 @@ class TVShowAPI(object):
 		print str(self.valid())
 		print str(self.valid_ep())
 		
-	def get_myshows_id(self):
-		try:
+	def get_myshows_id(self, imdbId):
+		#try:
+		if True:
 			if self.valid():
 				for key in self.myshows.keys():
-					return self.myshows[key]['id']
-		except:
+					print key
+					section = self.myshows[str(key)]
+					if imdbId:
+						if section['imdbId'] == imdbId:
+							return section['id']
+					else:
+						return section['id']
+		else:
+		#except:
 			pass
 			
 		return 0

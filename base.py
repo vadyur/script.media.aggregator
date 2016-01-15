@@ -232,6 +232,9 @@ class DescriptionParserBase(Informer):
 		except:
 			return u''
 
+	def get(self, tag, def_value):
+		return self._dict.get(tag, def_value)
+			
 	def parsed(self):
 		return self.OK
 
