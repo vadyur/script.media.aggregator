@@ -178,7 +178,8 @@ class NFOWriter:
 			movie_api = desc_parser.movie_api()
 			if self.make_imdbid_info(root, movie_api, tn):
 				tn = ''
-		elif root_tag=='tvshow':
+				
+		if root_tag=='tvshow':
 			self.make_tvshow_info(root, tvshow_api, desc_parser)
 				
 		if tn != '':

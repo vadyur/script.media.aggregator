@@ -124,23 +124,31 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		files = player.GetLastTorrentData()['files']
 		print files
 
-		if episodeNumber != None:
-			files.sort(key=operator.itemgetter('name'))		
-		else:
-			files.sort(key=operator.itemgetter('size'), reverse=True)
-		print 'sorted_files:'
-		print files
+		if not 'cutName' in params:
+			if episodeNumber != None:
+				files.sort(key=operator.itemgetter('name'))
+			else:
+				files.sort(key=operator.itemgetter('size'), reverse=True)
+			print 'sorted_files:'
+			print files
 		
 		
-		if episodeNumber == None:
-			index = 0
-			playable_item = files[0]
+		if not 'cutName' in params:
+			if episodeNumber == None:
+				index = 0
+				playable_item = files[0]
+			else:
+				playable_item = files[episodeNumber]
+				index = playable_item.get('index')
 		else:
-			playable_item = files[episodeNumber]
-			index = playable_item.get('index')
-			
+			cutName = urllib.unquote(params['cutName'])
+			for item in files:
+				if cutName in item['name']:
+					playable_item = item
+					index = playable_item.get('index')
+					break
+
 		print playable_item
-			
 			
 		player.StartBufferFile(index)
 		
