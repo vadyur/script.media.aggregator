@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import sys
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
@@ -49,10 +51,32 @@ def write_tree(fn, root):
 			xml_text += ET.tostring(root).encode('utf-8')
 			f.write(prettify(xml_text))
 	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)		
-	
+		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+
 
 class NFOWriter:
+
+	stripPairs = (
+		('<p>', '\n'),
+		('<li>', '\n'),
+		('<br>', '\n'),
+		('<.+?>', ' '),
+		('</.+?>', ' '),
+		( '&nbsp;', ' ',),
+		('&laquo;', '"',),
+		('&raquo;', '"', ),
+		('&ndash;', '-'),
+	)
+
+	def stripHtml(self, string):
+		# from xml.sax.saxutils import unescape
+		for (html, replacement) in self.stripPairs:
+			string = re.sub(html, replacement, string)
+
+		string = string.replace('&mdash;', u'—')
+		string = string.replace('&#151;', u'—')
+		return string.strip(' \t\n\r')
+
 	def add_element_copy(self, parent, tagname, parser):
 		value = parser.get_value(tagname)
 		if value != '':
@@ -72,27 +96,41 @@ class NFOWriter:
 			return
 		if not tvshow_api.valid():
 			return
+
+		# add poster
+		if 'image' in tvshow_api.data():
+			self.add_element_value(parent, "thumb", tvshow_api.data()['image']);
 			
 		self.add_element_copy(parent, 'rating', desc_parser)
-		
+
+		# add fanart
 		fanart = ET.SubElement(parent, 'fanart')
-		if desc_parser.fanart():
+		if desc_parser.fanart() is not None:
 			for item in desc_parser.fanart():
-				thumb = ET.SubElement(fanart, "thumb")
-				thumb.text = item
+				self.add_element_value(fanart, "thumb", item)
 		
 	def make_imdbid_info(self, parent, movie_api, tn):
 		try:
-			thumb = ET.SubElement(parent, "thumb", aspect='poster', preview='http://image.tmdb.org/t/p/w500' + movie_api[u'poster_path'])
-			thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'poster_path']
-			
-			if tn != '':
-				ET.SubElement(parent, "thumb", aspect='poster', preview=tn).text = tn
-			
-			
-			fanart = ET.SubElement(parent, 'fanart')
-			thumb = ET.SubElement(fanart, "thumb", preview='http://image.tmdb.org/t/p/w780' + movie_api[u'backdrop_path'])
-			thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'backdrop_path']
+			try:
+				thumb = ET.SubElement(parent, "thumb", aspect='poster', preview='http://image.tmdb.org/t/p/w500' + movie_api[u'poster_path'])
+				thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'poster_path']
+
+				if tn != '':
+					ET.SubElement(parent, "thumb", aspect='poster', preview=tn).text = tn
+			except:
+				try:
+					poster = movie_api.Poster()
+					if poster != '':
+						ET.SubElement(parent, "thumb", aspect='poster', preview=poster).text = poster
+				except:
+					pass
+
+			try:
+				fanart = ET.SubElement(parent, 'fanart')
+				thumb = ET.SubElement(fanart, "thumb", preview='http://image.tmdb.org/t/p/w780' + movie_api[u'backdrop_path'])
+				thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'backdrop_path']
+			except:
+				pass
 			
 			print movie_api.imdbRating()
 			ET.SubElement(parent, 'rating').text = movie_api.imdbRating()
@@ -123,7 +161,7 @@ class NFOWriter:
 		self.add_element_value(root, 'aired', episode['airDate'])
 
 		try:
-			self.add_element_value(root, 'plot', tvshow_api.data()['description'])
+			self.add_element_value(root, 'plot', self.stripHtml(tvshow_api.data()['description']))
 		except:
 			pass
 		
@@ -163,7 +201,14 @@ class NFOWriter:
 		self.add_element_copy(root, 'originaltitle', desc_parser)
 		self.add_element_copy(root, 'year', desc_parser)
 		self.add_element_split(root, 'director', desc_parser)
-		self.add_element_copy(root, 'plot', desc_parser)
+
+		plot = self.stripHtml(desc_parser.get_value('plot'))
+		if plot == '' and tvshow_api is not None:
+			try:
+				plot = self.stripHtml(tvshow_api.data()['description'])
+			except:
+				pass
+		self.add_element_value(root, 'plot', plot)
 		imdb_id = desc_parser.get_value('imdb_id')
 		ET.SubElement(root, 'id').text = imdb_id
 		self.add_element_split(root, 'genre', desc_parser)

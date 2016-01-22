@@ -1,14 +1,22 @@
 ﻿# -*- coding: utf-8 -*-
+import re
+import urllib2
 
-import os, re
-from settings import Settings
-from base import *
-from nfowriter import *
-from strmwriter import *
-import requests, time, countries
-from bencode import bdecode, BTFailure
+from bs4 import BeautifulSoup
+
+import base
+import countries
 import feedparser
-import  tvshowapi
+import requests
+
+import filesystem
+from base import DescriptionParserBase, clean_html, Informer
+from nfowriter import NFOWriter
+from settings import Settings
+from strmwriter import STRMWriter
+
+import tvshowapi
+
 
 _RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
 _BASE_URL = 'http://nnm-club.me/forum/'
@@ -95,8 +103,8 @@ class DescriptionParser(DescriptionParserBase):
 
 		if a != None:
 			try:
-				self.__link = _BASE_URL + a['href']
-				print self.__link
+				self._link = _BASE_URL + a['href']
+				print self._link
 			except:
 				# print a.__repr__()
 				return False
@@ -109,12 +117,12 @@ class DescriptionParser(DescriptionParserBase):
 			if self.need_skipped(full_title):
 				return False
 
-			fname = make_fullpath(self.make_filename(), '.strm')
-			if STRMWriterBase.has_link(fname, self.__link):
+			fname = base.make_fullpath(self.make_filename(), '.strm')
+			if base.STRMWriterBase.has_link(fname, self._link):
 				print 'Already exists'
 				return False
 
-			r = requests.get(self.__link)
+			r = requests.get(self._link)
 			if r.status_code == requests.codes.ok:
 				return self.parse_description(r.text)
 
@@ -195,7 +203,7 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 
 	def link(self):
-		return self.__link
+		return self._link
 
 
 class DescriptionParserRSS(DescriptionParser):
@@ -228,14 +236,11 @@ class DescriptionParserRSS(DescriptionParser):
 		result = self.parse_description(html_doc)
 
 		for a in self.soup.select('.postbody a'):
-			self.__link = a['href']
-			print self.__link
+			self._link = a['href']
+			print self._link
 			break
 
 		return result
-
-	def link(self):
-		return self.__link
 
 
 class PostsEnumerator(object):
@@ -279,7 +284,7 @@ def write_movie(post, settings, tracker):
 			print 'filename: ' + filename.encode('utf-8')
 			print '-------------------------------------------+'
 			STRMWriter(parser.link()).write(filename,
-											rank=get_rank(full_title, parser, settings),
+											rank=base.get_rank(full_title, parser, settings),
 											settings=settings)
 			NFOWriter().write(parser, filename)
 
@@ -315,71 +320,8 @@ def write_movies(content, path, settings, tracker=False):
 
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
-
-	r = requests.get(link)
-	if r.status_code == requests.codes.ok:
-		files = tvshowapi.parse_torrent(r.content)
-
-		title = parser.get_value('title')
-		print title.encode('utf-8')
-		originaltitle = parser.get_value('originaltitle')
-		print originaltitle.encode('utf-8')
-
-		tvshow_path = make_fullpath(title, '')
-		print tvshow_path.encode('utf-8')
-
-		try:
-			save_path = filesystem.save_make_chdir(tvshow_path)
-
-			imdb_id = parser.get('imdb_id', None)
-
-			tvshow_api = TVShowAPI(originaltitle, title, imdb_id)
-			NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
-
-			prevSeason = None
-			episodes = None
-			for f in files:
-				try:
-					new_season = prevSeason != f['season']
-					if new_season:
-						episodes = tvshow_api.episodes(f['season'])
-
-					results = filter(lambda x: x['episodeNumber'] == f['episode'], episodes)
-					episode = results[0] if len(results) > 0 else None
-					if episode is None:
-						episode = {
-							'title': title,
-							'seasonNumber': f['season'],
-							'episodeNumber': f['episode'],
-							'image': '',
-							'airDate': ''
-						}
-
-					season_path = 'Season %d' % f['season']
-				except:
-					continue
-
-				try:
-					tvshow_full_path = filesystem.getcwd()
-					filesystem.save_make_chdir(season_path)
-
-					if len(f['name']) > 6:
-						filename = f['name']
-					else:
-						filename = str(f['episode']) + '. ' + 'episode_s%de%d' % (f['season'], f['episode'])
-					print filename.encode('utf-8')
-
-					STRMWriter(parser.link()).write(filename, cutname=f['name'],
-													settings=settings,
-													rank=get_rank(fulltitle, parser, settings))
-					NFOWriter().write_episode(episode, filename, tvshow_api)
-
-					prevSeason = f['season']
-
-				finally:
-					filesystem.chdir(tvshow_full_path)
-		finally:
-			filesystem.chdir(save_path)
+	if parser.parsed():
+		tvshowapi.write_tvshow(fulltitle, description, link, settings, parser)
 
 
 def write_tvshows(content, path, settings):
@@ -409,6 +351,15 @@ def write_tvshows(content, path, settings):
 def run(settings):
 	write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
 	write_movies(MULTHD_URL, settings.animation_path(), settings, tracker=True)
+
+	passkey = get_passkey(settings) # a8MSVAwe34
+	# write_tvshows('http://nnm-club.me/forum/rss2.php?f=232,768&h=168&t=1&uk=' + passkey, '../tvshows', settings)
+	path = filesystem.join(settings.base_path(), u'Зарубежные Мультсериалы')
+	write_tvshows('http://nnm-club.me/forum/rss2.php?f=232&h=168&t=1&uk=' + passkey, path, settings)
+	path = filesystem.join(settings.base_path(), u'Зарубежные сериалы')
+	write_tvshows('http://nnm-club.me/forum/rss2.php?f=768&h=168&t=1&uk=' + passkey, path, settings)
+	path = filesystem.join(settings.base_path(), u'Отечественные Мультсериалы')
+	write_tvshows('http://nnm-club.me/forum/rss2.php?f=658&h=168&t=1&uk=' + passkey, path, settings)
 
 
 # write_movies(_BASE_URL + 'portal.php?c=13', filesystem.join(settings.base_path(), u'Наши'), settings)

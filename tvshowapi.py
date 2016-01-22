@@ -1,5 +1,9 @@
-﻿from base import *
-from bencode import bdecode, BTFailure
+﻿import json
+import re
+import urllib2
+
+import filesystem
+from base import TorrentPlayer, make_fullpath, get_rank
 
 
 def debug(s):
@@ -144,7 +148,12 @@ def FileNamesPrepare(filename):
 							break
 			if my_season and my_season > 100: my_season = None
 			if my_episode and my_episode > 365: my_episode = None
-			debug('[FileNamesPrepare] ' + '%d %d %s' % (my_season, my_episode, filename))
+			try:
+				debug('[FileNamesPrepare] ' + '%d %d %s' % (my_season, my_episode, filename))
+			except TypeError:
+				debug('[FileNamesPrepare]: TypeError')
+				debug('[FileNamesPrepare] ' + str([my_season, my_episode, filename]))
+				pass
 			return [my_season, my_episode, filename]
 
 
@@ -161,8 +170,20 @@ def get_list(dirlist):
 	return files
 
 
+def seasonfromname(name):
+	match = re.compile('(\d+)', re.I).findall(name)
+	if match:
+		try:
+			return int(match[0])
+		except:
+			pass
+	return None
+
+
 def parse_torrent(data, season=None):
+	from bencode import BTFailure
 	try:
+		from bencode import bdecode
 		decoded = bdecode(data)
 	except BTFailure:
 		print "Can't decode torrent data (invalid torrent link? %s)" % link
@@ -180,10 +201,23 @@ def parse_torrent(data, season=None):
 			if TorrentPlayer.is_playable(fname):
 				dirlist.append(fname)  # .decode('utf-8').encode('cp1251')
 
+	save_season = season
 	files = []
 	for item in get_list(dirlist):
 		if item is not None:
-			files.append({'name': item[2], 'season': season if season is not None else item[0], 'episode': item[1]})
+			if season is None:
+				if item[0] is None:
+					season = seasonfromname(info['name'])
+					if season is None:
+						f_item = next((f for f in info['files'] if item[2] in f['path'][-1]), None )
+						try:
+							season = seasonfromname(f_item['path'][-2])
+						except:
+							pass
+				else:
+					season = item[0]
+			files.append({'name': item[2], 'season': season, 'episode': item[1]})
+			season = save_season
 		else:
 			# TODO
 			continue
@@ -220,6 +254,79 @@ def parse_torrent2(data):
 	files.sort(key=lambda x: (x['season'], x['episode']))
 	return files
 
+def write_tvshow(fulltitle, description, link, settings, parser):
+	from nfowriter import NFOWriter
+	from strmwriter import STRMWriter
+	import requests
+
+	r = requests.get(link)
+	if r.status_code == requests.codes.ok:
+		files = parse_torrent(r.content)
+
+		title = parser.get_value('title')
+		print title.encode('utf-8')
+		originaltitle = parser.get_value('originaltitle')
+		print originaltitle.encode('utf-8')
+
+		tvshow_path = make_fullpath(title, '')
+		print tvshow_path.encode('utf-8')
+
+		try:
+			save_path = filesystem.save_make_chdir(tvshow_path)
+
+			imdb_id = parser.get('imdb_id', None)
+
+			tvshow_api = TVShowAPI(originaltitle, title, imdb_id)
+			NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
+
+			prevSeason = None
+			episodes = None
+			cnt = 0
+			for f in files:
+				cnt += 1
+				try:
+					new_season = prevSeason != f['season']
+					if new_season:
+						episodes = tvshow_api.episodes(f['season'])
+
+					results = filter(lambda x: x['episodeNumber'] == f['episode'], episodes)
+					episode = results[0] if len(results) > 0 else None
+					if episode is None:
+						episode = {
+							'title': title,
+							'seasonNumber': f['season'],
+							'episodeNumber': f['episode'],
+							'image': '',
+							'airDate': ''
+						}
+
+					season_path = 'Season %d' % f['season']
+				except:
+					continue
+
+				try:
+					tvshow_full_path = filesystem.getcwd()
+					filesystem.save_make_chdir(season_path)
+
+					results = filter(lambda x: x['season'] == f['season'] and x['episode'] == f['episode'], files)
+					if len(results) > 1:	# Has duplicate episodes
+						filename = f['name']
+					else:
+						filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
+					print filename.encode('utf-8')
+
+					STRMWriter(parser.link()).write(filename, cutname=f['name'],
+													settings=settings,
+													rank=get_rank(fulltitle, parser, settings))
+					NFOWriter().write_episode(episode, filename, tvshow_api)
+
+					prevSeason = f['season']
+
+				finally:
+					filesystem.chdir(tvshow_full_path)
+		finally:
+			filesystem.chdir(save_path)
+
 
 def test(link):
 	import requests
@@ -243,7 +350,12 @@ class TVShowAPI(object):
 
 		base_url = 'http://api.myshows.me/shows/search/?q='
 		url = base_url + urllib2.quote(title.encode('utf-8'))
-		self.myshows = json.load(urllib2.urlopen(url))
+		try:
+			self.myshows = json.load(urllib2.urlopen(url))
+		except urllib2.HTTPError as e:
+			print 'TVShowAPI: ' + str(e)
+			return
+
 		if not self.valid():
 			url = base_url + urllib2.quote(ruTitle.encode('utf-8'))
 			self.myshows = json.load(urllib2.urlopen(url))

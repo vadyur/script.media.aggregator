@@ -141,12 +141,15 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				playable_item = files[episodeNumber]
 				index = playable_item.get('index')
 		else:
-			cutName = urllib.unquote(params['cutName'])
+			cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
+			index = -1
 			for item in files:
-				if cutName in item['name']:
+				if cutName in item['name'].lower():
 					playable_item = item
 					index = playable_item.get('index')
 					break
+			if index == -1:
+				return play_torrent_variant.resultTryNext
 
 		print playable_item
 			
@@ -328,6 +331,9 @@ def play_torrent(path, episodeNumber, settings, params):
 		openInTorrenter(nfoReader)
 	
 def main():
+	# import rpdb2
+	# rpdb2.start_embedded_debugger('pw')
+
 	params 		= get_params()
 	print params
 	settings	= load_settings()

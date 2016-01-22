@@ -40,6 +40,9 @@ class MovieAPI:
 		
 	def Rated(self):
 		return self.omdbapi.get(u'Rated', u'')
+
+	def Poster(self):
+		return self.omdbapi.get(u'Poster', u'')
 		
 	def Collection(self):                           
 		try:
