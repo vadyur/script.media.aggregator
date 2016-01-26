@@ -1,6 +1,11 @@
 ﻿import json
 import re
 import urllib2
+from contextlib import closing
+from zipfile import ZipFile, BadZipfile, LargeZipFile
+import xml.etree.ElementTree as ET
+
+import io
 
 import filesystem
 from base import TorrentPlayer, make_fullpath, get_rank
@@ -277,7 +282,7 @@ def write_tvshow(fulltitle, description, link, settings, parser):
 			imdb_id = parser.get('imdb_id', None)
 
 			tvshow_api = TVShowAPI(originaltitle, title, imdb_id)
-			NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
+			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
 			prevSeason = None
 			episodes = None
@@ -315,10 +320,8 @@ def write_tvshow(fulltitle, description, link, settings, parser):
 						filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
 					print filename.encode('utf-8')
 
-					STRMWriter(parser.link()).write(filename, cutname=f['name'],
-													settings=settings,
-													rank=get_rank(fulltitle, parser, settings))
-					NFOWriter().write_episode(episode, filename, tvshow_api)
+					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
+					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
 
 					prevSeason = f['season']
 
@@ -335,18 +338,87 @@ def test(link):
 		files = parse_torrent(r.content)
 
 
+# TheTVDB
+# 1. http://thetvdb.com/api/GetSeriesByRemoteID.php?imdbid=ttxxxxxxx&language=ru	id=<Data><Series><id>
+# 2. http://thetvdb.com/api/1D62F2F90030C444/series/<id>/all/ru.zip					zip -> banners.xml, actors.xml, ru.xml
+
+class TheTVDBAPI(object):
+	__base_url = 'http://thetvdb.com/api/'
+	__apikey = '1D62F2F90030C444'
+	__lang = 'ru'
+	def __init__(self, imdbId):
+		self.tvdb = None
+		try:
+			response1 = urllib2.urlopen(self.__base_url + 'GetSeriesByRemoteID.php?imdbid=%s&language=%s' % (imdbId, self.__lang) )
+			try:
+				self.thetvdbid = re.search('<id>(\d+)</id>', response1.read()).group(1)
+			except AttributeError:
+				return
+		except urllib2.HTTPError as e:
+			print 'TheTVDBAPI: ' + str(e)
+			return
+
+		url2 = self.__base_url + self.__apikey + '/series/%s/all/%s.zip' % (self.thetvdbid, self.__lang)
+		print url2
+
+		response2 = urllib2.urlopen(url2)
+		try:
+			f = io.BytesIO(response2.read())
+			with closing(ZipFile(f, 'r')) as zf:
+				with closing(zf.open('banners.xml', 'r')) as banners:
+					self.tvdb = ET.fromstring(banners.read())
+					'''
+					for banner in self.tvdb:
+						for child in banner:
+							print [child.tag, child.text]
+					'''
+		except BadZipfile as bz:
+			print str(bz)
+		except LargeZipFile as lz:
+			print str(lz)
+		# else:
+		#	print 'Unknown'
+
+
+	def getArt(self, type):
+		result = []
+		if self.tvdb is None:
+			return result
+
+		baseurl = 'http://thetvdb.com/banners/'
+		for banner in self.tvdb:
+			BannerType = banner.find('BannerType')
+			if BannerType is not None:
+				if BannerType.text == type:
+					BannerPath = banner.find('BannerPath')
+					ThumbnailPath = banner.find('ThumbnailPath')
+
+					if BannerPath is not None and ThumbnailPath is not None:
+						result.append({'path': baseurl + BannerPath.text, 'thumb': baseurl + ThumbnailPath.text})
+		return result
+
+	def Fanart(self):
+		return self.getArt('fanart')
+
+	def Poster(self):
+		return self.getArt('poster')
+
 class TVShowAPI(object):
 	myshows = None
 	myshows_ep = None
 
 	def __init__(self, title, ruTitle, imdbId=None):
+
 		if imdbId:
+			self.tvdb = TheTVDBAPI(imdbId)
 			print imdbId
 			try:
 				imdbId = int(re.search('(\d+)', imdbId).group(1))
 				print imdbId
 			except:
 				imdbId = None
+		else:
+			self.tvdb = None
 
 		base_url = 'http://api.myshows.me/shows/search/?q='
 		url = base_url + urllib2.quote(title.encode('utf-8'))
@@ -423,3 +495,16 @@ class TVShowAPI(object):
 					episodes__.append(ep)
 
 		return sorted(episodes__, key=lambda k: k['episodeNumber'])
+
+	def Fanart(self):
+		if self.tvdb is None:
+			return []
+		else:
+			return self.tvdb.getArt('fanart')
+
+	def Poster(self):
+		if self.tvdb is None:
+			return []
+		else:
+			return self.tvdb.getArt('poster')
+

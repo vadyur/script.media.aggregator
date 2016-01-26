@@ -284,9 +284,9 @@ def write_movie(post, settings, tracker):
 			print 'filename: ' + filename.encode('utf-8')
 			print '-------------------------------------------+'
 			STRMWriter(parser.link()).write(filename,
-											rank=base.get_rank(full_title, parser, settings),
+											parser=parser,
 											settings=settings)
-			NFOWriter().write(parser, filename)
+			NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename)
 
 		# time.sleep(1)
 

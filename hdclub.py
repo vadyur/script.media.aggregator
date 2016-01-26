@@ -94,7 +94,7 @@ def write_movie(item, settings):
 			return
 		
 		print 'filename: ' +  filename.encode('utf-8')
-		STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)
+		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
 		NFOWriter().write(parser, filename)
 	else:
 		skipped(item)

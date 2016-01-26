@@ -7,7 +7,7 @@ class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
 		self.link = link
 		
-	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, rank = 0, settings = None):
+	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, parser = None, settings = None):
 		strmFilename = make_fullpath(filename, u'.strm')
 		
 		#------------------------------------------
@@ -22,11 +22,12 @@ class STRMWriter(STRMWriterBase):
 			link += u'&cutName=' + urllib2.quote(cutname)
 
 		#------------------------------------------
-		if rank != 0:
-			self.make_alternative(strmFilename, link, rank)
-			print 'rank: ' + str(rank)
+		if parser is not None:
+			self.make_alternative(strmFilename, link, parser)
+			# rank = get_rank(parser.get('full_title', ''), parser, settings),
+			# print 'rank: ' + str(rank)
 		
-			link_with_min_rank = STRMWriterBase.get_link_with_min_rank(strmFilename)
+			link_with_min_rank = STRMWriterBase.get_link_with_min_rank(strmFilename, settings)
 			if not link_with_min_rank is None:
 				link = link_with_min_rank
 				

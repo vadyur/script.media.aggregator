@@ -44,7 +44,7 @@ def get_rank(full_title, parser, settings):
 	rank = 0.0
 	conditions = 0
 	
-	if parser.get_value('gold'):
+	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
 		conditions += 1
 		
@@ -59,7 +59,7 @@ def get_rank(full_title, parser, settings):
 		rank += 2
 		conditions += 1
 		
-	size = parser.get_value('size')
+	size = parser.get('size', '')
 	if size != '':
 		if int(size) > preffered_size:
 			rank += int(size) / preffered_size
@@ -67,7 +67,7 @@ def get_rank(full_title, parser, settings):
 			rank += preffered_size / int(size)
 		conditions += 1
 
-	video = parser.get_value('video')
+	video = parser.get('video', '')
 	for part in video.split(', '):
 		multiplier = 0
 		if 'kbps' in part \
@@ -109,11 +109,11 @@ def get_rank(full_title, parser, settings):
 			rank += 2
 			conditions += 1
 		
-	if parser.get_value('format') == 'MKV':
+	if parser.get('format', '') == 'MKV':
 		rank += 0.6
 		conditions += 1
 		
-	if 'ISO' in parser.get_value('format'):
+	if 'ISO' in parser.get('format', ''):
 		rank += 100
 		conditions += 1
 	
@@ -121,9 +121,14 @@ def get_rank(full_title, parser, settings):
 		return rank / conditions
 	else:
 		return 1
+
+def make_utf8(s):
+	if isinstance(s, unicode):
+		return s.encode('utf-8')
+	return s
 	
 class STRMWriterBase(object):
-	def make_alternative(self, strmFilename, link, rank = 0):
+	def make_alternative(self, strmFilename, link, parser):
 		strmFilename_alt = strmFilename + '.alternative'
 			
 		s_alt = u''
@@ -134,15 +139,19 @@ class STRMWriterBase(object):
 		if not (link in s_alt):
 			try:
 				with filesystem.fopen(strmFilename_alt, "a+") as alternative:
-					alternative.write('#rank=' + str(rank) + '\n')
+					for key, value in parser.Dict().iteritems():
+						if key in ['director', 'studio', 'country', 'plot', 'actor', 'genre', 'country_studio']:
+							continue
+						alternative.write('#%s=%s\n' % (make_utf8(key), make_utf8(value)))
 					alternative.write(link.encode('utf-8') + '\n')
 			except:
 				pass
 
 	@staticmethod
-	def get_links_with_ranks(strmFilename):
+	def get_links_with_ranks(strmFilename, settings):
 		strmFilename_alt = strmFilename + '.alternative'
 		items = []
+		saved_dict = {}
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				curr_rank = 1
@@ -151,22 +160,28 @@ class STRMWriterBase(object):
 					if not line:
 						break
 					line = line.decode('utf-8')
-					
-					if u'#rank=' in line:
-						curr_rank = float(line.replace(u'#rank=', u''))
-						
-					if not line.startswith('#'):
+
+					if line.startswith('#'):
+						line = line.lstrip('#')
+						parts = line.split('=')
+						if len(parts) > 1:
+							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
+					elif not line.startswith('#'):
+						if 'rank' in saved_dict:
+							curr_rank = float(saved_dict['rank'])
+						else:
+							curr_rank = get_rank(saved_dict['full_title'], saved_dict, settings)
 						items.append({'rank': curr_rank, 'link': line.replace(u'\r', u'').replace(u'\n', u'')})
-						curr_rank = 1
-						
+						saved_dict.clear()
+
 		items.sort(key=operator.itemgetter('rank'))
 		print 'Sorded items'
 		print items
 		return items
 
 	@staticmethod
-	def get_link_with_min_rank(strmFilename):
-		items = STRMWriterBase.get_links_with_ranks(strmFilename)
+	def get_link_with_min_rank(strmFilename, settings):
+		items = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
 						
 		if len(items) == 0:
 			return None
@@ -179,8 +194,9 @@ class STRMWriterBase(object):
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				for line in alternative:
-					if link in urllib.unquote(line):
-						return True
+					if line.startswith('plugin://'):
+						if link in urllib.unquote(line):
+							return True
 		return False
 
 class Informer(object):
@@ -225,7 +241,10 @@ class DescriptionParserBase(Informer):
 		print '-------------------------------------------------------------------------'
 		for key, value in self._dict.iteritems():
 			print key.encode('utf-8') + '\t: ' + value.encode('utf-8')
-	
+
+	def Dict(self):
+		return self._dict
+
 	def get_value(self, tag):
 		try:
 			return self._dict[tag]
