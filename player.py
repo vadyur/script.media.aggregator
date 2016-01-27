@@ -303,15 +303,15 @@ def play_torrent(path, episodeNumber, settings, params):
 	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
 	print strmFilename.encode('utf-8')
-	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename)
+	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 
 	for v in links_with_ranks[:]:
-		if v['link'] in sys.argv[0] + sys.argv[2]:
-			links_with_ranks.remove(v)
+		# if v['link'] in sys.argv[0] + sys.argv[2]:
+		#	links_with_ranks.remove(v)
 		if not anidub_enable and 'tr.anidub.com' in v['link']:
 			links_with_ranks.remove(v)
 		if not hdclub_enable and 'hdclub.org' in v['link']:
@@ -319,6 +319,7 @@ def play_torrent(path, episodeNumber, settings, params):
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
 
+	print 'links_with_ranks: ' + str(links_with_ranks)
 
 	if len(links_with_ranks) == 0:
 		play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
