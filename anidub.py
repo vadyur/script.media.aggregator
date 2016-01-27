@@ -158,7 +158,7 @@ class DescriptionParser(DescriptionParserBase):
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
 	print filesystem.getcwd().encode('utf-8')
-	NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
+	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
 	return
 
 ###################################################################################################
@@ -219,7 +219,7 @@ def write_tvshow(content, path, settings):
 					print filename.encode('utf-8')
 					
 					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
-					NFOWriter().write_episode(episode, filename, tvshow_api)
+					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
 				
 			filesystem.chdir(save_path)
 		else:
@@ -262,5 +262,6 @@ def download_torrent(url, path, settings):
 
 ###################################################################################################
 def run(settings):
-	write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
+	if settings.anime_save:
+		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
 

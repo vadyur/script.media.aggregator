@@ -60,7 +60,13 @@ def load_settings():
 
 	torrent_player 		= _addon.getSetting('torrent_player')
 	storage_path		= _addon.getSetting('storage_path')
-
+	
+	movies_save 		= _addon.getSetting('movies_save') == 'true'
+	animation_save 		= _addon.getSetting('animation_save') == 'true'
+	documentary_save 	= _addon.getSetting('documentary_save') == 'true'
+	anime_save 			= _addon.getSetting('anime_save') == 'true'
+	tvshows_save 		= _addon.getSetting('tvshows_save') == 'true'
+	animation_tvshows_save = _addon.getSetting('animation_tvshows_save') == 'true'
 
 	settings 			= Settings(	base_path,
 									movies_path			= movies_path,
@@ -76,7 +82,13 @@ def load_settings():
 									preffered_bitrate 	= preffered_bitrate,
 									preffered_type 		= preffered_type,
 									torrent_player 		= torrent_player,
-									storage_path		= storage_path)
+									storage_path		= storage_path,
+									movies_save 		= movies_save,
+									animation_save 		= animation_save,
+									documentary_save 	= documentary_save,
+									anime_save 			= anime_save,
+									tvshows_save 		= tvshows_save,
+									animation_tvshows_save = animation_tvshows_save)
 	#print settings
 	return settings
 
@@ -290,23 +302,32 @@ def play_torrent(path, episodeNumber, settings, params):
 	strmFilename 	= nfoFullPath.replace('.nfo', '.strm')
 	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
-	play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
-	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
-		print strmFilename.encode('utf-8')
-		links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename)
-		tryCount = 1
-		for variant in links_with_ranks:
-			tryCount += 1
+	print strmFilename.encode('utf-8')
+	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename)
 
-			info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
+	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
+	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+
+	for v in links_with_ranks[:]:
+		if v['link'] in sys.argv[0] + sys.argv[2]:
+			links_with_ranks.remove(v)
+		if not anidub_enable and 'tr.anidub.com' in v['link']:
+			links_with_ranks.remove(v)
+		if not hdclub_enable and 'hdclub.org' in v['link']:
+			links_with_ranks.remove(v)
+		if not nnmclub_enable and 'nnm-club.me' in v['link']:
+			links_with_ranks.remove(v)
+
+
+	if len(links_with_ranks) == 0:
+		play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
+	else:
+		for tryCount, variant in enumerate(links_with_ranks, 1):
+
+			if tryCount > 1:
+				info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
 			print variant
-
-			#print "variant['link']=" + variant['link']
-			#print sys.argv[0] + sys.argv[2]
-			if variant['link'] in sys.argv[0] + sys.argv[2]:
-				print "variant skipped"
-				tryCount -= 1
-				continue
 
 			torrent_source = variant['link']
 			try:
@@ -353,7 +374,7 @@ def main():
 			dialog = xbmcgui.Dialog()
 			rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
 														u'-НАСТРОЙКИ',
-#														u'-ТЕСТ',
+														# u'-ТЕСТ',
 														u'Выход'])
 			if rep == 0:
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'

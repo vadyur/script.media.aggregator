@@ -259,14 +259,31 @@ def parse_torrent2(data):
 	files.sort(key=lambda x: (x['season'], x['episode']))
 	return files
 
-def write_tvshow(fulltitle, description, link, settings, parser):
+def season_from_title(fulltitle):
+	parts = re.split(r'[,;\(\)\[\]]', fulltitle)
+	for part in parts:
+		if u'сезонов' in part.lower():
+			return None
+		if u'сезоны' in part.lower():
+			return None
+		if u'сезон' in part.lower():
+			if re.search('\d+\D+\d+', part):
+				return None
+			match = re.search('(\d+)', part)
+			if match:
+				return int(match.group(1))
+
+	return None
+
+
+def write_tvshow(fulltitle, link, settings, parser):
 	from nfowriter import NFOWriter
 	from strmwriter import STRMWriter
 	import requests
 
 	r = requests.get(link)
 	if r.status_code == requests.codes.ok:
-		files = parse_torrent(r.content)
+		files = parse_torrent(r.content, season_from_title(fulltitle))
 
 		title = parser.get_value('title')
 		print title.encode('utf-8')

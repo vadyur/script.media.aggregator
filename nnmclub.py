@@ -321,7 +321,7 @@ def write_movies(content, path, settings, tracker=False):
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
-		tvshowapi.write_tvshow(fulltitle, description, link, settings, parser)
+		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
 
 
 def write_tvshows(content, path, settings):
@@ -349,17 +349,23 @@ def write_tvshows(content, path, settings):
 
 
 def run(settings):
-	write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
-	write_movies(MULTHD_URL, settings.animation_path(), settings, tracker=True)
+	if settings.movies_save:
+		write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
+	if settings.animation_save:
+		write_movies(MULTHD_URL, settings.animation_path(), settings, tracker=True)
 
-	passkey = get_passkey(settings) # a8MSVAwe34
-	# write_tvshows('http://nnm-club.me/forum/rss2.php?f=232,768&h=168&t=1&uk=' + passkey, '../tvshows', settings)
-	path = filesystem.join(settings.base_path(), u'Зарубежные Мультсериалы')
-	write_tvshows('http://nnm-club.me/forum/rss2.php?f=232&h=168&t=1&uk=' + passkey, path, settings)
-	path = filesystem.join(settings.base_path(), u'Зарубежные сериалы')
-	write_tvshows('http://nnm-club.me/forum/rss2.php?f=768&h=168&t=1&uk=' + passkey, path, settings)
-	path = filesystem.join(settings.base_path(), u'Отечественные Мультсериалы')
-	write_tvshows('http://nnm-club.me/forum/rss2.php?f=658&h=168&t=1&uk=' + passkey, path, settings)
+	if settings.animation_tvshows_save or settings.tvshows_save:
+		passkey = get_passkey(settings)
+
+	if settings.animation_tvshows_save:
+		# path = filesystem.join(settings.base_path(), u'Зарубежные Мультсериалы')
+		write_tvshows('http://nnm-club.me/forum/rss2.php?f=232&h=168&t=1&uk=' + passkey, settings.animation_tvshow_path(), settings)
+		# path = filesystem.join(settings.base_path(), u'Отечественные Мультсериалы')
+		# write_tvshows('http://nnm-club.me/forum/rss2.php?f=658&h=168&t=1&uk=' + passkey, settings.animation_tvshow_path(), settings)
+
+	if settings.tvshows_save:
+		# path = filesystem.join(settings.base_path(), u'Зарубежные сериалы')
+		write_tvshows('http://nnm-club.me/forum/rss2.php?f=768&h=168&t=1&uk=' + passkey, settings.tvshow_path(), settings)
 
 
 # write_movies(_BASE_URL + 'portal.php?c=13', filesystem.join(settings.base_path(), u'Наши'), settings)

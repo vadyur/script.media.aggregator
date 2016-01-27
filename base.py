@@ -167,11 +167,15 @@ class STRMWriterBase(object):
 						if len(parts) > 1:
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif not line.startswith('#'):
-						if 'rank' in saved_dict:
-							curr_rank = float(saved_dict['rank'])
-						else:
-							curr_rank = get_rank(saved_dict['full_title'], saved_dict, settings)
-						items.append({'rank': curr_rank, 'link': line.replace(u'\r', u'').replace(u'\n', u'')})
+						try:
+							if 'rank' in saved_dict:
+								curr_rank = float(saved_dict['rank'])
+							else:
+								curr_rank = get_rank(saved_dict['full_title'], saved_dict, settings)
+						except:
+							curr_rank = 1
+
+						items.append({'rank': curr_rank, 'link': line.strip(u'\r\n\t ')})
 						saved_dict.clear()
 
 		items.sort(key=operator.itemgetter('rank'))
@@ -266,10 +270,11 @@ class DescriptionParserBase(Informer):
 		else:
 			return None
 		
-	def __init__(self, content, settings = None):
+	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
 		
 		self._dict.clear()
+		self._dict['full_title'] = full_title
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(clean_html(html_doc), 'html.parser')
