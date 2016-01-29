@@ -160,7 +160,6 @@ class STRMWriterBase(object):
 					if not line:
 						break
 					line = line.decode('utf-8')
-
 					if line.startswith('#'):
 						line = line.lstrip('#')
 						parts = line.split('=')
@@ -175,13 +174,15 @@ class STRMWriterBase(object):
 						except:
 							curr_rank = 1
 
-						items.append({'rank': curr_rank, 'link': line.strip(u'\r\n\t ')})
+						item = {'rank': curr_rank, 'link': line.strip(u'\r\n\t ')}
+						items.append(dict(item, **saved_dict))
 						saved_dict.clear()
 
 		items.sort(key=operator.itemgetter('rank'))
 		print 'Sorded items'
 		print items
 		return items
+
 
 	@staticmethod
 	def get_link_with_min_rank(strmFilename, settings):

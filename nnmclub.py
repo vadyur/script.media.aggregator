@@ -50,6 +50,7 @@ class DescriptionParser(DescriptionParserBase):
 			u'Качество видео:': u'format',
 			u'Производство:': u'country_studio',
 			u'Видео:': u'video',
+			u'Перевод:': u'translate',
 		}.get(x.strip(), u'')
 
 	def clean(self, title):

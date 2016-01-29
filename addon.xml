@@ -8,10 +8,25 @@
 	<import addon="script.module.requests" optional="false"/>
 	<import addon="script.module.feedparser" optional="false"/>
 	<import addon="script.module.myconnpy" optional="false"/>
+    <import addon="script.module.pyxbmct" version="1.1.4"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
 	<provides>video</provides>
   </extension>
+  <extension point="kodi.context.item" library="context.py">
+	<item>
+	  <label>Media Aggregator: выбор</label>
+	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
+	</item>
+  </extension>
+  <!--
+  <extension point="kodi.context.item" library="context.py">
+	<item>
+	  <label>Media Aggregator: выбор 2</label>
+	  <visible>true</visible>
+	</item>
+  </extension>
+  -->
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
