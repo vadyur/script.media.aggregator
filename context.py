@@ -4,6 +4,7 @@ import sys, xbmc, re, xbmcgui
 
 import pyxbmct.addonwindow as pyxbmct
 
+import filesystem
 from base import STRMWriterBase
 
 
@@ -12,19 +13,12 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		# Вызываем конструктор базового класса.
 		super(MyWindow, self).__init__(title)
 		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
-		# 2 строки и 3 столбца.
 		self.setGeometry(850, 550, 1, 1)
 
-		'''
-		# Создаем текстовую надпись.
-		label = pyxbmct.Label('This is a PyXBMCt window.', alignment=pyxbmct.ALIGN_CENTER)
-		# Помещаем надпись в сетку.
-		self.placeControl(label, 0, 0, columnspan=3)
-		'''
-
-		list = pyxbmct.List('font14', _itemHeight=80)
-		self.placeControl(list, 0, 0)
-		self.setFocus(list)
+		self.list = pyxbmct.List('font14', _itemHeight=80)
+		self.placeControl(self.list, 0, 0)
+		self.setFocus(self.list)
+		self.connect(self.list, self.make_choice)
 
 		for item in links:
 			try:
@@ -37,7 +31,9 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				pass
 
 			if s != '':
-				list.addItem(s)
+				li = xbmcgui.ListItem(s)
+				li.setProperty('link', item['link'])
+				self.list.addItem(li)
 			#list.addItem('Item 1\nNew line')
 			#list.addItem('Item 2\nNew line')
 			#list.addItem('Item 3\nNew line\nAdd line')
@@ -54,6 +50,12 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		'''
 		# Связываем клавиатурное действие с методом.
 		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
+		self.has_choice = False
+
+	def make_choice(self):
+		print 'make choice'
+		self.has_choice = True
+		self.close()
 
 def main():
 
@@ -65,15 +67,35 @@ def main():
 
 	print xbmc.getInfoLabel('Container.FolderPath')
 
-	# import rpdb2
-	# rpdb2.start_embedded_debugger('pw')
-
-
 	links = STRMWriterBase.get_links_with_ranks(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), None)
 
 	window = MyWindow('Media Aggregator', links=links)
 	window.doModal()
+	if not window.has_choice:
+		del window
+		return
+
+	cursel = window.list.getSelectedItem()
+	print cursel.getLabel()
+	link = cursel.getProperty('link')
 	del window
+
+
+#	import rpdb2
+#	rpdb2.start_embedded_debugger('pw')
+	with filesystem.fopen(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), 'r') as strm:
+		src_link = strm.read()
+		print src_link
+		pattern = 'torrent=(.+?)&'
+		match = re.search(pattern, str(link))
+		if not match:
+			pattern2 = 'torrent=(.+)'
+			match = re.search(pattern2, str(link))
+
+		if match:
+			dst_link = re.sub(pattern, 'torrent=' + match.group(1) + '&', str(src_link)) + '&onlythis=true'
+			print dst_link
+			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
 
 if __name__ == '__main__':

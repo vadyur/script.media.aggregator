@@ -309,6 +309,10 @@ def play_torrent(path, episodeNumber, settings, params):
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 
+	onlythis = False
+	if 'onlythis' in params and params['onlythis'] == 'true':
+		onlythis = True
+
 	for v in links_with_ranks[:]:
 		# if v['link'] in sys.argv[0] + sys.argv[2]:
 		#	links_with_ranks.remove(v)
@@ -321,7 +325,7 @@ def play_torrent(path, episodeNumber, settings, params):
 
 	print 'links_with_ranks: ' + str(links_with_ranks)
 
-	if len(links_with_ranks) == 0:
+	if len(links_with_ranks) == 0 or onlythis:
 		play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
 	else:
 		for tryCount, variant in enumerate(links_with_ranks, 1):
@@ -347,7 +351,7 @@ def play_torrent(path, episodeNumber, settings, params):
 	info_dialog.update(0, '', '')
 	info_dialog.close()
 
-	if play_torrent_variant_result == play_torrent_variant.resultTryNext:
+	if play_torrent_variant_result == play_torrent_variant.resultTryNext and not onlythis:
 		# Open in torrenter
 		openInTorrenter(nfoReader)
 
