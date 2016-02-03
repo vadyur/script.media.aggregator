@@ -206,6 +206,15 @@ class DescriptionParser(DescriptionParserBase):
 	def link(self):
 		return self._link
 
+class DescriptionParserTVShows(DescriptionParser):
+
+	def need_skipped(self, full_title):
+		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'Half-SBS']:
+			if phrase in full_title:
+				print 'Skipped by: ' + phrase.encode('utf-8')
+				return True
+		return False
+
 
 class DescriptionParserRSS(DescriptionParser):
 	def __init__(self, title, description, settings=None):
@@ -269,7 +278,10 @@ class TrackerPostsEnumerator(PostsEnumerator):
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		print url
 
-		for a in self.soup.select('a.topictitle'):
+		for a in  self.soup.find_all('a', class_ = 'topictitle'): #self.soup.select('a.topictitle'):
+			td = a.find_parent('td')
+			if td and not td.find('span', class_ = 'tDL'):
+				continue
 			self._items.append(a)
 
 

@@ -6,6 +6,8 @@ import anidub, hdclub, nnmclub, filesystem
 import urllib, os, requests
 import time
 import operator
+
+import tvshowapi
 from settings import *
 from nforeader import NFOReader
 from yatpplayer import *
@@ -98,6 +100,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	play_torrent_variant.resultCancel 	= 'Cancel'
 	play_torrent_variant.resultTryNext	= 'TryNext'
 
+	# import rpdb2
+	# rpdb2.start_embedded_debugger('pw')
+
 	start_time = time.time()
 	start_play_max_time 	= int(_addon.getSetting('start_play_max_time'))		# default 60 seconds
 	search_seed_max_time	= int(_addon.getSetting('search_seed_max_time'))	# default 15 seconds
@@ -155,10 +160,12 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
 			index = -1
 			for item in files:
-				if cutName in item['name'].lower():
+				name = item['name'].lower()
+				if cutName in tvshowapi.cutStr(name):
 					playable_item = item
 					index = playable_item.get('index')
 					break
+
 			if index == -1:
 				return play_torrent_variant.resultTryNext
 

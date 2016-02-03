@@ -132,7 +132,7 @@ def FileNamesPrepare(filename):
 	except:
 		pass
 
-	urls = ['s(\d+)e(\d+)', '(\d+)[x|-](\d+)', 'E(\d+)', 'Ep(\d+)', '\((\d+)\)']
+	urls = [r's(\d+)e(\d+)', r's(\d+) e(\d+)', r'(\d+)[x|-](\d+)', r'E(\d+)', r'Ep(\d+)', r'\((\d+)\)']
 	for file in urls:
 		match = re.compile(file, re.DOTALL | re.I | re.IGNORECASE).findall(filename)
 		if match:
@@ -152,7 +152,15 @@ def FileNamesPrepare(filename):
 						except:
 							break
 			if my_season and my_season > 100: my_season = None
-			if my_episode and my_episode > 365: my_episode = None
+			if my_episode:
+				if my_episode > 1000:
+					dm = divmod(my_episode, 100)
+					if dm[0] + 1 == dm[1]:
+						my_episode = dm[0]
+					else:
+						my_episode = None
+				elif my_episode > 365:
+					my_episode = None
 			try:
 				debug('[FileNamesPrepare] ' + '%d %d %s' % (my_season, my_episode, filename))
 			except TypeError:
@@ -179,7 +187,8 @@ def seasonfromname(name):
 	match = re.compile('(\d+)', re.I).findall(name)
 	if match:
 		try:
-			return int(match[0])
+			num = int(match[0])
+			return num if num > 0 and num < 20 else None
 		except:
 			pass
 	return None
@@ -191,8 +200,8 @@ def parse_torrent(data, season=None):
 		from bencode import bdecode
 		decoded = bdecode(data)
 	except BTFailure:
-		print "Can't decode torrent data (invalid torrent link? %s)" % link
-		return
+		print "Can't decode torrent data (invalid torrent link?)"
+		return []
 
 	info = decoded['info']
 	dirlist = []
@@ -334,8 +343,17 @@ def write_tvshow(fulltitle, link, settings, parser):
 					if len(results) > 1:	# Has duplicate episodes
 						filename = f['name']
 					else:
-						filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
-					print filename.encode('utf-8')
+						try:
+							filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
+						except BaseException as e:
+							print e
+							filename = f['name']
+
+					try:
+						print filename
+						filename = filename.decode('utf-8')
+					except:
+						print [filename]
 
 					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
 					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
