@@ -65,6 +65,14 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def parse_season_from_title(self, title):
 		try:
+			found = re.search(r"(\d) \[\d+\D+\d+\]", title)
+			if found:
+				try:
+					self._dict['season'] = int(found.group(1))
+					return
+				except:
+					pass
+
 			parts = title.split(u'ТВ-')
 			if len(parts) == 1:
 				parts = title.split(u'TV-')
@@ -209,6 +217,18 @@ def write_tvshow(content, path, settings):
 			filesystem.chdir(season_path)
 				
 			episodes = tvshow_api.episodes(season)
+
+			if len(episodes) == 0:
+				for i in range(1, parser.get_value('episodes')):
+					episodes.append({
+						'title': title,
+						'shortName': 's%02de%02d' % (season, i),
+						'episodeNumber': i,
+						'seasonNumber': season,
+						'image': '',
+						'airDate': ''
+					})
+
 			for episode in episodes:
 				title 			= episode['title']
 				shortName 		= episode['shortName']
@@ -265,3 +285,7 @@ def run(settings):
 	if settings.anime_save:
 		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
 
+
+if __name__ == '__main__':
+	settings = Settings('../media_library')
+	run(settings)
