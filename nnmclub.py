@@ -154,9 +154,10 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
 
 		count_id = 0
-		for a in self.soup.select('#imdb_id'):
+		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):
 			try:
 				href = a['href']
+
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
 					self._dict['imdb_id'] = components[4]
