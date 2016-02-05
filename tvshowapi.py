@@ -4,6 +4,7 @@ import urllib2
 from contextlib import closing
 from zipfile import ZipFile, BadZipfile, LargeZipFile
 import xml.etree.ElementTree as ET
+from movieapi import KinopoiskAPI
 
 import io
 
@@ -299,15 +300,17 @@ def write_tvshow(fulltitle, link, settings, parser):
 		originaltitle = parser.get_value('originaltitle')
 		print originaltitle.encode('utf-8')
 
-		tvshow_path = make_fullpath(title, '')
+		imdb_id = parser.get('imdb_id', None)
+		kp_id = parser.get('kp_id', None)
+		tvshow_api = TVShowAPI(originaltitle, title, imdb_id, kp_id)
+
+		api_title = tvshow_api.Title()
+		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
 		print tvshow_path.encode('utf-8')
 
 		try:
 			save_path = filesystem.save_make_chdir(tvshow_path)
 
-			imdb_id = parser.get('imdb_id', None)
-
-			tvshow_api = TVShowAPI(originaltitle, title, imdb_id)
 			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
 			prevSeason = None
@@ -377,12 +380,15 @@ def test(link):
 # 1. http://thetvdb.com/api/GetSeriesByRemoteID.php?imdbid=ttxxxxxxx&language=ru	id=<Data><Series><id>
 # 2. http://thetvdb.com/api/1D62F2F90030C444/series/<id>/all/ru.zip					zip -> banners.xml, actors.xml, ru.xml
 
+# noinspection SpellCheckingInspection
 class TheTVDBAPI(object):
 	__base_url = 'http://thetvdb.com/api/'
 	__apikey = '1D62F2F90030C444'
 	__lang = 'ru'
+
 	def __init__(self, imdbId):
-		self.tvdb = None
+		self.tvdb_banners = None
+		self.tvdb_ru = None
 		try:
 			response1 = urllib2.urlopen(self.__base_url + 'GetSeriesByRemoteID.php?imdbid=%s&language=%s' % (imdbId, self.__lang) )
 			try:
@@ -401,27 +407,22 @@ class TheTVDBAPI(object):
 			f = io.BytesIO(response2.read())
 			with closing(ZipFile(f, 'r')) as zf:
 				with closing(zf.open('banners.xml', 'r')) as banners:
-					self.tvdb = ET.fromstring(banners.read())
-					'''
-					for banner in self.tvdb:
-						for child in banner:
-							print [child.tag, child.text]
-					'''
+					self.tvdb_banners = ET.fromstring(banners.read())
+				with closing(zf.open('ru.xml')) as ru:
+					self.tvdb_ru = ET.fromstring(ru.read())
 		except BadZipfile as bz:
 			print str(bz)
 		except LargeZipFile as lz:
 			print str(lz)
-		# else:
-		#	print 'Unknown'
 
 
 	def getArt(self, type):
 		result = []
-		if self.tvdb is None:
+		if self.tvdb_banners is None:
 			return result
 
 		baseurl = 'http://thetvdb.com/banners/'
-		for banner in self.tvdb:
+		for banner in self.tvdb_banners:
 			BannerType = banner.find('BannerType')
 			if BannerType is not None:
 				if BannerType.text == type:
@@ -438,22 +439,36 @@ class TheTVDBAPI(object):
 	def Poster(self):
 		return self.getArt('poster')
 
-class TVShowAPI(object):
+	def getTitle(self):
+		if self.tvdb_ru is None:
+			return None
+
+		Series = self.tvdb_ru.find('Series')
+		if Series is not None:
+			SeriesName = Series.find('SeriesName')
+			if SeriesName is not None:
+				return SeriesName.text
+
+		return None
+
+
+class MyShowsAPI(object):
 	myshows = None
 	myshows_ep = None
 
-	def __init__(self, title, ruTitle, imdbId=None):
-
+	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
 		if imdbId:
-			self.tvdb = TheTVDBAPI(imdbId)
-			print imdbId
 			try:
 				imdbId = int(re.search('(\d+)', imdbId).group(1))
 				print imdbId
 			except:
 				imdbId = None
-		else:
-			self.tvdb = None
+
+		if kinopoiskId:
+			try:
+				kinopoiskId = int(re.search('(\d+)', kinopoiskId).group(1))
+			except:
+				kinopoiskId = None
 
 		base_url = 'http://api.myshows.me/shows/search/?q='
 		url = base_url + urllib2.quote(title.encode('utf-8'))
@@ -470,7 +485,7 @@ class TVShowAPI(object):
 		if self.valid():
 			print url
 			# print unicode(json.dumps(self.myshows, sort_keys=True, indent=4, separators=(',', ': ')), 'unicode-escape').encode('utf-8')
-			id = self.get_myshows_id(imdbId)
+			id = self.get_myshows_id(imdbId, kinopoiskId)
 			print id
 			if id != 0:
 				url = 'http://api.myshows.me/shows/' + str(id)
@@ -481,7 +496,7 @@ class TVShowAPI(object):
 		print str(self.valid())
 		print str(self.valid_ep())
 
-	def get_myshows_id(self, imdbId):
+	def get_myshows_id(self, imdbId, kinopoiskId):
 		# try:
 		if True:
 			if self.valid():
@@ -491,7 +506,12 @@ class TVShowAPI(object):
 					if imdbId:
 						if section['imdbId'] == imdbId:
 							return section['id']
-					else:
+
+					if kinopoiskId:
+						if section['kinopoiskId'] == kinopoiskId:
+							return section['id']
+
+					if imdbId is None or kinopoiskId is None:
 						return section['id']
 		else:
 			# except:
@@ -515,9 +535,11 @@ class TVShowAPI(object):
 		if self.valid_ep():
 			return self.myshows_ep
 
+		'''
 		if self.valid():
 			for key in self.myshows.keys():
-				return key
+				return self.myshows.get(key, None)
+		'''
 
 		return None
 
@@ -531,15 +553,28 @@ class TVShowAPI(object):
 
 		return sorted(episodes__, key=lambda k: k['episodeNumber'])
 
-	def Fanart(self):
-		if self.tvdb is None:
-			return []
-		else:
-			return self.tvdb.getArt('fanart')
+class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 
-	def Poster(self):
-		if self.tvdb is None:
-			return []
-		else:
-			return self.tvdb.getArt('poster')
+	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
+		TheTVDBAPI.__init__(self, imdbId)
+		MyShowsAPI.__init__(self, title, ruTitle, imdbId, kinopoiskId)
+		KinopoiskAPI.__init__(self, kinopoiskId)
 
+
+	def Title(self):
+		title = KinopoiskAPI.getTitle(self)
+		if title is not None:
+			return title
+
+		title = TheTVDBAPI.getTitle(self)
+		if title is not None:
+			return title
+
+		d = self.data()
+		if d is not None:
+			try:
+				return d.get('ruTitle', None)
+			except AttributeError:
+				pass
+
+		return None

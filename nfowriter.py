@@ -102,73 +102,6 @@ class NFOWriter:
 			ET.SubElement(parent, tagname).text = i.strip()
 		return len(values) > 0
 
-	def make_tvshow_info(self, parent, tvshow_api):
-		if tvshow_api == None:
-			return
-		if not tvshow_api.valid():
-			return
-
-		# add poster
-		for poster in tvshow_api.Poster():
-			self.add_element_value(parent, "thumb", poster['path'])
-
-		if 'image' in tvshow_api.data():
-			self.add_element_value(parent, "thumb", tvshow_api.data()['image']);
-
-		self.add_element_copy(parent, 'rating', self.parser)
-
-		# add fanart
-
-		fanart = ET.SubElement(root, 'fanart')
-		for fa in tvshow_api.Fanart():
-			self.add_element_value(fanart, "thumb", fa['path'])
-
-		if self.parser.fanart() is not None:
-			for item in self.parser.fanart():
-				self.add_element_value(fanart, "thumb", item)
-
-	def make_imdbid_info(self, parent, movie_api, tn):
-		try:
-			try:
-				thumb = ET.SubElement(root, "thumb", aspect='poster',
-									  preview='http://image.tmdb.org/t/p/w500' + movie_api[u'poster_path'])
-				thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'poster_path']
-
-				if tn != '':
-					ET.SubElement(root, "thumb", aspect='poster', preview=tn).text = tn
-			except:
-				try:
-					poster = movie_api.Poster()
-					if poster != '':
-						ET.SubElement(root, "thumb", aspect='poster', preview=poster).text = poster
-				except:
-					pass
-
-			try:
-				fanart = ET.SubElement(root, 'fanart')
-				thumb = ET.SubElement(fanart, "thumb",
-									  preview='http://image.tmdb.org/t/p/w780' + movie_api[u'backdrop_path'])
-				thumb.text = u'http://image.tmdb.org/t/p/original' + movie_api[u'backdrop_path']
-			except:
-				pass
-
-			print movie_api.imdbRating()
-			ET.SubElement(root, 'rating').text = movie_api.imdbRating()
-			print movie_api.Runtime()
-			ET.SubElement(root, 'runtime').text = movie_api.Runtime()
-			print 'Rated: ' + movie_api.Rated()
-			ET.SubElement(root, 'mpaa').text = movie_api.Rated()
-			print 'Collection: ' + movie_api.Collection().encode('utf-8')
-			ET.SubElement(root, 'set').text = movie_api.Collection()
-
-			for tag in movie_api.Tags():
-				ET.SubElement(root, 'tag').text = tag
-				print 'tag: ' + tag.encode('utf-8')
-
-		except:
-			return False
-
-		return True
 
 	def write_episode(self, episode, filename):
 		root_tag = 'episodedetails'
@@ -180,10 +113,12 @@ class NFOWriter:
 		self.add_element_value(root, 'thumb', episode['image'])
 		self.add_element_value(root, 'aired', episode['airDate'])
 
+		'''
 		try:
 			self.add_element_value(root, 'plot', self.stripHtml(self.movie_api.data()['description']))
 		except:
 			pass
+		'''
 
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
@@ -217,6 +152,12 @@ class NFOWriter:
 				ET.SubElement(root, 'trailer').text = trailer
 
 	def write_title(self, root):
+		if self.tvshow_api:
+			title = self.tvshow_api.Title()
+			if title:
+				self.add_element_value(root, 'title', title)
+				return
+
 		self.add_element_copy(root, 'title', self.parser)
 
 	def write_originaltitle(self, root):
@@ -253,11 +194,13 @@ class NFOWriter:
 
 	def write_plot(self, root):
 		plot = self.stripHtml(self.parser.get_value('plot'))
+		'''
 		if plot == '' and self.tvshow_api is not None:
 			try:
 				plot = self.stripHtml(self.tvshow_api.data()['description'])
 			except:
 				pass
+		'''
 		self.add_element_value(root, 'plot', plot)
 
 	def write_tagline(self, root):
