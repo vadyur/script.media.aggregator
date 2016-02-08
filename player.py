@@ -297,7 +297,7 @@ def openInTorrenter(nfoReader):
 			print 'Search in torrenter: ' + uri
 			xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
 
-def play_torrent(path, episodeNumber, settings, params):
+def play_torrent(settings, params):
 	info_dialog = xbmcgui.DialogProgress()
 	info_dialog.create('Media Aggregator')
 
@@ -333,7 +333,12 @@ def play_torrent(path, episodeNumber, settings, params):
 	print 'links_with_ranks: ' + str(links_with_ranks)
 
 	if len(links_with_ranks) == 0 or onlythis:
-		play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
+		torrent_source = params['torrent']
+		path_or_url_and_episode = get_path_or_url_and_episode(settings, params, torrent_source)
+		if path_or_url_and_episode:
+			path = path_or_url_and_episode['path_or_url']
+			episodeNumber = path_or_url_and_episode['episode']
+			play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
 	else:
 		for tryCount, variant in enumerate(links_with_ranks, 1):
 
@@ -351,6 +356,7 @@ def play_torrent(path, episodeNumber, settings, params):
 			if path_or_url_and_episode is None:
 				continue
 
+			episodeNumber = path_or_url_and_episode['episode']
 			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params)
 			if play_torrent_variant_result != play_torrent_variant.resultTryNext:
 				break
@@ -376,9 +382,9 @@ def main():
 		# import pydevd
 		# pydevd.settrace(stdoutToServer=True, stderrToServer=True)
 
-		path_or_url_and_episode = get_path_or_url_and_episode(settings, params, params['torrent'])
-		if not path_or_url_and_episode is None:
-			play_torrent(path_or_url_and_episode['path_or_url'], path_or_url_and_episode['episode'], settings = settings, params = params)
+		#path_or_url_and_episode = get_path_or_url_and_episode(settings, params, params['torrent'])
+		#if not path_or_url_and_episode is None:
+		play_torrent(settings = settings, params = params)
 
 		# pydevd.stoptrace()
 	else:
