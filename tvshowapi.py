@@ -313,18 +313,21 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
-			prevSeason = None
-			episodes = None
+			#prevSeason = None
+			#episodes = None
 			cnt = 0
 			for f in files:
 				cnt += 1
 				try:
+					'''
 					new_season = prevSeason != f['season']
 					if new_season:
 						episodes = tvshow_api.episodes(f['season'])
 
 					results = filter(lambda x: x['episodeNumber'] == f['episode'], episodes)
 					episode = results[0] if len(results) > 0 else None
+					'''
+					episode = tvshow_api.Episode(f['season'], f['episode'])
 					if episode is None:
 						episode = {
 							'title': title,
@@ -361,7 +364,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
 					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
 
-					prevSeason = f['season']
+					#prevSeason = f['season']
 
 				finally:
 					filesystem.chdir(tvshow_full_path)
@@ -385,6 +388,16 @@ class TheTVDBAPI(object):
 	__base_url = 'http://thetvdb.com/api/'
 	__apikey = '1D62F2F90030C444'
 	__lang = 'ru'
+
+	dictEpisodes = {
+		'Overview': 'plot',
+		'EpisodeName': 'title',
+		'EpisodeNumber': 'episode',
+		'SeasonNumber': 'season',
+		'Rating': 'rating',
+		'FirstAired': 'aired',
+		'Director': 'director'
+	}
 
 	def __init__(self, imdbId):
 		self.tvdb_banners = None
@@ -415,6 +428,29 @@ class TheTVDBAPI(object):
 		except LargeZipFile as lz:
 			print str(lz)
 
+	def getEpisode(self, season, episode):
+		res = {}
+		if self.tvdb_ru is None:
+			return res
+
+		for ep in self.tvdb_ru:
+			if ep.tag == 'Episode':
+				try:
+					episode_number = int(ep.find('EpisodeNumber').text)
+					season_number = int(ep.find('SeasonNumber').text)
+				except BaseException as e:
+					print e
+					continue
+				if int(episode_number) != episode or int(season_number) != season:
+					continue
+
+				for child in ep:
+					if child.tag in self.dictEpisodes and len(child.text) > 0:
+						res[self.dictEpisodes[child.tag]] = child.text
+					if child.tag == 'filename' and len(child.text) > 0:
+						res['thumb'] = 'http://thetvdb.com/banners/' + child.text
+
+		return res
 
 	def getArt(self, type):
 		result = []
@@ -455,6 +491,15 @@ class TheTVDBAPI(object):
 class MyShowsAPI(object):
 	myshows = None
 	myshows_ep = None
+
+	dictMyShows = {	
+		'title': 'title',
+		'airDate': 'aired',
+		'shortName': 'short',
+		'image': 'thumb',
+		'seasonNumber': 'season',
+		'episodeNumber': 'episode'
+	}
 
 	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
 		if imdbId:
@@ -543,15 +588,34 @@ class MyShowsAPI(object):
 
 		return None
 
+	def getEpisode(self, season, episode):
+		res = {}
+		if self.valid_ep():
+			for episode_data in self.myshows_ep['episodes']:
+				ep = self.myshows_ep['episodes'][episode_data]
+				if ep['seasonNumber'] != season or ep['episodeNumber'] != episode:
+					continue
+				for tag in ep:
+					if tag in self.dictMyShows:
+						res[self.dictMyShows[tag]] = ep[tag]
+		return res
+				
 	def episodes(self, season):
+		ren_items = {'airDate': 'aired',
+					 'shortName': 'short',
+					 'seasonNumber': 'season',
+					 'episodeNumber': 'episode'}
 		episodes__ = []
 		if self.valid_ep():
 			for episode in self.myshows_ep['episodes']:
-				ep = self.myshows_ep['episodes'][episode]
+				ep = self.myshows_ep['episodes'][episode].copy()
 				if ep['seasonNumber'] == season and ep['episodeNumber'] != 0:
+					for key in ren_items:
+						ep[ren_items[key]] = ep.pop(key)
 					episodes__.append(ep)
 
-		return sorted(episodes__, key=lambda k: k['episodeNumber'])
+
+		return sorted(episodes__, key=lambda k: k['episode'])
 
 class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 
@@ -578,3 +642,22 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 				pass
 
 		return None
+
+	def Episode(self, season, episode):
+		from nfowriter import NFOWriter
+		data_ms = MyShowsAPI.getEpisode(self, season, episode)
+		data_tmdb = TheTVDBAPI.getEpisode(self, season, episode)
+
+		res = data_ms.copy()
+		res.update(data_tmdb)
+
+		if 'plot' in res:
+			res['plot'] = NFOWriter(None).stripHtml(res['plot'])
+
+		return res
+
+'''
+class AniDBAPI(object):
+	base_url = 'http://api.anidb.net:9001/httpapi?request=anime&client=xbmcscrap&clientver=1&protover=1'
+	def __init__(self, title):
+'''

@@ -8,6 +8,7 @@ class KinopoiskAPI(object):
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
+		self.actors = []
 
 	def getTitle(self):
 		title = None
@@ -24,7 +25,9 @@ class KinopoiskAPI(object):
 		return title
 
 	def Actors(self):
-		actors = []
+		if len(self.actors) > 0:
+			return self.actors
+
 		if self.kinopoisk_url:
 			cast_url = self.kinopoisk_url + 'cast/'
 			r = requests.get(cast_url)
@@ -35,7 +38,7 @@ class KinopoiskAPI(object):
 						if not hasattr(sibling, 'tag'):
 							continue
 						if sibling.tag == 'a':
-							return actors
+							return self.actors
 						for actorInfo in sibling.select('.actorInfo'):
 							photo 		= actorInfo.select('div.photo a')[0]['href']
 							#http://st.kp.yandex.net/images/actor_iphone/iphone360_30098.jpg
@@ -46,8 +49,8 @@ class KinopoiskAPI(object):
 							en_name		= actorInfo.select('div.info .name span')[0].get_text()
 							role		= actorInfo.select('div.info .role')[0].get_text().replace('... ', '')
 							role 		= role.split(',')[0]
-							actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
-		return actors
+							self.actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
+		return self.actors
 
 	def __trailer(self, element):
 		for parent in element.parents:

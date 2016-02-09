@@ -91,6 +91,13 @@ class NFOWriter:
 			ET.SubElement(parent, tagname).text = unicode(value)
 		return value != ''
 
+	def add_element_copy_ep(self, parent, tagname, episode):
+		try:
+			self.add_element_value(parent, tagname, episode[tagname])
+		except:
+			pass
+
+
 	def add_element_value(self, parent, tagname, value):
 		if value != '':
 			ET.SubElement(parent, tagname).text = unicode(value)
@@ -103,15 +110,32 @@ class NFOWriter:
 		return len(values) > 0
 
 
-	def write_episode(self, episode, filename):
+	def write_episode(self, episode, filename, actors = None):
 		root_tag = 'episodedetails'
 		root = ET.Element(root_tag)
 
-		self.add_element_value(root, 'title', episode['title'])
+		self.add_element_copy_ep(root, 'title', episode)
+		if self.tvshow_api:
+			title = self.tvshow_api.Title()
+			if title:
+				self.add_element_value(root, 'showtitle', title)
+
+		'''
 		self.add_element_value(root, 'season', episode['seasonNumber'])
 		self.add_element_value(root, 'episode', episode['episodeNumber'])
 		self.add_element_value(root, 'thumb', episode['image'])
 		self.add_element_value(root, 'aired', episode['airDate'])
+		'''
+
+		for tagname, value in episode.iteritems():
+			if tagname != 'title':
+				self.add_element_value(root, tagname, value)
+
+		self.add_actors(root)
+
+
+		#if  self.tvshow_api:
+		#	plot = self.tvshow_api.
 
 		'''
 		try:
@@ -141,8 +165,9 @@ class NFOWriter:
 					index += 1
 		else:
 			for name in self.parser.get_value('actor').split(', '):
-				actor = ET.SubElement(root, 'actor')
-				ET.SubElement(actor, 'name').text = name
+				if name != '':
+					actor = ET.SubElement(root, 'actor')
+					ET.SubElement(actor, 'name').text = name
 
 	def add_trailer(self, root):
 		kp_id = self.parser.get_value('kp_id')

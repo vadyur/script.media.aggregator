@@ -222,22 +222,25 @@ def write_tvshow(content, path, settings):
 				for i in range(1, parser.get_value('episodes')):
 					episodes.append({
 						'title': title,
-						'shortName': 's%02de%02d' % (season, i),
-						'episodeNumber': i,
-						'seasonNumber': season,
-						'image': '',
-						'airDate': ''
+						'showtitle': title,
+						'short': 's%02de%02d' % (season, i),
+						'episode': i,
+						'season': season
 					})
 
 			for episode in episodes:
 				title 			= episode['title']
-				shortName 		= episode['shortName']
-				episodeNumber	= episode['episodeNumber']
+				shortName 		= episode['short']
+				episodeNumber	= episode['episode']
 				
 				if episodeNumber <= parser.get_value('episodes'):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
-					
+
+					ep = tvshow_api.Episode(season, episodeNumber)
+					if ep:
+						episode = ep
+
 					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
 					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
 				
