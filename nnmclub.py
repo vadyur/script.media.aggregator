@@ -302,6 +302,18 @@ def write_movie(post, settings, tracker):
 											settings=settings)
 			NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename)
 
+			link = None
+			try:
+				link = post.select('a[href*="download.php"]')[0]['href']
+			except:
+				try:
+					link = post.find_parent('tr').select('a[href*="download.php"]')[0]['href']
+				except:
+					pass
+			if link:
+				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
+
+
 		# time.sleep(1)
 
 	del parser
@@ -331,12 +343,25 @@ def write_movies(content, path, settings, tracker=False):
 	finally:
 		filesystem.chdir(original_dir)
 
+def save_download_link(parser, settings, link):
+	try:
+		path_store = filesystem.join(settings.addon_data_path, 'nnmclub')
+		if not filesystem.exists(path_store):
+			filesystem.makedirs(path_store)
+		source = parser.link()
+		match = re.search(r'\.php.+?t=(\d+)', source)
+		if match:
+			with filesystem.fopen(filesystem.join(path_store, match.group(1)), 'w') as f:
+				f.write(link)
+	except:
+		pass
+
 
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
 		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
-
+		save_download_link(parser, settings, link)
 
 def write_tvshows(content, path, settings):
 	original_dir = filesystem.getcwd()
@@ -363,13 +388,15 @@ def write_tvshows(content, path, settings):
 
 
 def run(settings):
+	passkey = get_passkey(settings)
+	#if passkey != settings.nnmclub_passkey:
+	settings.nnmclub_passkey = passkey
+
 	if settings.movies_save:
 		write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
 	if settings.animation_save:
 		write_movies(MULTHD_URL, settings.animation_path(), settings, tracker=True)
 
-	if settings.animation_tvshows_save or settings.tvshows_save:
-		passkey = get_passkey(settings)
 
 	if settings.animation_tvshows_save:
 		# path = filesystem.join(settings.base_path(), u'Зарубежные Мультсериалы')
@@ -434,23 +461,51 @@ def get_passkey(settings=None, session=None):
 
 	return None
 
+def find_direct_link(url, settings):
+	match = re.search(r'\.php.+?t=(\d+)', url)
+	if match:
+		path_store = filesystem.join(settings.addon_data_path, 'nnmclub', match.group(1))
+		if filesystem.exists(path_store):
+			print '[nnm-club] Direct link found'
+			with filesystem.fopen(path_store, 'r') as f:
+				return f.read()
+	return None
 
 def download_torrent(url, path, settings):
+	import shutil
 	url = urllib2.unquote(url)
 	print 'download_torrent:' + url
-	s = create_session(settings)
 
-	# print login.text.encode('cp1251')
+	href = None
+	link = find_direct_link(url, settings)
+	if link is None:
+		s = create_session(settings)
+		page = s.get(url)
+		# print page.text.encode('cp1251')
 
-	page = s.get(url)
-	# print page.text.encode('cp1251')
-
-	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
-	a = soup.select('td.gensmall > span.genmed > b > a')
-	if len(a) > 0:
-		href = 'http://nnm-club.me/forum/' + a[0]['href']
+		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+		a = soup.select('td.gensmall > span.genmed > b > a')
+		if len(a) > 0:
+			href = 'http://nnm-club.me/forum/' + a[0]['href']
 		print s.headers
-		r = s.get(href, headers={'Referer': url})
+	else:
+		href = link
+		response = urllib2.urlopen(link)
+		#CHUNK = 256 * 1024
+		with filesystem.fopen(path, 'wb') as f:
+			shutil.copyfileobj(response, f)
+			return True
+
+		#r = requests.head(link)
+		#print r.headers
+		#return False
+
+
+	if href:
+		if link:
+			r = requests.get(link)
+		else:
+			r = s.get(href, headers={'Referer': url})
 		print r.headers
 
 		# 'Content-Type': 'application/x-bittorrent'

@@ -17,9 +17,11 @@ from kodidb import *
 from base import STRMWriterBase
 
 # Определяем параметры плагина
-_ADDON_NAME =   'script.media.aggregator'
-_addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
-_addon_path =   _addon.getAddonInfo('path').decode('utf-8')
+_ADDON_NAME = 'script.media.aggregator'
+_addon      = xbmcaddon.Addon(id=_ADDON_NAME)
+_addon_path = _addon.getAddonInfo('path').decode('utf-8')
+_addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+print _addondir.encode('utf-8')
 
 def get_params():
 	param=[]
@@ -91,6 +93,8 @@ def load_settings():
 									anime_save 			= anime_save,
 									tvshows_save 		= tvshows_save,
 									animation_tvshows_save = animation_tvshows_save)
+
+	settings.addon_data_path		= _addondir
 	#print settings
 	return settings
 
@@ -405,6 +409,10 @@ def main():
 					hdclub.run(settings)
 				if nnmclub_enable:
 					nnmclub.run(settings)
+					try:
+						_addon.setSetting('nnmclub_passkey', settings.nnmclub_passkey)
+					except:
+						pass
 				if not (anidub_enable or hdclub_enable or nnmclub_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 1
@@ -412,8 +420,16 @@ def main():
 					xbmc.executebuiltin('UpdateLibrary("video")')
 
 			if rep == 1:
+				save_nnmclub_login = settings.nnmclub_login
+				save_nnmclub_password = settings.nnmclub_password
 				_addon.openSettings()
 				settings = load_settings()
+				
+				if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
+					passkey = nnmclub.get_passkey(settings=settings)
+					_addon.setSetting('nnmclub_passkey', passkey)
+					settings.nnmclub_passkey = passkey
+
 			'''
 			if rep == 2:
 				adv_s = AdvancedSettingsReader()
