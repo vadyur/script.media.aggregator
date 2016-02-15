@@ -3,3 +3,4 @@ standalone.py
 *.pyc
 /test_login.py
 *test.py
+.idea/

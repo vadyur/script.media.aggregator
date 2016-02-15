@@ -35,6 +35,15 @@ def makedirs(path):
 def chdir(path):
 	os.chdir(get_path(path))
 	
+def save_make_chdir(new_path):
+	current = getcwd()
+	try:
+		if not exists(new_path):
+			makedirs(new_path)
+		chdir(new_path)
+	finally:
+		return current
+	
 def isfile(path):
 	return os.path.isfile(get_path(path))
 	

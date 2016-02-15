@@ -23,7 +23,13 @@ class Settings:
 		anidub_login = '', anidub_password = '', 
 		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1,
 		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
-		torrent_player = TorrentPlayer.YATP, storage_path = ''):
+		torrent_player = TorrentPlayer.YATP, storage_path = '',
+		movies_save			= True,
+		animation_save		= True,
+		documentary_save	= True,
+		anime_save			= True,
+		tvshows_save		= True,
+		animation_tvshows_save = True):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -50,6 +56,14 @@ class Settings:
 		
 		self.torrent_player 		= torrent_player
 		self.storage_path			= storage_path
+		
+		self.movies_save 			= movies_save
+		self.animation_save 		= animation_save
+		self.documentary_save 		= documentary_save
+		self.anime_save 			= anime_save
+		self.tvshows_save 			= tvshows_save
+		self.animation_tvshows_save = animation_tvshows_save
+		
 
 		
 	def __repr__(self):
@@ -75,5 +89,8 @@ class Settings:
 		return filesystem.join(self.__base_path, self.__documentary_path)
 	def anime_tvshow_path(self):
 		return filesystem.join(self.__base_path, self.__anime_tvshow_path)
-		
-		
+	def animation_tvshow_path(self):
+		return filesystem.join(self.__base_path, 'Animation TVShows')
+	def tvshow_path(self):
+		return filesystem.join(self.__base_path, 'TVShows')
+

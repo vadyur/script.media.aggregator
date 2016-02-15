@@ -80,11 +80,12 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 		
 def write_movie(item, settings):
-	parser = DescriptionParser(item.description, settings = settings)
-	print '-------------------------------------------------------------------------'
-	
 	full_title = item.title
 	print 'full_title: ' + full_title.encode('utf-8')
+
+	parser = DescriptionParser(full_title, item.description, settings = settings)
+	print '-------------------------------------------------------------------------'
+	
 	if parser.need_skipped(full_title):
 		return
 	
@@ -93,9 +94,9 @@ def write_movie(item, settings):
 		if not filename:
 			return
 		
-		print 'filename: ' +  filename.encode('utf-8')
-		STRMWriter(item.link).write(filename, rank = get_rank(item.title, parser, settings), settings = settings)
-		NFOWriter().write(parser, filename)
+		print 'filename: ' + filename.encode('utf-8')
+		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
+		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
 	else:
 		skipped(item)
 		
@@ -126,7 +127,10 @@ def write_movies(content, path, settings):
 	filesystem.chdir(original_dir)
 
 def run(settings):
-	write_movies(settings.animation_url, settings.animation_path(), settings)
-	write_movies(settings.documentary_url, settings.documentary_path(), settings)
-	write_movies(settings.movies_url, settings.movies_path(), settings)
+	if settings.animation_save:
+		write_movies(settings.animation_url, settings.animation_path(), settings)
+	if settings.documentary_save:
+		write_movies(settings.documentary_url, settings.documentary_path(), settings)
+	if settings.movies_save:
+		write_movies(settings.movies_url, settings.movies_path(), settings)
 

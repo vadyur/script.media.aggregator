@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.media.aggregator" version="0.6.0" name="Media Aggregator" provider-name="-=Vd=-">
+<addon id="script.media.aggregator" version="0.7.0" name="Media Aggregator" provider-name="-=Vd=-">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
 	<import addon="plugin.video.yatp" optional="true"/>
@@ -8,9 +8,16 @@
 	<import addon="script.module.requests" optional="false"/>
 	<import addon="script.module.feedparser" optional="false"/>
 	<import addon="script.module.myconnpy" optional="false"/>
+    <import addon="script.module.pyxbmct" version="1.1.4"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
 	<provides>video</provides>
+  </extension>
+  <extension point="kodi.context.item" library="context.py">
+	<item>
+	  <label>Media Aggregator: выбор</label>
+	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
+	</item>
   </extension>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
