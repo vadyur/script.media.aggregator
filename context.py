@@ -17,8 +17,6 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 		self.list = pyxbmct.List('font14', _itemHeight=80)
 		self.placeControl(self.list, 0, 0)
-		self.setFocus(self.list)
-		self.connect(self.list, self.make_choice)
 
 		for item in links:
 			try:
@@ -37,6 +35,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#list.addItem('Item 1\nNew line')
 			#list.addItem('Item 2\nNew line')
 			#list.addItem('Item 3\nNew line\nAdd line')
+
+		self.setFocus(self.list)
+		self.connect(self.list, self.make_choice)
+
 
 		'''
 		# Создаем кнопку.
