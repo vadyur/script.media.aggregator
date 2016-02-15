@@ -3,10 +3,13 @@
     <category label="Основные">
         <setting label="Путь к медиатеке"	type="folder" id="base_path" 		default="Videos"/>
 		<setting label="Субдиректории" type="lsep"/>
-        <setting label="Фильмы" 		type="text"   id="movies_path" 		default="Movies"/>
-        <setting label="Мультфильмы" 	type="text"   id="animation_path" 	default="Animation"/>
-        <setting label="Документальное" type="text"  id="documentary_path" default="Documentary"/>
-        <setting label="Аниме" 			type="text"   id="anime_path" 		default="Anime"/>
+        <setting label="Фильмы" 		type="bool"   id="movies_save" 		default="true"/>
+        <setting label="Мультфильмы" 	type="bool"   id="animation_save" 	default="true"/>
+        <setting label="Документальное" type="bool"  id="documentary_save" default="true"/>
+        <setting label="Аниме" 			type="bool"   id="anime_save" 		default="true"/>
+        <setting label="Сериалы" 		type="bool"   id="tvshows_save" 		default="true"/>
+        <setting label="Анимационные сериалы" 	type="bool"   id="animation_tvshows_save" 	default="true"/>
+
 		<setting label="Автоматическая генерация" type="lsep"/>
 		<setting label="При запуске" type="bool" id="service_startup" default="false"/>
 		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" />

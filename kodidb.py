@@ -42,8 +42,17 @@ class AdvancedSettingsReader(object):
 		return self.dict.get(key, None)
 
 reader = AdvancedSettingsReader()
-		
-		
+
+DB_VERSIONS = {
+	'10': '37',
+	'11': '60',
+	'12': '75',
+	'13': '78',
+	'14': '90',
+	'15': '93',
+	'16': '99'
+}
+
 BASE_PATH = 'special://database'		
 class VideoDatabase(object):
 	@staticmethod
@@ -55,10 +64,18 @@ class VideoDatabase(object):
 			return 0
 		return max(versions)		
 
+	@staticmethod
+	def get_db_version():
+		major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
+		return DB_VERSIONS.get(major)
+
 	def __init__(self):
 		try:
 			
-			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos93'
+			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos'
+			self.DB_NAME += self.get_db_version()
+			xbmc.log('kodidb: DB name is ' + self.DB_NAME )
+
 			self.DB_USER = reader['user']
 			self.DB_PASS = reader['pass']
 			self.DB_ADDRESS = reader['host'] #+ ':' + reader['port']
@@ -69,22 +86,7 @@ class VideoDatabase(object):
 							self.DB_USER is not None and \
 							self.DB_PASS is not None and \
 							self.DB_NAME is not None:
-				'''			
-				conn = mysql.connector.connect(	user=self.DB_USER, \
-											password=self.DB_PASS, \
-											host=self.DB_ADDRESS, \
-											port=self.DB_PORT)
-				try:
-					cur = conn.cursor()
-					cur.execute('SHOW DATABASES')
-					bases = cur.fetchall()
-					for base in bases:
-						print base
-					
-				finally:
-					conn.close()
-				'''
-		  
+
 				xbmc.log('kodidb: Service: Loading MySQL as DB engine')
 				self.DB = 'mysql'
 			else:

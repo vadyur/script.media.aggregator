@@ -65,6 +65,14 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def parse_season_from_title(self, title):
 		try:
+			found = re.search(r"(\d) \[\d+\D+\d+\]", title)
+			if found:
+				try:
+					self._dict['season'] = int(found.group(1))
+					return
+				except:
+					pass
+
 			parts = title.split(u'ТВ-')
 			if len(parts) == 1:
 				parts = title.split(u'TV-')
@@ -158,7 +166,7 @@ class DescriptionParser(DescriptionParserBase):
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
 	print filesystem.getcwd().encode('utf-8')
-	NFOWriter().write(parser, 'tvshow', 'tvshow', tvshow_api)
+	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
 	return
 
 ###################################################################################################
@@ -209,17 +217,32 @@ def write_tvshow(content, path, settings):
 			filesystem.chdir(season_path)
 				
 			episodes = tvshow_api.episodes(season)
+
+			if len(episodes) == 0:
+				for i in range(1, parser.get_value('episodes')):
+					episodes.append({
+						'title': title,
+						'showtitle': title,
+						'short': 's%02de%02d' % (season, i),
+						'episode': i,
+						'season': season
+					})
+
 			for episode in episodes:
 				title 			= episode['title']
-				shortName 		= episode['shortName']
-				episodeNumber	= episode['episodeNumber']
+				shortName 		= episode['short']
+				episodeNumber	= episode['episode']
 				
 				if episodeNumber <= parser.get_value('episodes'):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
 					print filename.encode('utf-8')
-					
-					STRMWriter(item.link).write(filename, episodeNumber, settings = settings)
-					NFOWriter().write_episode(episode, filename, tvshow_api)
+
+					ep = tvshow_api.Episode(season, episodeNumber)
+					if ep:
+						episode = ep
+
+					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
+					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
 				
 			filesystem.chdir(save_path)
 		else:
@@ -262,5 +285,10 @@ def download_torrent(url, path, settings):
 
 ###################################################################################################
 def run(settings):
-	write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
+	if settings.anime_save:
+		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
 
+
+if __name__ == '__main__':
+	settings = Settings('../media_library')
+	run(settings)
