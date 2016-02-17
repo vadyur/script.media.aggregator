@@ -192,6 +192,9 @@ def write_tvshow(content, path, settings):
 			print originaltitle.encode('utf-8')
 			season = parser.get_value('season')
 			filename = title
+
+			from downloader import TorrentDownloader
+			TorrentDownloader(item.link, settings.addon_data_path, settings).download()
 			
 			print 'Episodes: ' + str(parser.get_value('episodes'))
 			
@@ -243,6 +246,7 @@ def write_tvshow(content, path, settings):
 
 					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
 					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
+
 				
 			filesystem.chdir(save_path)
 		else:

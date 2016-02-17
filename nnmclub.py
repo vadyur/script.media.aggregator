@@ -313,6 +313,8 @@ def write_movie(post, settings, tracker):
 			if link:
 				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
 
+			from downloader import TorrentDownloader
+			TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
 
 		# time.sleep(1)
 

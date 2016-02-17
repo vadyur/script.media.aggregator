@@ -54,7 +54,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		self.debug('__exit__')
 		self.close()
 		
-	def AddTorrent(self, path):
+	def _AddTorrent(self, path):
 		if filesystem.exists(path):
 			uri = path2url(path)
 		else:
@@ -85,9 +85,9 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
 							keep_incomplete=False, keep_complete=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
 							log_files_progress=True)
-		self.engine.start()
+		#self.engine.start()
 		
-	def CheckTorrentAdded(self):
+	def _CheckTorrentAdded(self):
 		status = self.engine.status()		
 		self.engine.check_torrent_error(status)
 		
@@ -99,7 +99,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		
 		return True
 		
-	def GetLastTorrentData(self):
+	def _GetLastTorrentData(self):
 		while True:
 			time.sleep(0.2)
 			
@@ -125,6 +125,9 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		return { 'info_hash': info_hash, 'files': playable_items }
 		
 	def StartBufferFile(self, fileIndex):
+		self._AddTorrent(self.path)
+
+		'''
 		try:
 			files = self.engine.list()
 			print 'StartBufferFile: has files'
@@ -143,9 +146,12 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		except:
 			print 'StartBufferFile: exception trown'
 			self.download_path = None
+		'''
+
+		self.download_path = None
 		
 		#if fileIndex != 0:
-		self.engine.close()
+		#self.engine.close()
 		self.engine.start(fileIndex)
 		#status = self.engine.file_status(fileIndex)
 		self.file_id = fileIndex

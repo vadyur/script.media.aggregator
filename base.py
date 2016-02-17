@@ -319,14 +319,48 @@ class TorrentPlayer(object):
 		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
 	
 	def AddTorrent(self, path):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		self.path = path
 		
 	def CheckTorrentAdded(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		return filesystem.exists(self.path)
 		
 	def GetLastTorrentData(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+
+		data = None
+		with filesystem.fopen(self.path, 'rb') as torr:
+			data = torr.read()
+
+		if data is None:
+			return None
+
+		from bencode import BTFailure
+		try:
+			from bencode import bdecode
+			decoded = bdecode(data)
+		except BTFailure:
+			print "Can't decode torrent data (invalid torrent link?)"
+			return None
+
+		info = decoded['info']
+		info_hash = ''
+		playable_items = []
+		if 'files' in info:
+			for i, f in enumerate(info['files']):
+				# print i
+				# print f
+				name = os.sep.join(f['path'])
+				size = f['length']
+				print name
+				if TorrentPlayer.is_playable(name):
+					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
+		else:
+			return { 'info_hash': info_hash, 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
+
+		return { 'info_hash': info_hash, 'files': playable_items }
+
 	def StartBufferFile(self, fileIndex):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		

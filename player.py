@@ -15,12 +15,18 @@ from torrent2httpplayer import *
 from torrent2http import Error as TPError
 from kodidb import *
 from base import STRMWriterBase
+from downloader import TorrentDownloader
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
 _addon      = xbmcaddon.Addon(id=_ADDON_NAME)
 _addon_path = _addon.getAddonInfo('path').decode('utf-8')
-_addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+
+try:
+	_addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+except:
+	_addondir   = u''
+
 print _addondir.encode('utf-8')
 
 def get_params():
@@ -95,14 +101,17 @@ def load_settings():
 									animation_tvshows_save = animation_tvshows_save)
 
 	settings.addon_data_path		= _addondir
+
 	#print settings
 	return settings
 
-def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params):
+def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
+	import filecmp
 
 	play_torrent_variant.resultOK 		= 'OK'
 	play_torrent_variant.resultCancel 	= 'Cancel'
 	play_torrent_variant.resultTryNext	= 'TryNext'
+	play_torrent_variant.resultTryAgain	= 'TryAgain'
 
 	# import rpdb2
 	# rpdb2.start_embedded_debugger('pw')
@@ -117,12 +126,16 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	if settings == None:
 		return play_torrent_variant.resultCancel
 
+	if downloader:
+		downloader.start(True)
+
 	try:
 		if settings.torrent_player == 'YATP':
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
 			player = Torrent2HTTPPlayer(settings)
 
+		print '------------ Open torrent: ' + path
 		player.AddTorrent(path)
 
 		added = False
@@ -135,6 +148,15 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				return play_torrent_variant.resultCancel
 
 			info_dialog.update(i, u'Проверяем файлы', ' ', ' ')
+
+			if downloader and downloader.is_finished():
+				if not filecmp.cmp(path, downloader.get_filename()):
+					downloader.move_file_to(path)
+					print 'play_torrent_variant.resultTryAgain'
+					return play_torrent_variant.resultTryAgain
+				else:
+					print 'Torrents are equal'
+					downloader = None
 
 			xbmc.sleep(1000)
 
@@ -165,7 +187,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			index = -1
 			for item in files:
 				name = item['name'].lower()
-				if cutName in tvshowapi.cutStr(name):
+				if cutName in unicode(tvshowapi.cutStr(name)):
 					playable_item = item
 					index = playable_item.get('index')
 					break
@@ -196,6 +218,15 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					if info['num_seeds'] == 0:
 						print 'Seeds not found'
 						return play_torrent_variant.resultTryNext
+
+			if downloader and downloader.is_finished():
+				if not filecmp.cmp(path, downloader.get_filename()):
+					downloader.move_file_to(path)
+					print 'play_torrent_variant.resultTryAgain'
+					return play_torrent_variant.resultTryAgain
+				else:
+					print 'Torrents are equal'
+					downloader = None
 
 			xbmc.sleep(1000)
 
@@ -257,6 +288,16 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
+
+	path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+	if not filesystem.exists(path):
+		torr_downloader.download()
+		path = torr_downloader.get_filename()
+		torr_downloader = None
+
+	'''
+	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	if 'anidub' in torrent_source:
 		path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
 		print path
@@ -280,8 +321,9 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	else:
 		url = urllib.unquote(torrent_source)
 		return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
+	'''
 
-	return None
+	return { 'path_or_url': path, 'episode': params.get('episodeNumber', None), 'downloader': torr_downloader }
 
 def openInTorrenter(nfoReader):
 	try:
@@ -342,7 +384,10 @@ def play_torrent(settings, params):
 		if path_or_url_and_episode:
 			path = path_or_url_and_episode['path_or_url']
 			episodeNumber = path_or_url_and_episode['episode']
-			play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params)
+			downloader = path_or_url_and_episode['downloader']
+			play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader)
+			if play_torrent_variant_result == play_torrent_variant.resultTryAgain:
+				play_torrent_variant_result = play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, None)
 	else:
 		for tryCount, variant in enumerate(links_with_ranks, 1):
 
@@ -361,7 +406,12 @@ def play_torrent(settings, params):
 				continue
 
 			episodeNumber = path_or_url_and_episode['episode']
-			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params)
+			downloader = path_or_url_and_episode['downloader']
+
+			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params, downloader)
+			if play_torrent_variant_result == play_torrent_variant.resultTryAgain:
+				play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog, episodeNumber, nfoReader, settings, params, None)
+
 			if play_torrent_variant_result != play_torrent_variant.resultTryNext:
 				break
 

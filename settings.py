@@ -34,6 +34,7 @@ class Settings:
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
+		self.hdclub_passkey			= hdclub_passkey
 		
 		self.__base_path			= filesystem.abspath(base_path)
 		self.__movies_path 			= movies_path
