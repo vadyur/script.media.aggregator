@@ -345,7 +345,12 @@ class TorrentPlayer(object):
 			return None
 
 		info = decoded['info']
-		info_hash = ''
+
+		import hashlib
+		from bencode import bencode
+		info_hash = hashlib.sha1(bencode(info)).hexdigest()
+		print info_hash
+
 		playable_items = []
 		if 'files' in info:
 			for i, f in enumerate(info['files']):
