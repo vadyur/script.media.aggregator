@@ -4,6 +4,23 @@ import json, re, base
 import urllib2, requests
 from bs4 import BeautifulSoup
 
+def get_tmdb_api_key():
+	try:
+		import xbmc, filesystem
+		xml_path = xbmc.translatePath('special://home').decode('utf-8')
+		xml_path = filesystem.join(xml_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
+		with filesystem.fopen(xml_path, 'r') as xml:
+			content = xml.read()
+			match = re.search('api_key=(\w+)', content)
+			if match:
+				key = match.group(1)
+				print 'get_tmdb_api_key: ok'
+				return key
+
+	except BaseException as e:
+		print 'get_tmdb_api_key: ' + str(e)
+		return 'f7f51775877e0bb6703520952b3c7840'
+
 class KinopoiskAPI(object):
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
@@ -86,13 +103,12 @@ class KinopoiskAPI(object):
 					return self.__trailer(a)
 		return None
 
-
 class MovieAPI(KinopoiskAPI):
-	tmdb_api_key		= '57983e31fb435df4df77afb854740ea9'	# from metadata.common.themoviedb.org scraper
 	api_url		= 'https://api.themoviedb.org/3'
+	tmdb_api_key = get_tmdb_api_key()
 
 	def url_imdb_id(self, idmb_id):
-		return 'http://api.themoviedb.org/3/movie/' + idmb_id + '?api_key=' + self.tmdb_api_key + '&language=ru'
+		return 'http://api.themoviedb.org/3/movie/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		
 #	def url_tmdb_images(self, id):
 #		return api_url + '/movie/' + id + '/images' + '?api_key=' + self.tmdb_api_key
