@@ -426,21 +426,13 @@ def main():
 	params 		= get_params()
 	print params
 	settings	= load_settings()
-	#print settings
 
 	xbmc.log(settings.base_path())
 	if 'torrent' in params:
 		# import rpdb2
 		# rpdb2.start_embedded_debugger('pw')
-		# sys.path.append(r"c:\Program Files (x86)\JetBrains\PyCharm Community Edition 5.0.3\helpers\pydev")
-		# import pydevd
-		# pydevd.settrace(stdoutToServer=True, stderrToServer=True)
-
-		#path_or_url_and_episode = get_path_or_url_and_episode(settings, params, params['torrent'])
-		#if not path_or_url_and_episode is None:
 		play_torrent(settings = settings, params = params)
 
-		# pydevd.stoptrace()
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()
@@ -480,12 +472,6 @@ def main():
 					_addon.setSetting('nnmclub_passkey', passkey)
 					settings.nnmclub_passkey = passkey
 
-			'''
-			if rep == 2:
-				adv_s = AdvancedSettingsReader()
-				print adv_s['type']
-				return
-			'''
 			if rep > 1 or rep < 0:
 				break
 
