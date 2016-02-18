@@ -5,7 +5,6 @@ import urllib2
 from bs4 import BeautifulSoup
 
 import base
-import countries
 import feedparser
 import requests
 
@@ -176,24 +175,7 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 
-		if 'country_studio' in self._dict:
-			parse_string = self._dict['country_studio']
-			items = re.split(r'[/,|\(\);\\]', parse_string.replace(' - ', '/'))
-			cntry = []
-			stdio = []
-			for s in items:
-				s = s.strip()
-				if len(s) == 0:
-					continue
-				cntry.append(s) if countries.isCountry(s) else stdio.append(s)
-			self._dict['country'] = ', '.join(cntry)
-			self._dict['studio'] = ', '.join(stdio)
-			'''
-			parts = parse_string.split(' / ')
-			self._dict['country'] = parts[0]
-			if len(parts) > 1:
-				self._dict['studio'] = parts[1]
-			'''
+		self.parse_country_studio()
 
 		if self.settings:
 			if self.settings.use_kinopoisk:
@@ -313,6 +295,8 @@ def write_movie(post, settings, tracker):
 			if link:
 				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
 
+			from downloader import TorrentDownloader
+			TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
 
 		# time.sleep(1)
 

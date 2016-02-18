@@ -123,7 +123,7 @@ class NFOReader(object):
 		list_item = xbmcgui.ListItem(path=playable_url)
 		list_item.setInfo('video', self.get_info())
 		art = self.get_art()
-		list_item.setArt(art)
+		#list_item.setArt(art)
 		list_item.setThumbnailImage(art.get('poster', ''))
 		
 		return list_item

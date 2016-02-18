@@ -25,6 +25,7 @@ class DescriptionParser(DescriptionParserBase):
 			u'Продолжительность:': u'runtime',
 			u'Формат:': u'format',
 			u'Видео:': u'video',
+			u'Выпущено:': u'country_studio'
 		}.get(x, u'')
 		
 	def parse(self):
@@ -48,7 +49,9 @@ class DescriptionParser(DescriptionParserBase):
 					tag = u''
 			except:
 				pass
-				
+
+		self.parse_country_studio()
+
 		count_id = 0
 		for a in self.soup.select('a'):
 			try:
@@ -97,6 +100,8 @@ def write_movie(item, settings):
 		print 'filename: ' + filename.encode('utf-8')
 		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
 		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
+		from downloader import TorrentDownloader
+		TorrentDownloader(item.link, settings.addon_data_path, settings).download()
 	else:
 		skipped(item)
 		
@@ -134,3 +139,12 @@ def run(settings):
 	if settings.movies_save:
 		write_movies(settings.movies_url, settings.movies_path(), settings)
 
+def download_torrent(url, path, settings):
+	url = url.replace('details.php', 'download.php')
+	if not 'passkey' in url:
+		url += '&passkey=' + settings.hdclub_passkey
+
+	import shutil
+	response = urllib2.urlopen(url)
+	with filesystem.fopen(path, 'wb') as f:
+		shutil.copyfileobj(response, f)

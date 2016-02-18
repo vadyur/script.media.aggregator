@@ -21,6 +21,13 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		for item in links:
 			try:
 				s = ''
+				link = item['link']
+				if 'anidub' in link:
+					s += '[AniDUB] '
+				elif 'nnm-club' in link:
+					s += '[NNM-Club] '
+				elif 'hdclub' in link:
+					s += '[HDclub] '
 				s += item['full_title']
 				s += '\n' + u'Видео: ' + item['video']
 				s += '\n' + u'Перевод: ' + item['translate']
@@ -30,7 +37,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 			if s != '':
 				li = xbmcgui.ListItem(s)
-				li.setProperty('link', item['link'])
+				li.setProperty('link', link)
 				self.list.addItem(li)
 			#list.addItem('Item 1\nNew line')
 			#list.addItem('Item 2\nNew line')

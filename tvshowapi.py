@@ -291,9 +291,15 @@ def write_tvshow(fulltitle, link, settings, parser):
 	from strmwriter import STRMWriter
 	import requests
 
-	r = requests.get(link)
-	if r.status_code == requests.codes.ok:
-		files = parse_torrent(r.content, season_from_title(fulltitle))
+	from downloader import TorrentDownloader
+	dl = TorrentDownloader(parser.link(), settings.addon_data_path, settings)
+	dl.download()
+
+	#r = requests.get(link)
+	#if r.status_code == requests.codes.ok:
+	with filesystem.fopen(dl.get_filename(), 'rb') as torr:
+		content = torr.read()
+		files = parse_torrent(content, season_from_title(fulltitle))
 
 		title = parser.get_value('title')
 		print title.encode('utf-8')

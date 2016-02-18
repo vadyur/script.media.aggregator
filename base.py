@@ -270,7 +270,22 @@ class DescriptionParserBase(Informer):
 			return self._dict['fanart']
 		else:
 			return None
-		
+
+	def parse_country_studio(self):
+		import countries
+		if 'country_studio' in self._dict:
+			parse_string = self._dict['country_studio']
+			items = re.split(r'[/,|\(\);\\]', parse_string.replace(' - ', '/'))
+			cntry = []
+			stdio = []
+			for s in items:
+				s = s.strip()
+				if len(s) == 0:
+					continue
+				cntry.append(s) if countries.isCountry(s) else stdio.append(s)
+			self._dict['country'] = ', '.join(cntry)
+			self._dict['studio'] = ', '.join(stdio)
+
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
 		
@@ -319,14 +334,53 @@ class TorrentPlayer(object):
 		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
 	
 	def AddTorrent(self, path):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		self.path = path
 		
 	def CheckTorrentAdded(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		return filesystem.exists(self.path)
 		
 	def GetLastTorrentData(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		
+		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+
+		data = None
+		with filesystem.fopen(self.path, 'rb') as torr:
+			data = torr.read()
+
+		if data is None:
+			return None
+
+		from bencode import BTFailure
+		try:
+			from bencode import bdecode
+			decoded = bdecode(data)
+		except BTFailure:
+			print "Can't decode torrent data (invalid torrent link?)"
+			return None
+
+		info = decoded['info']
+
+		import hashlib
+		from bencode import bencode
+		info_hash = hashlib.sha1(bencode(info)).hexdigest()
+		print info_hash
+
+		playable_items = []
+		if 'files' in info:
+			for i, f in enumerate(info['files']):
+				# print i
+				# print f
+				name = os.sep.join(f['path'])
+				size = f['length']
+				print name
+				if TorrentPlayer.is_playable(name):
+					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
+		else:
+			return { 'info_hash': info_hash, 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
+
+		return { 'info_hash': info_hash, 'files': playable_items }
+
 	def StartBufferFile(self, fileIndex):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		

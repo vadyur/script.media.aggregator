@@ -106,9 +106,9 @@ class NFOWriter:
 	def add_element_split(self, parent, tagname, parser):
 		values = parser.get_value(tagname).split(',')
 		for i in values:
-			ET.SubElement(parent, tagname).text = i.strip()
+			if i and i != '':
+				ET.SubElement(parent, tagname).text = i.strip()
 		return len(values) > 0
-
 
 	def write_episode(self, episode, filename, actors = None):
 		root_tag = 'episodedetails'
@@ -320,6 +320,12 @@ class NFOWriter:
 	def write_actor(self, root):
 		self.add_actors(root)
 
+	def write_country(self, root):
+		self.add_element_split(root, 'country', self.parser)
+
+	def write_studio(self, root):
+		self.add_element_split(root, 'studio', self.parser)
+
 	def write_movie(self, filename):
 		root = ET.Element('movie')
 		self.write_title(root)
@@ -342,8 +348,10 @@ class NFOWriter:
 		self.write_filenameandpath(root)
 		self.write_trailer(root)
 		self.write_genre(root)
+		self.write_country(root)
 		self.write_credits(root)
 		self.write_director(root)
+		self.write_studio(root)
 		self.write_actor(root)
 		fn = make_fullpath(filename, '.nfo')
 		write_tree(fn, root)
@@ -370,8 +378,10 @@ class NFOWriter:
 		self.write_filenameandpath(root)
 		self.write_trailer(root)
 		self.write_genre(root)
+		self.write_country(root)
 		self.write_credits(root)
 		self.write_director(root)
+		self.write_studio(root)
 		self.write_actor(root)
 		fn = make_fullpath('tvshow', '.nfo')
 		write_tree(fn, root)
