@@ -25,6 +25,7 @@ class DescriptionParser(DescriptionParserBase):
 			u'Продолжительность:': u'runtime',
 			u'Формат:': u'format',
 			u'Видео:': u'video',
+			u'Выпущено:': u'country_studio'
 		}.get(x, u'')
 		
 	def parse(self):
@@ -48,7 +49,9 @@ class DescriptionParser(DescriptionParserBase):
 					tag = u''
 			except:
 				pass
-				
+
+		self.parse_country_studio()
+
 		count_id = 0
 		for a in self.soup.select('a'):
 			try:

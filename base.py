@@ -270,7 +270,22 @@ class DescriptionParserBase(Informer):
 			return self._dict['fanart']
 		else:
 			return None
-		
+
+	def parse_country_studio(self):
+		import countries
+		if 'country_studio' in self._dict:
+			parse_string = self._dict['country_studio']
+			items = re.split(r'[/,|\(\);\\]', parse_string.replace(' - ', '/'))
+			cntry = []
+			stdio = []
+			for s in items:
+				s = s.strip()
+				if len(s) == 0:
+					continue
+				cntry.append(s) if countries.isCountry(s) else stdio.append(s)
+			self._dict['country'] = ', '.join(cntry)
+			self._dict['studio'] = ', '.join(stdio)
+
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
 		
