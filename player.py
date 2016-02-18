@@ -293,35 +293,8 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
 		torr_downloader.download()
-		path = torr_downloader.get_filename()
+		torr_downloader.move_file_to(path)
 		torr_downloader = None
-
-	'''
-	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
-	if 'anidub' in torrent_source:
-		path = filesystem.join(tempPath, u'temp.anidub.media-aggregator.torrent')
-		print path
-		if anidub.download_torrent(torrent_source, path, settings):
-			return { 'path_or_url': path, 'episode': params.get('episodeNumber', None) }
-	elif 'hdclub' in torrent_source:
-		url = urllib.unquote(torrent_source).replace('details.php', 'download.php')
-		if not 'passkey' in url:
-			url += '&passkey=' + _addon.getSetting('hdclub_passkey')
-
-		return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
-	elif 'nnm-club' in torrent_source:
-		path = filesystem.join(tempPath, u'temp.nnm-club.media-aggregator.torrent')
-		if settings.nnmclub_login != '' and settings.nnmclub_password != '' and nnmclub.download_torrent(torrent_source, path, settings):
-			print 'Download torrent %s' % path
-			return { 'path_or_url': path, 'episode': params.get('episodeNumber', None) }
-		else:
-			url = nnmclub.get_magnet_link(urllib.unquote(torrent_source))
-			print 'Download magnet %s' % url
-			return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
-	else:
-		url = urllib.unquote(torrent_source)
-		return { 'path_or_url': url, 'episode': params.get('episodeNumber', None) }
-	'''
 
 	return { 'path_or_url': path, 'episode': params.get('episodeNumber', None), 'downloader': torr_downloader }
 
