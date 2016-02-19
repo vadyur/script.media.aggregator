@@ -235,6 +235,8 @@ class DescriptionParserRSS(DescriptionParser):
 
 		return result
 
+class DescriptionParserRSSTVShows(DescriptionParserRSS, DescriptionParserTVShows):
+	pass
 
 class PostsEnumerator(object):
 	# ==============================================================================================
@@ -254,7 +256,6 @@ class PostsEnumerator(object):
 	def items(self):
 		return self._items
 
-
 class TrackerPostsEnumerator(PostsEnumerator):
 	def process_page(self, url):
 		request = self._s.get(url)
@@ -266,6 +267,15 @@ class TrackerPostsEnumerator(PostsEnumerator):
 			if td and not td.find('span', class_ = 'tDL'):
 				continue
 			self._items.append(a)
+
+def write_movie_rss(fulltitle, description, link, settings):
+	parser = DescriptionParserRSS(fulltitle, description, settings)
+	if parser.parsed():
+		import movieapi
+		if link:
+			save_download_link(parser, settings, link)
+		movieapi.write_movie(fulltitle, link, settings, parser)
+		save_download_link(parser, settings, link)
 
 
 def write_movie(post, settings, tracker):
@@ -304,6 +314,7 @@ def write_movie(post, settings, tracker):
 
 
 def write_movies(content, path, settings, tracker=False):
+
 	original_dir = filesystem.getcwd()
 
 	if not filesystem.exists(path):
@@ -340,14 +351,13 @@ def save_download_link(parser, settings, link):
 	except:
 		pass
 
-
 def write_tvshow(fulltitle, description, link, settings):
-	parser = DescriptionParserRSS(fulltitle, description, settings)
+	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
 		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
 		save_download_link(parser, settings, link)
 
-def write_tvshows(content, path, settings):
+def write_tvshows(rss_url, path, settings):
 	original_dir = filesystem.getcwd()
 
 	if not filesystem.exists(path):
@@ -356,44 +366,62 @@ def write_tvshows(content, path, settings):
 	try:
 		filesystem.chdir(path)
 
-		d = feedparser.parse(content)
+		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			try:
 				print item.title.encode('utf-8')
 			except:
 				continue
-			write_tvshow( \
-					fulltitle=item.title, \
-					description=item.description, \
-					link=item.link, \
-					settings=settings)
+			write_tvshow(
+				fulltitle=item.title,
+				description=item.description,
+				link=item.link,
+				settings=settings)
 	finally:
 		filesystem.chdir(original_dir)
 
+def write_movies_rss(rss_url, path, settings):
+	original_dir = filesystem.getcwd()
+
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
+
+	try:
+		filesystem.chdir(path)
+
+		d = feedparser.parse(rss_url)
+		for item in d.entries:
+			try:
+				print item.title.encode('utf-8')
+			except:
+				continue
+			write_movie_rss(
+				fulltitle=item.title,
+				description=item.description,
+				link=item.link,
+				settings=settings)
+	finally:
+		filesystem.chdir(original_dir)
+
+def get_rss_url(f_id, passkey):
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=168&t=1&uk=' + passkey
 
 def run(settings):
 	passkey = get_passkey(settings)
-	#if passkey != settings.nnmclub_passkey:
 	settings.nnmclub_passkey = passkey
 
 	if settings.movies_save:
-		write_movies(_HD_PORTAL_URL, settings.movies_path(), settings)
-	if settings.animation_save:
-		write_movies(MULTHD_URL, settings.animation_path(), settings, tracker=True)
+		write_movies_rss(get_rss_url('227,954', passkey), settings.movies_path(), settings)
 
+	if settings.animation_save:
+		write_movies_rss(get_rss_url(661, passkey), settings.animation_path(), settings)
 
 	if settings.animation_tvshows_save:
-		# path = filesystem.join(settings.base_path(), u'Зарубежные Мультсериалы')
-		write_tvshows('http://nnm-club.me/forum/rss2.php?f=232&h=168&t=1&uk=' + passkey, settings.animation_tvshow_path(), settings)
-		# path = filesystem.join(settings.base_path(), u'Отечественные Мультсериалы')
-		# write_tvshows('http://nnm-club.me/forum/rss2.php?f=658&h=168&t=1&uk=' + passkey, settings.animation_tvshow_path(), settings)
+		write_tvshows(get_rss_url(232, passkey), settings.animation_tvshow_path(), settings)
 
 	if settings.tvshows_save:
-		# path = filesystem.join(settings.base_path(), u'Зарубежные сериалы')
-		write_tvshows('http://nnm-club.me/forum/rss2.php?f=768&h=168&t=1&uk=' + passkey, settings.tvshow_path(), settings)
+		write_tvshows(get_rss_url(768, passkey), settings.tvshow_path(), settings)
 
-
-# write_movies(_BASE_URL + 'portal.php?c=13', filesystem.join(settings.base_path(), u'Наши'), settings)
 
 def get_magnet_link(url):
 	r = requests.get(url)
