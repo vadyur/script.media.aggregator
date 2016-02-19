@@ -4,6 +4,23 @@ import json, re, base
 import urllib2, requests
 from bs4 import BeautifulSoup
 
+def write_movie(fulltitle, link, settings, parser):
+	print '+-------------------------------------------'
+	filename = parser.make_filename()
+	if filename:
+		print 'fulltitle: ' + fulltitle.encode('utf-8')
+		print 'filename: ' + filename.encode('utf-8')
+		print '-------------------------------------------+'
+		from strmwriter import STRMWriter
+		STRMWriter(parser.link()).write(filename,
+										parser=parser,
+										settings=settings)
+		from nfowriter import NFOWriter
+		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename)
+
+		from downloader import TorrentDownloader
+		TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
+
 def get_tmdb_api_key():
 	try:
 		import xbmc, filesystem

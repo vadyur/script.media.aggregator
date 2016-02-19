@@ -12,7 +12,14 @@ from nfowriter import *
 from strmwriter import *
 
 class DescriptionParser(DescriptionParserBase):
-				
+
+	def __init__(self, full_title, content, link, settings):
+		self._link = link
+		DescriptionParserBase.__init__(self, full_title, content, settings)
+
+	def link(self):
+		return self._link
+
 	def get_tag(self, x):
 		return {
 			u'Название:': u'title',
@@ -86,7 +93,7 @@ def write_movie(item, settings):
 	full_title = item.title
 	print 'full_title: ' + full_title.encode('utf-8')
 
-	parser = DescriptionParser(full_title, item.description, settings = settings)
+	parser = DescriptionParser(full_title, item.description, item.link,	settings)
 	print '-------------------------------------------------------------------------'
 	
 	if parser.need_skipped(full_title):
@@ -107,7 +114,7 @@ def write_movie(item, settings):
 		
 	del parser
 		
-def write_movies(content, path, settings):
+def write_movies(rss_url, path, settings):
 	
 	original_dir = filesystem.getcwd()
 	
@@ -116,28 +123,59 @@ def write_movies(content, path, settings):
 		
 	filesystem.chdir(path)
 	
-	d = feedparser.parse(content)
-	'''
-	print d.feed.publisher
-	print d.feed.subtitle
-	print d.feed.language
-	print d.feed.title.encode('utf-8')
-	print d.entries[0].title.encode('utf-8')
-	print d.entries[0].description.encode('utf-8')
-	print d.entries[0].link
-	'''
+	d = feedparser.parse(rss_url)
 	for item in d.entries:
 		write_movie(item, settings)
 			
 	filesystem.chdir(original_dir)
 
+def write_tvshow(item, settings):
+	full_title = item.title
+	print 'full_title: ' + full_title.encode('utf-8')
+
+	parser = DescriptionParser(full_title, item.description, item.link, settings)
+	print '-------------------------------------------------------------------------'
+
+	if parser.need_skipped(full_title):
+		return
+
+	if parser.parsed():
+		import tvshowapi
+		tvshowapi.write_tvshow(full_title, item.link, settings, parser)
+
+	del parser
+
+def write_tvshows(rss_url, path, settings):
+
+	original_dir = filesystem.getcwd()
+
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
+
+	filesystem.chdir(path)
+
+	d = feedparser.parse(rss_url)
+	for item in d.entries:
+		write_tvshow(item, settings)
+
+	filesystem.chdir(original_dir)
+
+def get_rss_url(f_id, passkey):
+	return 'http://hdclub.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey
+
 def run(settings):
 	if settings.animation_save:
 		write_movies(settings.animation_url, settings.animation_path(), settings)
+
 	if settings.documentary_save:
 		write_movies(settings.documentary_url, settings.documentary_path(), settings)
+
 	if settings.movies_save:
 		write_movies(settings.movies_url, settings.movies_path(), settings)
+
+	if settings.tvshows_save:
+		write_tvshows(get_rss_url(64, settings.hdclub_passkey), settings.tvshow_path(), settings)
+
 
 def download_torrent(url, path, settings):
 	url = url.replace('details.php', 'download.php')
