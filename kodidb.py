@@ -3,8 +3,8 @@ import xml.etree.ElementTree as ET
 
 import inspect
 def lineno():
-    """Returns the current line number in our program."""
-    return inspect.currentframe().f_back.f_lineno
+	"""Returns the current line number in our program."""
+	return inspect.currentframe().f_back.f_lineno
 
 class AdvancedSettingsReader(object):
 	dict = {}
@@ -23,9 +23,14 @@ class AdvancedSettingsReader(object):
 		try:
 			with filesystem.fopen(path, 'r') as f:
 				content = f.read()
+				print content
 				root = ET.fromstring(content)
 		except IOError as e:
 			self.LOG("I/O error({0}): {1}".format(e.errno, e.strerror))
+			return
+		except BaseException as e:
+			self.LOG("error: " + str(e))
+			return
 
 		for section in root:
 			if section.tag == 'videodatabase':
@@ -99,11 +104,11 @@ class VideoDatabase(object):
 	def create_connection(self):
 		if self.DB == 'mysql':
 			import mysql.connector
-			return mysql.connector.connect(	database=self.DB_NAME, \
-											user=self.DB_USER, \
-											password=self.DB_PASS, \
-											host=self.DB_ADDRESS, \
-											port=self.DB_PORT, \
+			return mysql.connector.connect(	database=self.DB_NAME,
+											user=self.DB_USER,
+											password=self.DB_PASS,
+											host=self.DB_ADDRESS,
+											port=self.DB_PORT,
 											buffered=True)
 		else:
 			from sqlite3 import dbapi2 as db_sqlite
@@ -274,5 +279,3 @@ class KodiDB(object):
 		
 	def getFileDataById(self, fileId):
 		return
-		
-		
