@@ -15,6 +15,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
 		self.setGeometry(850, 550, 1, 1)
 
+		self.files = None
 		self.list = pyxbmct.List('font14', _itemHeight=80)
 		self.placeControl(self.list, 0, 0)
 
@@ -46,20 +47,74 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.setFocus(self.list)
 		self.connect(self.list, self.make_choice)
 
+		self.connect(pyxbmct.ACTION_MOVE_RIGHT, self.show_files)
+		self.connect(pyxbmct.ACTION_MOVE_LEFT, self.show_list)
 
-		'''
-		# Создаем кнопку.
-		button = pyxbmct.Button('Close')
-		# Помещаем кнопку в сетку.
-		self.placeControl(button, 1, 1)
-		# Устанавливаем начальный фокус на кнопку.
-		self.setFocus(button)
-		# Связываем кнопку с методом.
-		self.connect(button, self.close)
-		'''
 		# Связываем клавиатурное действие с методом.
 		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
 		self.has_choice = False
+		self.has_select_file = False
+
+	def show_list(self):
+		self.list.setVisible(True)
+		self.setFocus(self.list)
+
+		if self.files:
+			self.files.setVisible(False)
+			del self.files
+			self.files = None
+
+	def show_files(self):
+		if self.files:
+			return
+
+		self.files = pyxbmct.List('font14')
+		self.placeControl(self.files, 0, 0)
+
+		cursel = self.list.getSelectedItem()
+		print cursel.getLabel()
+		link = cursel.getProperty('link')
+
+		match = re.search('torrent=(.+)&', str(link))
+		if not match:
+			pattern2 = 'torrent=(.+)'
+			match = re.search(pattern2, str(link))
+
+		if match:
+			link = match.group(1)
+
+		self.list.setVisible(False)
+
+		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+		from downloader import TorrentDownloader
+		import player
+		settings = player.load_settings()
+		import urllib
+		torr_downloader = TorrentDownloader(urllib.unquote(link), tempPath, settings)
+		path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+		if not filesystem.exists(path):
+			torr_downloader.download()
+			path = torr_downloader.get_filename()
+
+		print path
+		if filesystem.exists(path):
+			import base
+			player = base.TorrentPlayer()
+			player.AddTorrent(path)
+			data = player.GetLastTorrentData()
+			if data:
+				for f in data['files']:
+					li = xbmcgui.ListItem(f['name'])
+					li.setProperty('index', str(f['index']))
+					self.files.addItem(li)
+
+		self.setFocus(self.files)
+		self.connect(self.files, self.select_file)
+
+	def select_file(self):
+		print 'select_file'
+		self.has_select_file = True
+		self.close()
 
 	def make_choice(self):
 		print 'make choice'
@@ -80,18 +135,29 @@ def main():
 
 	window = MyWindow('Media Aggregator', links=links)
 	window.doModal()
-	if not window.has_choice:
+
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+
+	print window.has_choice
+	print window.has_select_file
+
+	if not window.has_choice and not window.has_select_file:
 		del window
 		return
 
 	cursel = window.list.getSelectedItem()
 	print cursel.getLabel()
 	link = cursel.getProperty('link')
+
+	selected_file = None
+	if window.has_select_file:
+		#selected_file = window.files.getSelectedItem().getLabel()
+		selected_file = window.files.getSelectedItem().getProperty('index')
+
 	del window
 
 
-#	import rpdb2
-#	rpdb2.start_embedded_debugger('pw')
 	with filesystem.fopen(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), 'r') as strm:
 		src_link = strm.read()
 		print src_link
@@ -104,6 +170,13 @@ def main():
 		if match:
 			dst_link = re.sub(pattern, 'torrent=' + match.group(1) + '&', str(src_link)) + '&onlythis=true'
 			print dst_link
+
+			if selected_file:
+				#import urllib
+				#from tvshowapi import cutStr
+				#dst_link += '&cutName=' + urllib.quote(cutStr(selected_file))
+				dst_link += '&index=' + str(selected_file)
+
 			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
 

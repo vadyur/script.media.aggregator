@@ -168,20 +168,28 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		print files
 
 		if 'cutName' not in params:
-			if episodeNumber is not None:
-				files.sort(key=operator.itemgetter('name'))
-			else:
-				files.sort(key=operator.itemgetter('size'), reverse=True)
-			print 'sorted_files:'
-			print files
+			if 'index' not in params:
+				if episodeNumber is not None:
+					files.sort(key=operator.itemgetter('name'))
+				else:
+					files.sort(key=operator.itemgetter('size'), reverse=True)
+				print 'sorted_files:'
+				print files
 
 		if 'cutName' not in params:
-			if episodeNumber is None:
-				index = 0
-				playable_item = files[0]
+			if 'index' not in params:
+				if episodeNumber is None:
+					index = 0
+					playable_item = files[0]
+				else:
+					playable_item = files[episodeNumber]
+					index = playable_item.get('index')
 			else:
-				playable_item = files[episodeNumber]
-				index = playable_item.get('index')
+				index = -1
+				for item in files:
+					if int(params['index']) == item['index']:
+						playable_item = item
+						index = playable_item.get('index')
 		else:
 			cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
 			index = -1
