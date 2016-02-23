@@ -7,7 +7,7 @@ from base import TorrentPlayer
 import urlparse, urllib, time, filesystem, xbmc, xbmcaddon
 
 def path2url(path):
-    return urlparse.urljoin('file:', urllib.pathname2url(path))
+	return urlparse.urljoin('file:', urllib.pathname2url(path))
 	
 _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
@@ -229,9 +229,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			pass
 			
 		return None
-		
 
-		
 	def GetStreamURL(self, playable_item):
 		if self.download_path is None:
 			f_status = self.engine.file_status(self.file_id)
