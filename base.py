@@ -363,8 +363,8 @@ class TorrentPlayer(object):
 
 		import hashlib
 		from bencode import bencode
-		info_hash = hashlib.sha1(bencode(info)).hexdigest()
-		print info_hash
+		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
+		print self.info_hash
 
 		playable_items = []
 		if 'files' in info:
@@ -377,9 +377,9 @@ class TorrentPlayer(object):
 				if TorrentPlayer.is_playable(name):
 					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
 		else:
-			return { 'info_hash': info_hash, 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
+			return { 'info_hash': self.info_hash, 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
 
-		return { 'info_hash': info_hash, 'files': playable_items }
+		return { 'info_hash': self.info_hash, 'files': playable_items }
 
 	def StartBufferFile(self, fileIndex):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")

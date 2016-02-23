@@ -39,7 +39,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		self.settings = settings
 		self.download_path = None
 		
-		self.pre_buffer_bytes 	= self.debug_assignment(int(getSetting('pre_buffer_bytes'))*1024*1024, 'pre_buffer_bytes') 		
+		self.pre_buffer_bytes 	= self.debug_assignment(int(getSetting('pre_buffer_bytes'))*1024*1024, 'pre_buffer_bytes')
 		
 		self.debug('__init__')
 		
@@ -83,8 +83,16 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		
 		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
-							keep_incomplete=False, keep_complete=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
+							keep_incomplete=False, keep_complete=True, keep_files=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
 							log_files_progress=True)
+
+		try:
+			self.engine.resume_file = filesystem.join(self.settings.addon_data_path, self.info_hash + '.resume')
+		except BaseException as e:
+			print e
+			self.engine.resume_file = filesystem.join(download_path, self.info_hash + '.resume')
+		self.debug('resume file is: ' + self.engine.resume_file)
+
 		#self.engine.start()
 		
 	def _CheckTorrentAdded(self):
