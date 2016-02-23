@@ -61,7 +61,7 @@ def load_settings():
 	anidub_login		= _addon.getSetting('anidub_login')
 	anidub_password		= _addon.getSetting('anidub_password')
 
-	nnmclub_pages		= int(_addon.getSetting('nnmclub_pages'))
+	nnmclub_pages		= 3
 	nnmclub_login		= _addon.getSetting('nnmclub_login')
 	nnmclub_password	= _addon.getSetting('nnmclub_password')
 
