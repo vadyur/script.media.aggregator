@@ -311,6 +311,12 @@ class NFOWriter:
 	def write_genre(self, root):
 		self.add_element_split(root, 'genre', self.parser)
 
+	def write_tag(self, root):
+		tags = self.parser.get('tag', None)
+		if isinstance(tags, list):
+			for tag in tags:
+				self.add_element_value(root, 'tag', tag)
+
 	def write_credits(self, root):
 		pass
 
@@ -348,6 +354,7 @@ class NFOWriter:
 		self.write_filenameandpath(root)
 		self.write_trailer(root)
 		self.write_genre(root)
+		self.write_tag(root)
 		self.write_country(root)
 		self.write_credits(root)
 		self.write_director(root)
@@ -378,6 +385,7 @@ class NFOWriter:
 		self.write_filenameandpath(root)
 		self.write_trailer(root)
 		self.write_genre(root)
+		self.write_tag(root)
 		self.write_country(root)
 		self.write_credits(root)
 		self.write_director(root)
