@@ -4,6 +4,10 @@ import os, sys
 
 __DEBUG__ = False
 
+class MakeCHDirException(Exception):
+	def __init__(self, path):
+		self.path = path
+
 def get_filesystem_encoding():
 	return sys.getfilesystemencoding() if os.name == 'nt' else 'utf-8'
 
@@ -41,6 +45,9 @@ def save_make_chdir(new_path):
 		if not exists(new_path):
 			makedirs(new_path)
 		chdir(new_path)
+	except BaseException as e:
+		print e
+		raise MakeCHDirException(current)
 	finally:
 		return current
 	

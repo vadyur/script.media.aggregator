@@ -293,7 +293,8 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 	from downloader import TorrentDownloader
 	dl = TorrentDownloader(parser.link(), settings.addon_data_path, settings)
-	dl.download()
+	if not dl.download():
+		return
 
 	#r = requests.get(link)
 	#if r.status_code == requests.codes.ok:
@@ -319,20 +320,10 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
-			#prevSeason = None
-			#episodes = None
 			cnt = 0
 			for f in files:
 				cnt += 1
 				try:
-					'''
-					new_season = prevSeason != f['season']
-					if new_season:
-						episodes = tvshow_api.episodes(f['season'])
-
-					results = filter(lambda x: x['episodeNumber'] == f['episode'], episodes)
-					episode = results[0] if len(results) > 0 else None
-					'''
 					episode = tvshow_api.Episode(f['season'], f['episode'])
 					if episode is None:
 						episode = {
@@ -370,11 +361,20 @@ def write_tvshow(fulltitle, link, settings, parser):
 					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
 					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
 
-					#prevSeason = f['season']
-
-				finally:
 					filesystem.chdir(tvshow_full_path)
-		finally:
+
+				except filesystem.MakeCHDirException as e:
+					filesystem.chdir(e.path)
+				except BaseException as e:
+					filesystem.chdir(tvshow_full_path)
+
+				# end for
+
+			filesystem.chdir(save_path)
+
+		except filesystem.MakeCHDirException as e:
+			filesystem.chdir(e.path)
+		except BaseException as e:
 			filesystem.chdir(save_path)
 
 

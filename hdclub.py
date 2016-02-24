@@ -115,19 +115,19 @@ def write_movie(item, settings):
 	del parser
 		
 def write_movies(rss_url, path, settings):
+	try:
+		original_dir = filesystem.save_make_chdir(path)
 	
-	original_dir = filesystem.getcwd()
-	
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-		
-	filesystem.chdir(path)
-	
-	d = feedparser.parse(rss_url)
-	for item in d.entries:
-		write_movie(item, settings)
-			
-	filesystem.chdir(original_dir)
+		d = feedparser.parse(rss_url)
+		for item in d.entries:
+			write_movie(item, settings)
+
+		filesystem.chdir(original_dir)
+	except filesystem.MakeCHDirException as e:
+		filesystem.chdir(e.path)
+	except BaseException as e:
+		print e
+		filesystem.chdir(original_dir)
 
 def write_tvshow(item, settings):
 	full_title = item.title
@@ -147,18 +147,19 @@ def write_tvshow(item, settings):
 
 def write_tvshows(rss_url, path, settings):
 
-	original_dir = filesystem.getcwd()
+	try:
+		original_dir = filesystem.save_make_chdir(path)
 
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
+		d = feedparser.parse(rss_url)
+		for item in d.entries:
+			write_tvshow(item, settings)
 
-	filesystem.chdir(path)
-
-	d = feedparser.parse(rss_url)
-	for item in d.entries:
-		write_tvshow(item, settings)
-
-	filesystem.chdir(original_dir)
+		filesystem.chdir(original_dir)
+	except filesystem.MakeCHDirException as e:
+		filesystem.chdir(e.path)
+	except BaseException as e:
+		print e
+		filesystem.chdir(original_dir)
 
 def get_rss_url(f_id, passkey):
 	return 'http://hdclub.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey
@@ -182,7 +183,12 @@ def download_torrent(url, path, settings):
 	if not 'passkey' in url:
 		url += '&passkey=' + settings.hdclub_passkey
 
-	import shutil
-	response = urllib2.urlopen(url)
-	with filesystem.fopen(path, 'wb') as f:
-		shutil.copyfileobj(response, f)
+	try:
+		import shutil
+		response = urllib2.urlopen(url)
+		with filesystem.fopen(path, 'wb') as f:
+			shutil.copyfileobj(response, f)
+		return True
+	except BaseException as e:
+		print e
+		return False
