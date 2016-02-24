@@ -160,6 +160,13 @@ class DescriptionParser(DescriptionParserBase):
 				print self._dict['studio']
 			except:
 				pass
+
+		tags = []
+		for a in self.soup.select('a[href*="http://tr.anidub.com/tags/"]'):
+			tags.append(a.get_text().strip())
+		if len(tags) > 0:
+			self._dict['tag'] = tags
+
 				
 		return True
 
