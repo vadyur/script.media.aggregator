@@ -49,34 +49,44 @@ def get_params():
 	#print param
 	return param
 
+def getSetting(id, default = ''):
+	result = _addon.getSetting(id)
+	if result != '':
+		return result
+	else:
+		return default
+
 def load_settings():
-	base_path 			= _addon.getSetting('base_path').decode('utf-8')
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
 
-	movies_path			= _addon.getSetting('movies_path').decode('utf-8')
-	animation_path		= _addon.getSetting('animation_path').decode('utf-8')
-	documentary_path	= _addon.getSetting('documentary_path').decode('utf-8')
-	anime_path			= _addon.getSetting('anime_path').decode('utf-8')
+	base_path 			= getSetting('base_path', '').decode('utf-8')
 
-	hdclub_passkey		= _addon.getSetting('hdclub_passkey')
-	anidub_login		= _addon.getSetting('anidub_login')
-	anidub_password		= _addon.getSetting('anidub_password')
+	movies_path			= getSetting('movies_path', 'Movies').decode('utf-8')
+	animation_path		= getSetting('animation_path', 'Animation').decode('utf-8')
+	documentary_path	= getSetting('documentary_path', 'Documentary').decode('utf-8')
+	anime_path			= getSetting('anime_path', 'Anime').decode('utf-8')
+
+	hdclub_passkey		= getSetting('hdclub_passkey')
+	anidub_login		= getSetting('anidub_login')
+	anidub_password		= getSetting('anidub_password')
 
 	nnmclub_pages		= 3
-	nnmclub_login		= _addon.getSetting('nnmclub_login')
-	nnmclub_password	= _addon.getSetting('nnmclub_password')
+	nnmclub_login		= getSetting('nnmclub_login')
+	nnmclub_password	= getSetting('nnmclub_password')
 
-	preffered_bitrate 	= int(_addon.getSetting('preffered_bitrate'))
-	preffered_type 		= _addon.getSetting('preffered_type')
+	preffered_bitrate 	= int(getSetting('preffered_bitrate'))
+	preffered_type 		= getSetting('preffered_type')
 
-	torrent_player 		= _addon.getSetting('torrent_player')
-	storage_path		= _addon.getSetting('storage_path')
+	torrent_player 		= getSetting('torrent_player')
+	storage_path		= getSetting('storage_path')
 	
-	movies_save 		= _addon.getSetting('movies_save') == 'true'
-	animation_save 		= _addon.getSetting('animation_save') == 'true'
-	documentary_save 	= _addon.getSetting('documentary_save') == 'true'
-	anime_save 			= _addon.getSetting('anime_save') == 'true'
-	tvshows_save 		= _addon.getSetting('tvshows_save') == 'true'
-	animation_tvshows_save = _addon.getSetting('animation_tvshows_save') == 'true'
+	movies_save 		= getSetting('movies_save') == 'true'
+	animation_save 		= getSetting('animation_save') == 'true'
+	documentary_save 	= getSetting('documentary_save') == 'true'
+	anime_save 			= getSetting('anime_save') == 'true'
+	tvshows_save 		= getSetting('tvshows_save') == 'true'
+	animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
 
 	settings 			= Settings(	base_path,
 									movies_path			= movies_path,

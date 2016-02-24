@@ -76,13 +76,13 @@ class TorrentDownloader(Downloader):
     def download(self):
         if 'nnm-club' in self.url:
             import nnmclub
-            nnmclub.download_torrent(self.url, self.get_filename(), self.settings)
+            return nnmclub.download_torrent(self.url, self.get_filename(), self.settings)
         elif 'hdclub' in self.url:
             import hdclub
-            hdclub.download_torrent(self.url, self.get_filename(), self.settings)
+            return hdclub.download_torrent(self.url, self.get_filename(), self.settings)
         elif 'anidub' in self.url:
             import anidub
-            anidub.download_torrent(self.url, self.get_filename(), self.settings)
+            return anidub.download_torrent(self.url, self.get_filename(), self.settings)
 
 
 
