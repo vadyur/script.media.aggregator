@@ -22,6 +22,10 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 	
 def get_path(path):
 	errors='strict'
+
+	if path.startswith('smb://') and os.name == 'nt':
+		path = path.replace('smb://', r'\\').replace('/', '\\')
+
 	path = ensure_unicode(path)
 	if os.name == 'nt':
 		return path
@@ -82,7 +86,12 @@ def test():
 	print 'subpath: %s' % subpath.encode('utf-8')
 	print 'subpath2: %s' % subpath2.encode('utf-8')
 	print 'join(getcwd(), subpath, subpath2): %s' % fullpath.encode('utf-8')
-	
+
+	remote_file = u'smb://vd/Incoming/test.txt'
+	if isfile(remote_file):
+		with fopen(remote_file, "r") as f:
+			print f.read()
+
 	
 if __name__ == '__main__':
 	__DEBUG__ = True
