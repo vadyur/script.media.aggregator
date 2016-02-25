@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import sys
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
@@ -186,32 +186,41 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				print 'sorted_files:'
 				print files
 
-		if 'cutName' not in params:
-			if 'index' not in params:
-				if episodeNumber is None:
-					index = 0
-					playable_item = files[0]
+		try:		
+			if 'cutName' not in params:
+				if 'index' not in params:
+					if episodeNumber is None:
+						index = 0
+						playable_item = files[0]
+					else:
+						playable_item = files[episodeNumber]
+						index = playable_item.get('index')
 				else:
-					playable_item = files[episodeNumber]
-					index = playable_item.get('index')
+					index = -1
+					for item in files:
+						if int(params['index']) == item['index']:
+							playable_item = item
+							index = playable_item.get('index')
 			else:
+				cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
 				index = -1
 				for item in files:
-					if int(params['index']) == item['index']:
+					name = item['name'].lower()
+					if cutName in unicode(tvshowapi.cutStr(name)):
 						playable_item = item
 						index = playable_item.get('index')
-		else:
-			cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
-			index = -1
-			for item in files:
-				name = item['name'].lower()
-				if cutName in unicode(tvshowapi.cutStr(name)):
-					playable_item = item
-					index = playable_item.get('index')
-					break
+						break
 
-			if index == -1:
-				return play_torrent_variant.resultTryNext
+				if index == -1:
+					return play_torrent_variant.resultTryNext
+		except IndexError:
+			for i in range(10):
+				if downloader and downloader.is_finished():
+					if not filecmp.cmp(path, downloader.get_filename()):
+						downloader.move_file_to(path)
+						print 'play_torrent_variant.resultTryAgain'
+						return play_torrent_variant.resultTryAgain
+				xbmc.sleep(1000)
 
 		print playable_item
 
