@@ -111,6 +111,8 @@ def load_settings():
 									animation_tvshows_save = animation_tvshows_save)
 
 	settings.addon_data_path		= _addondir
+	settings.run_script				= getSetting('run_script') == 'true'
+	settings.script_params			= getSetting('script_params').decode('utf-8')
 
 	#print settings
 	return settings
@@ -300,6 +302,14 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		print '!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!'
 
 		xbmc.sleep(1000)
+
+		# import rpdb2
+		# rpdb2.start_embedded_debugger('pw')
+
+		if settings.run_script:
+			import afteractions
+			afteractions.Runner(settings, params, player, playable_item)
+
 		k_db.PlayerPostProccessing()
 
 		xbmc.executebuiltin('Container.Refresh')
