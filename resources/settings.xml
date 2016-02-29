@@ -16,7 +16,21 @@
 		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false"/>
 		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
     </category>
-	
+
+    <category label="Дополнительно">
+        <setting label="Выполнить скрипт/программу по завершению просмотра" type="bool" id="run_script" default="false"/>
+        <setting label="" type="text"   id="script_params" enable="eq(-1,true)" default=""/>
+        <setting label="Можно использовать параметры" type="lsep"/>
+        <setting label="    %t - путь к torrent-файлу" type="text" enable="false" />
+        <setting label="    %f - путь к проигрываемому файлу" type="text" enable="false" />
+        <setting label="    %F - путь к проигрываемому файлу, относительно каталага загрузки" type="text" enable="false" />
+        <setting label="    %u - URL раздачи" type="text" enable="false" />
+        <setting label="    %s - короткое имя источника (anidub, hdclub, nnmclub)" type="text" enable="false" />
+        <setting label="    %p - количество загруженного (%)" type="text" enable="false" />
+        <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" />
+    </category>
+
+
     <category label="Предпочтения">
 		<setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>
 		<setting label="Качество" id="preffered_type" type="select" values="720p|1080" default="1080" />
