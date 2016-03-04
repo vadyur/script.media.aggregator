@@ -73,7 +73,16 @@ def join(path, *paths):
 	for p in paths:
 		fpaths.append( get_path(p) )
 	return ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
-	
+
+def listdir(path):
+	ld = []
+	for p in os.listdir(get_path(path)):
+		ld.append(ensure_unicode(p))
+	return ld
+
+def remove(path):
+	os.remove(get_path(path))
+
 def test():	
 	print 'Filesystem encoding: %s' % get_filesystem_encoding()
 	print 'getcwd(): %s' % getcwd().encode('utf-8')

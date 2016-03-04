@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import log
+from log import debug
+
+
 import requests, urllib
 from base import TorrentPlayer
 
@@ -14,7 +18,7 @@ class YATPPlayer(TorrentPlayer):
 		paths to .torrent files and magnet links. Warning: paths on networked filesystems (smb/nfs) are not supported!
 		'''
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "add_torrent", "params": {'torrent': path}})
-		print r.json()
+		debug(r.json())
 		
 	def CheckTorrentAdded(self):
 		'''
@@ -22,7 +26,7 @@ class YATPPlayer(TorrentPlayer):
 		Usually, .torrent files are added almost instantaneously, but processing magnet links takes some time.
 		'''
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_torrent_added"})
-		print r.json()
+		debug(r.json())
 		try:
 			if r.json()['result']:
 				return True
@@ -45,7 +49,7 @@ class YATPPlayer(TorrentPlayer):
 		files = []
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_last_added_torrent"})
 		torr_data = r.json()['result']
-		print torr_data
+		debug(torr_data)
 		
 		self.info_hash = torr_data['info_hash']
 		
@@ -63,8 +67,8 @@ class YATPPlayer(TorrentPlayer):
 		
 	def CheckBufferComplete(self):
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "check_buffering_complete"})
-		print r.json()
-		print 'check_buffering_complete'
+		debug(r.json())
+		debug('check_buffering_complete')
 		try:
 			if r.json()['result']:
 				return True
@@ -81,7 +85,7 @@ class YATPPlayer(TorrentPlayer):
 		except:
 			pass
 			
-		print str(result) + '%'
+		debug(str(result) + '%')
 		return result
 		
 	def updateDialogInfo(self, progress, progressBar):
@@ -95,7 +99,7 @@ class YATPPlayer(TorrentPlayer):
 								   u"Скорость загрузки: {0} КБ/с        Скорость отдачи: {1} КБ/с.".format(torrent_info['dl_speed'], torrent_info['ul_speed']),
 								   u"Сидов: {0} Пиров: {1}.".format(torrent_info['num_seeds'], torrent_info['num_peers']))
 								   
-			#print '[YATP] updateDialogInfo: ' + str(r.json())
+			#debug('[YATP] updateDialogInfo: ' + str(r.json()))
 		except:
 			progressBar.update(progress)
 			

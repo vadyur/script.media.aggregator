@@ -1,3 +1,5 @@
+import log
+
 import xbmc, json, filesystem, xbmcvfs, os, re
 import xml.etree.ElementTree as ET
 
@@ -9,7 +11,7 @@ def lineno():
 class AdvancedSettingsReader(object):
 	dict = {}
 	def LOG(self, s):
-		print '[AdvancedSettingsReader]: ' + s
+		log.debug('[AdvancedSettingsReader]: ' + s)
 	
 	def __init__(self):
 		self.use_mysql = False
@@ -23,7 +25,7 @@ class AdvancedSettingsReader(object):
 		try:
 			with filesystem.fopen(path, 'r') as f:
 				content = f.read()
-				print content
+				log.debug(content)
 				root = ET.fromstring(content)
 		except IOError as e:
 			self.LOG("I/O error({0}): {1}".format(e.errno, e.strerror))
@@ -37,7 +39,7 @@ class AdvancedSettingsReader(object):
 				for child in section:
 					if child.tag in ['type', 'host', 'port', 'user', 'pass', 'name']:
 						self.dict[child.tag] = child.text
-						print child.text
+						log.debug(child.text)
 				self.LOG('<videodatabase> found')
 				return
 				
@@ -126,7 +128,7 @@ class KodiDB(object):
 		if isinstance(msg, unicode):
 			msg = msg.encode('utf-8')
 		#line = inspect.currentframe().f_back.f_back.f_lineno
-		print '[KodiDB:%d] %s' % (line, msg)
+		log.debug('[KodiDB:%d] %s' % (line, msg))
 	
 	def __init__(self, strmName, strmPath, pluginUrl):
 		

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import log
+from log import debug
+
+
 from base import *
 import os, urllib2, sys, filesystem
 
@@ -25,7 +29,7 @@ class STRMWriter(STRMWriterBase):
 		if parser is not None:
 			self.make_alternative(strmFilename, link, parser)
 			# rank = get_rank(parser.get('full_title', ''), parser, settings),
-			# print 'rank: ' + str(rank)
+			# debug('rank: ' + str(rank))
 		
 			link_with_min_rank = STRMWriterBase.get_link_with_min_rank(strmFilename, settings)
 			if not link_with_min_rank is None:
@@ -38,7 +42,7 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(filesystem.getcwd(), settings.base_path())
-			print path.encode('utf-8')
+			debug(path.encode('utf-8'))
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 
 		#------------------------------------------
@@ -53,7 +57,7 @@ class STRMWriter(STRMWriterBase):
 			with filesystem.fopen(strmFilename, 'w') as f:
 				f.write(link.encode('utf-8'))
 		except IOError:
-			print 'Error write ' + strmFilename.encode('utf-8')
+			debug('Error write ' + strmFilename.encode('utf-8'))
 			return
 
 

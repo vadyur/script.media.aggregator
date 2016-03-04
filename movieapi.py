@@ -1,16 +1,20 @@
 ﻿# -*- coding: utf-8 -*-
 
+import log
+from log import debug
+
+
 import json, re, base
 import urllib2, requests
 from bs4 import BeautifulSoup
 
 def write_movie(fulltitle, link, settings, parser):
-	print '+-------------------------------------------'
+	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
-		print 'fulltitle: ' + fulltitle.encode('utf-8')
-		print 'filename: ' + filename.encode('utf-8')
-		print '-------------------------------------------+'
+		debug('fulltitle: ' + fulltitle.encode('utf-8'))
+		debug('filename: ' + filename.encode('utf-8'))
+		debug('-------------------------------------------+')
 		from strmwriter import STRMWriter
 		STRMWriter(parser.link()).write(filename,
 										parser=parser,
@@ -31,11 +35,11 @@ def get_tmdb_api_key():
 			match = re.search('api_key=(\w+)', content)
 			if match:
 				key = match.group(1)
-				print 'get_tmdb_api_key: ok'
+				debug('get_tmdb_api_key: ok')
 				return key
 
 	except BaseException as e:
-		print 'get_tmdb_api_key: ' + str(e)
+		debug('get_tmdb_api_key: ' + str(e))
 		return 'f7f51775877e0bb6703520952b3c7840'
 
 class KinopoiskAPI(object):
@@ -88,7 +92,7 @@ class KinopoiskAPI(object):
 
 	def __trailer(self, element):
 		for parent in element.parents:
-			#print parent.tag
+			#debug(parent.tag)
 			if parent.name == 'tr':
 				for tr in parent.next_siblings:
 					if not hasattr(tr, 'select'):
@@ -100,7 +104,7 @@ class KinopoiskAPI(object):
 							trailer = a_cont['href']
 							trailer = re.search('link=(.+?)$', trailer).group(1)
 							try:
-								print 'trailer: ' + trailer
+								debug('trailer: ' + trailer)
 							except:
 								pass
 							return trailer
@@ -137,14 +141,14 @@ class MovieAPI(KinopoiskAPI):
 			url_ = self.url_imdb_id(imdb_id)
 			try:
 				self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
-				print 'tmdb_data (' + url_ + ') \t\t\t[Ok]'
+				debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
 			except:
 				pass
 
 			try:
 				omdb_url = 'http://www.omdbapi.com/?i=' + imdb_id + '&plot=short&r=json'
 				self.omdbapi	= json.load(urllib2.urlopen( omdb_url ))
-				print 'omdbapi (' + omdb_url + ') \t\t\t[Ok]'
+				debug('omdbapi (' + omdb_url + ') \t\t\t[Ok]')
 			except:
 				pass
 			

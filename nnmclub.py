@@ -1,4 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
+
+import log
+from log import debug
+
+
 import re
 import urllib2
 
@@ -104,13 +109,13 @@ class DescriptionParser(DescriptionParserBase):
 		if a != None:
 			try:
 				self._link = _BASE_URL + a['href']
-				print self._link
+				debug(self._link)
 			except:
-				# print a.__repr__()
+				# debug(a.__repr__())
 				return False
 
 			full_title = a.get_text().strip(' \t\n\r')
-			print 'full_title: ' + full_title.encode('utf-8')
+			debug('full_title: ' + full_title.encode('utf-8'))
 
 			self.parse_title(full_title)
 
@@ -119,7 +124,7 @@ class DescriptionParser(DescriptionParserBase):
 
 			fname = base.make_fullpath(self.make_filename(), '.strm')
 			if base.STRMWriterBase.has_link(fname, self._link):
-				print 'Already exists'
+				debug('Already exists')
 				return False
 
 			r = requests.get(self._link)
@@ -135,7 +140,7 @@ class DescriptionParser(DescriptionParserBase):
 		self._dict['gold'] = False
 		for a in self.soup.select('img[src="images/gold.gif"]'):
 			self._dict['gold'] = True
-			print 'gold'
+			debug('gold')
 
 		for span in self.soup.select('span.postbody span'):
 			try:
@@ -146,7 +151,7 @@ class DescriptionParser(DescriptionParserBase):
 						self._dict[tag] = base.striphtml(unicode(span.next_sibling).strip())
 					else:
 						self._dict[tag] = base.striphtml(unicode(span.next_sibling.next_sibling).strip())
-					print '%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8'))
+					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
 			except:
 				pass
 		if 'genre' in self._dict:
@@ -170,7 +175,7 @@ class DescriptionParser(DescriptionParserBase):
 		for img in self.soup.select('var.postImg'):  # ('img.postImg'):
 			try:
 				self._dict['thumbnail'] = img['title']
-				print '!!!!!!!!!!!!!!thumbnail: ' + self._dict['thumbnail']
+				debug('!!!!!!!!!!!!!!thumbnail: ' + self._dict['thumbnail'])
 				break
 			except:
 				pass
@@ -194,7 +199,7 @@ class DescriptionParserTVShows(DescriptionParser):
 	def need_skipped(self, full_title):
 		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'Half-SBS']:
 			if phrase in full_title:
-				print 'Skipped by: ' + phrase.encode('utf-8')
+				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
 		return False
 
@@ -211,7 +216,7 @@ class DescriptionParserRSS(DescriptionParser):
 
 	def parse(self):
 		full_title = self._dict['full_title']
-		print 'full_title: ' + full_title.encode('utf-8')
+		debug('full_title: ' + full_title.encode('utf-8'))
 
 		if self.need_skipped(full_title):
 			return False
@@ -230,7 +235,7 @@ class DescriptionParserRSS(DescriptionParser):
 
 		for a in self.soup.select('.postbody a'):
 			self._link = a['href']
-			print self._link
+			debug(self._link)
 			break
 
 		return result
@@ -248,7 +253,7 @@ class PostsEnumerator(object):
 	def process_page(self, url):
 		request = self._s.get(url)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
-		print url
+		debug(url)
 
 		for tbl in self.soup.select('table.pline'):
 			self._items.append(tbl)
@@ -260,7 +265,7 @@ class TrackerPostsEnumerator(PostsEnumerator):
 	def process_page(self, url):
 		request = self._s.get(url)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
-		print url
+		debug(url)
 
 		for a in  self.soup.find_all('a', class_ = 'topictitle'): #self.soup.select('a.topictitle'):
 			td = a.find_parent('td')
@@ -279,16 +284,16 @@ def write_movie_rss(fulltitle, description, link, settings):
 
 
 def write_movie(post, settings, tracker):
-	print '!-------------------------------------------'
+	debug('!-------------------------------------------')
 	parser = DescriptionParser(post, settings=settings, tracker=tracker)
 	if parser.parsed():
-		print '+-------------------------------------------'
+		debug('+-------------------------------------------')
 		full_title = parser.get_value('full_title')
 		filename = parser.make_filename()
 		if filename:
-			print 'full_title: ' + full_title.encode('utf-8')
-			print 'filename: ' + filename.encode('utf-8')
-			print '-------------------------------------------+'
+			debug('full_title: ' + full_title.encode('utf-8'))
+			debug('filename: ' + filename.encode('utf-8'))
+			debug('-------------------------------------------+')
 			STRMWriter(parser.link()).write(filename,
 											parser=parser,
 											settings=settings)
@@ -369,7 +374,7 @@ def write_tvshows(rss_url, path, settings):
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			try:
-				print item.title.encode('utf-8')
+				debug(item.title.encode('utf-8'))
 			except:
 				continue
 			write_tvshow(
@@ -392,7 +397,7 @@ def write_movies_rss(rss_url, path, settings):
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			try:
-				print item.title.encode('utf-8')
+				debug(item.title.encode('utf-8'))
 			except:
 				continue
 			write_movie_rss(
@@ -428,7 +433,7 @@ def get_magnet_link(url):
 	if r.status_code == requests.codes.ok:
 		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
-			print a['href']
+			debug(a['href'])
 			return a['href']
 	return None
 
@@ -442,13 +447,13 @@ def create_session(settings):
 
 	for inp in soup.select('input[name="code"]'):
 		code = inp['value']
-	# print code
+	# debug(code)
 
 	data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password,
 			"autologin": "on", "code": code, "redirect": "", "login": ""}
 	login = s.post("http://nnm-club.me/forum/login.php", data=data,
 				   headers={'Referer': "http://nnm-club.me/forum/login.php"})
-	print 'Login status: %d' % login.status_code
+	debug('Login status: %d' % login.status_code)
 
 	return s
 
@@ -478,7 +483,7 @@ def find_direct_link(url, settings):
 	if match:
 		path_store = filesystem.join(settings.addon_data_path, 'nnmclub', match.group(1))
 		if filesystem.exists(path_store):
-			print '[nnm-club] Direct link found'
+			debug('[nnm-club] Direct link found')
 			with filesystem.fopen(path_store, 'r') as f:
 				return f.read()
 	return None
@@ -486,20 +491,20 @@ def find_direct_link(url, settings):
 def download_torrent(url, path, settings):
 	import shutil
 	url = urllib2.unquote(url)
-	print 'download_torrent:' + url
+	debug('download_torrent:' + url)
 
 	href = None
 	link = find_direct_link(url, settings)
 	if link is None:
 		s = create_session(settings)
 		page = s.get(url)
-		# print page.text.encode('cp1251')
+		# debug(page.text.encode('cp1251'))
 
 		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 		a = soup.select('td.gensmall > span.genmed > b > a')
 		if len(a) > 0:
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
-		print s.headers
+		debug(s.headers)
 	else:
 		href = link
 		response = urllib2.urlopen(link)
@@ -509,7 +514,7 @@ def download_torrent(url, path, settings):
 			return True
 
 		#r = requests.head(link)
-		#print r.headers
+		#debug(r.headers)
 		#return False
 
 
@@ -518,7 +523,7 @@ def download_torrent(url, path, settings):
 			r = requests.get(link)
 		else:
 			r = s.get(href, headers={'Referer': url})
-		print r.headers
+		debug(r.headers)
 
 		# 'Content-Type': 'application/x-bittorrent'
 		if 'Content-Type' in r.headers:

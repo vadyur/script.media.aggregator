@@ -70,7 +70,8 @@ class TorrentDownloader(Downloader):
             else:
                 return None
         except BaseException as e:
-            print e
+            from log import debug
+            debug(e)
             return None
 
     def download(self):

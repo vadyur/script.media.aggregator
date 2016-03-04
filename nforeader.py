@@ -1,3 +1,7 @@
+import log
+from log import debug
+
+
 import os, xbmcgui
 import xml.etree.ElementTree as ET
 import requests, filesystem
@@ -22,7 +26,7 @@ class NFOReader(object):
 					pass
 				self.__root = ET.fromstring(content)  #ET.parse(self.__path)
 		except IOError as e:
-			print "NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror)		
+			debug("NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror)		)
 
 		
 	@staticmethod
@@ -49,7 +53,7 @@ class NFOReader(object):
 		castandrole = []
 		for child in root:
 			try:
-				#print child.tag, child.text
+				#debug(child.tag, child.text)
 				if child.tag in string_items:
 					info[child.tag] = child.text
 				if child.tag in integer_items:
@@ -75,23 +79,23 @@ class NFOReader(object):
 			info['castandrole'] = castandrole
 				
 				
-		print info
+		debug(info)
 		return info
 		
 	def download_image(self, url, type):
 		r = requests.get(url)
-		print r.headers
+		debug(r.headers)
 		
 		if r.headers[ 'Content-Type'] == 'image/jpeg':
 			filename = filesystem.join(self.__temp_path, 'temp.media-aggregator.' + type + '.jpg')
 			
-			print 'Start download: ' + filename + ' from ' + url
+			debug('Start download: ' + filename + ' from ' + url)
 			
 			with filesystem.fopen(filename, 'wb') as f:
 				for chunk in r.iter_content(100000):
 					f.write(chunk)
 					
-			print 'End download: ' + filename
+			debug('End download: ' + filename)
 			return filename
 				
 		return None
@@ -116,7 +120,7 @@ class NFOReader(object):
 					if thumb.tag == 'thumb':
 						art['fanart'] = thumb.text
 						
-		print art
+		debug(art)
 		return art
 				
 	def make_list_item(self, playable_url):
