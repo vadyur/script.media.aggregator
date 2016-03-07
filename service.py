@@ -57,7 +57,11 @@ def scrape_nnm(settings = None):
 
 	for chunk in chunks(hashes, 32):
 		import scraper
-		seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
+		try:
+			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
+		except BaseException as e:
+			log.debug(str(e))
+			continue
 
 		for item in chunk:
 			filename = filesystem.join(data_path, 'nnmclub', item[2])
