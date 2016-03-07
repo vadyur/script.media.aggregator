@@ -1,3 +1,7 @@
+import log
+from log import debug
+
+
 import os
 import urllib
 
@@ -25,7 +29,7 @@ class Runner(object):
 				raise Exception('Not in Kodi')
 			return path
 		except BaseException as e:
-			print e
+			debug(e)
 			return filesystem.getcwd()
 
 	@property
@@ -54,7 +58,7 @@ class Runner(object):
 			import xbmc
 			return xbmc.getInfoLabel('ListItem.DBTYPE')
 		except BaseException as e:
-			print e
+			debug(e)
 			return ''
 
 	@property
@@ -82,7 +86,7 @@ class Runner(object):
 		try:
 			return str(round(info['downloaded'] * 100 / info['size']))
 		except BaseException as e:
-			print e
+			debug(e)
 			return 0
 
 	def process_params(self):
@@ -105,7 +109,7 @@ class Runner(object):
 			self.command[i] = self.command[i].encode('utf-8')
 
 	def run(self):
-		print self.command
+		debug(self.command)
 		import subprocess
 
 		startupinfo = None
@@ -120,7 +124,7 @@ class Runner(object):
 		try:
 			subprocess.call(executable=u8runner, args=self.command, startupinfo=startupinfo)
 		except OSError, e:
-			print ("Can't start %s: %r" % (str(self.command), e))
+			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:
-			print e
+			debug(e)
 

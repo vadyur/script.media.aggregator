@@ -1,4 +1,8 @@
-﻿import json
+﻿import log
+
+
+
+import json
 import re
 import urllib2
 from contextlib import closing
@@ -9,18 +13,11 @@ from movieapi import KinopoiskAPI
 import io
 
 import filesystem
-from base import TorrentPlayer, make_fullpath, get_rank
+from base import TorrentPlayer, make_fullpath
 
 
 def debug(s):
-	try:
-		if isinstance(s, unicode):
-			print s.encode('utf-8')
-		else:
-			print s
-
-	except:
-		pass
+	log.debug(s)
 
 
 def cutStr(s):
@@ -201,7 +198,7 @@ def parse_torrent(data, season=None):
 		from bencode import bdecode
 		decoded = bdecode(data)
 	except BTFailure:
-		print "Can't decode torrent data (invalid torrent link?)"
+		debug("Can't decode torrent data (invalid torrent link?)")
 		return []
 
 	info = decoded['info']
@@ -209,10 +206,10 @@ def parse_torrent(data, season=None):
 	parent_list = []
 	if 'files' in info:
 		for i, f in enumerate(info['files']):
-			# print i
-			# print f
+			# debug(i)
+			# debug(f)
 			fname = f['path'][-1]
-			print fname
+			debug(fname)
 			if TorrentPlayer.is_playable(fname):
 				dirlist.append(fname)  # .decode('utf-8').encode('cp1251')
 
@@ -245,22 +242,22 @@ def parse_torrent2(data):
 	try:
 		decoded = bdecode(data)
 	except BTFailure:
-		print "Can't decode torrent data (invalid torrent link? %s)" % link
+		debug("Can't decode torrent data (invalid torrent link? %s)" % link)
 		return
 
 	files = []
 	info = decoded['info']
 	if 'files' in info:
 		for i, f in enumerate(info['files']):
-			# print i
-			# print f
+			# debug(i)
+			# debug(f)
 			fname = f['path'][-1]
 			if TorrentPlayer.is_playable(fname):
 				s = re.search('s(\d+)e(\d+)[\._ ]', fname, re.I)
 				if s:
 					season = int(s.group(1))
 					episode = int(s.group(2))
-					print 'Filename: %s\t index: %d\t season: %d\t episode: %d' % (fname, i, season, episode)
+					debug('Filename: %s\t index: %d\t season: %d\t episode: %d' % (fname, i, season, episode))
 					files.append({'index': i, 'name': fname, 'season': season, 'episode': episode})
 
 	if len(files) == 0:
@@ -303,9 +300,9 @@ def write_tvshow(fulltitle, link, settings, parser):
 		files = parse_torrent(content, season_from_title(fulltitle))
 
 		title = parser.get_value('title')
-		print title.encode('utf-8')
+		debug(title.encode('utf-8'))
 		originaltitle = parser.get_value('originaltitle')
-		print originaltitle.encode('utf-8')
+		debug(originaltitle.encode('utf-8'))
 
 		imdb_id = parser.get('imdb_id', None)
 		kp_id = parser.get('kp_id', None)
@@ -313,7 +310,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 		api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
-		print tvshow_path.encode('utf-8')
+		debug(tvshow_path.encode('utf-8'))
 
 		try:
 			save_path = filesystem.save_make_chdir(tvshow_path)
@@ -349,14 +346,14 @@ def write_tvshow(fulltitle, link, settings, parser):
 						try:
 							filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
 						except BaseException as e:
-							print e
+							debug(e)
 							filename = f['name']
 
 					try:
-						print filename
+						debug(filename)
 						filename = filename.decode('utf-8')
 					except:
-						print [filename]
+						debug([filename])
 
 					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
 					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
@@ -415,11 +412,11 @@ class TheTVDBAPI(object):
 			except AttributeError:
 				return
 		except urllib2.HTTPError as e:
-			print 'TheTVDBAPI: ' + str(e)
+			debug('TheTVDBAPI: ' + str(e))
 			return
 
 		url2 = self.__base_url + self.__apikey + '/series/%s/all/%s.zip' % (self.thetvdbid, self.__lang)
-		print url2
+		debug(url2)
 
 		response2 = urllib2.urlopen(url2)
 		try:
@@ -430,9 +427,9 @@ class TheTVDBAPI(object):
 				with closing(zf.open('ru.xml')) as ru:
 					self.tvdb_ru = ET.fromstring(ru.read())
 		except BadZipfile as bz:
-			print str(bz)
+			debug(str(bz))
 		except LargeZipFile as lz:
-			print str(lz)
+			debug(str(lz))
 
 	def getEpisode(self, season, episode):
 		res = {}
@@ -445,7 +442,7 @@ class TheTVDBAPI(object):
 					episode_number = int(ep.find('EpisodeNumber').text)
 					season_number = int(ep.find('SeasonNumber').text)
 				except BaseException as e:
-					print e
+					debug(e)
 					continue
 				if int(episode_number) != episode or int(season_number) != season:
 					continue
@@ -511,7 +508,7 @@ class MyShowsAPI(object):
 		if imdbId:
 			try:
 				imdbId = int(re.search('(\d+)', imdbId).group(1))
-				print imdbId
+				debug(imdbId)
 			except:
 				imdbId = None
 
@@ -526,7 +523,7 @@ class MyShowsAPI(object):
 		try:
 			self.myshows = json.load(urllib2.urlopen(url))
 		except urllib2.HTTPError as e:
-			print 'TVShowAPI: ' + str(e)
+			debug('TVShowAPI: ' + str(e))
 			return
 
 		if not self.valid():
@@ -534,25 +531,25 @@ class MyShowsAPI(object):
 			self.myshows = json.load(urllib2.urlopen(url))
 
 		if self.valid():
-			print url
-			# print unicode(json.dumps(self.myshows, sort_keys=True, indent=4, separators=(',', ': ')), 'unicode-escape').encode('utf-8')
+			debug(url)
+			# debug(unicode(json.dumps(self.myshows, sort_keys=True, indent=4, separators=(',', ': ')), 'unicode-escape').encode('utf-8'))
 			id = self.get_myshows_id(imdbId, kinopoiskId)
-			print id
+			debug(id)
 			if id != 0:
 				url = 'http://api.myshows.me/shows/' + str(id)
 				self.myshows_ep = json.load(urllib2.urlopen(url))
 				if self.valid_ep():
-					print url
+					debug(url)
 
-		print str(self.valid())
-		print str(self.valid_ep())
+		debug(str(self.valid()))
+		debug(str(self.valid_ep()))
 
 	def get_myshows_id(self, imdbId, kinopoiskId):
 		# try:
 		if True:
 			if self.valid():
 				for key in self.myshows.keys():
-					print key
+					debug(key)
 					section = self.myshows[str(key)]
 					if imdbId:
 						if section['imdbId'] == imdbId:

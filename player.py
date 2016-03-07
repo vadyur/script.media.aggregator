@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import log
+from log import debug
+
+
 import sys
 import xbmcplugin, xbmcgui, xbmc, xbmcaddon
 import anidub, hdclub, nnmclub, filesystem
@@ -27,7 +31,7 @@ try:
 except:
 	_addondir   = u''
 
-print _addondir.encode('utf-8')
+debug(_addondir.encode('utf-8'))
 
 def get_params():
 	param=[]
@@ -46,7 +50,7 @@ def get_params():
 			if (len(splitparams))==2:
 				param[splitparams[0]]=splitparams[1]
 
-	#print param
+	#debug(param)
 	return param
 
 def getSetting(id, default = ''):
@@ -114,7 +118,7 @@ def load_settings():
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
-	#print settings
+	#debug(settings)
 	return settings
 
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
@@ -147,7 +151,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		elif settings.torrent_player == 'torrent2http':
 			player = Torrent2HTTPPlayer(settings)
 
-		print '------------ Open torrent: ' + path
+		debug('------------ Open torrent: ' + path)
 		player.AddTorrent(path)
 
 		added = False
@@ -164,20 +168,20 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			if downloader and downloader.is_finished():
 				if not filecmp.cmp(path, downloader.get_filename()):
 					downloader.move_file_to(path)
-					print 'play_torrent_variant.resultTryAgain'
+					debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
 				else:
-					print 'Torrents are equal'
+					debug('Torrents are equal')
 					downloader = None
 
 			xbmc.sleep(1000)
 
 		if not added:
-			print 'Torrent not added'
+			debug('Torrent not added')
 			return play_torrent_variant.resultTryNext
 
 		files = player.GetLastTorrentData()['files']
-		print files
+		debug(files)
 
 		if 'cutName' not in params:
 			if 'index' not in params:
@@ -185,8 +189,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					files.sort(key=operator.itemgetter('name'))
 				else:
 					files.sort(key=operator.itemgetter('size'), reverse=True)
-				print 'sorted_files:'
-				print files
+				debug('sorted_files:')
+				debug(files)
 
 		try:		
 			if 'cutName' not in params:
@@ -224,7 +228,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 						return play_torrent_variant.resultTryAgain
 				xbmc.sleep(1000)
 
-		print playable_item
+		debug(playable_item)
 
 		player.StartBufferFile(index)
 
@@ -245,16 +249,16 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				info = player.GetTorrentInfo()
 				if 'num_seeds' in info:
 					if info['num_seeds'] == 0:
-						print 'Seeds not found'
+						debug('Seeds not found')
 						return play_torrent_variant.resultTryNext
 
 			if downloader and downloader.is_finished():
 				if not filecmp.cmp(path, downloader.get_filename()):
 					downloader.move_file_to(path)
-					print 'play_torrent_variant.resultTryAgain'
+					debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
 				else:
-					print 'Torrents are equal'
+					debug('Torrents are equal')
 					downloader = None
 
 			xbmc.sleep(1000)
@@ -266,7 +270,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			return play_torrent_variant.resultCancel
 
 		playable_url 	= player.GetStreamURL(playable_item)
-		print playable_url
+		debug(playable_url)
 
 		handle = int(sys.argv[1])
 		if nfoReader != None:
@@ -288,10 +292,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		while not xbmc_player.isPlaying():
 			xbmc.sleep(300)
 
-		print '!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!'
+		debug('!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
 		if k_db.timeOffset != 0:
-			print "Seek to time: " + str(k_db.timeOffset)
+			debug("Seek to time: " + str(k_db.timeOffset))
 			xbmc.sleep(2000)
 			xbmc_player.seekTime(int(k_db.timeOffset))
 
@@ -299,7 +303,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		while not xbmc.abortRequested and xbmc_player.isPlaying():
 			xbmc.sleep(1000)
 
-		print '!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!'
+		debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
 		xbmc.sleep(1000)
 
@@ -315,7 +319,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		xbmc.executebuiltin('Container.Refresh')
 
 	except TPError as e:
-		print e
+		debug(e)
 		return play_torrent_variant.resultTryNext
 
 	finally:
@@ -350,7 +354,7 @@ def openInTorrenter(nfoReader):
 			ctitle = info['originaltitle']
 		if not ctitle is None:
 			uri = '%s?%s' % ('plugin://plugin.video.torrenter/', urllib.urlencode({'action':'search','url': ctitle.encode('utf-8')}))
-			print 'Search in torrenter: ' + uri
+			debug('Search in torrenter: ' + uri)
 			xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
 
 def play_torrent(settings, params):
@@ -365,8 +369,8 @@ def play_torrent(settings, params):
 	strmFilename 	= nfoFullPath.replace('.nfo', '.strm')
 	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
-	print strmFilename.encode('utf-8')
-	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
+	debug(strmFilename.encode('utf-8'))
+	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
@@ -386,7 +390,7 @@ def play_torrent(settings, params):
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
 
-	print 'links_with_ranks: ' + str(links_with_ranks)
+	debug('links_with_ranks: ' + str(links_with_ranks))
 
 	if len(links_with_ranks) == 0 or onlythis:
 		torrent_source = params['torrent']
@@ -403,7 +407,7 @@ def play_torrent(settings, params):
 
 			if tryCount > 1:
 				info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
-			print variant
+			debug(variant)
 
 			torrent_source = variant['link']
 			try:
@@ -434,7 +438,7 @@ def play_torrent(settings, params):
 
 def main():
 	params 		= get_params()
-	print params
+	debug(params)
 	settings	= load_settings()
 
 	xbmc.log(settings.base_path())

@@ -1,5 +1,9 @@
 ﻿# coding: utf-8
 
+import log
+from log import debug
+
+
 import feedparser, filesystem
 import xml.etree.cElementTree as ET
 from bs4 import BeautifulSoup
@@ -48,7 +52,7 @@ class DescriptionParser(DescriptionParserBase):
 				if text == u'Золотая раздача':
 					self._dict['gold'] = True
 				
-				#print text.encode('utf-8')
+				#debug(text.encode('utf-8'))
 				if tag == u'':
 					tag = self.get_tag(text)
 				else:
@@ -81,7 +85,7 @@ class DescriptionParser(DescriptionParserBase):
 		for img in self.soup.select('img[src*="thumbnail.php"]'):
 			try:
 				self._dict['thumbnail'] = img['src']
-				print self._dict['thumbnail']
+				debug(self._dict['thumbnail'])
 			except:
 				pass
 
@@ -91,10 +95,10 @@ class DescriptionParser(DescriptionParserBase):
 		
 def write_movie(item, settings):
 	full_title = item.title
-	print 'full_title: ' + full_title.encode('utf-8')
+	debug('full_title: ' + full_title.encode('utf-8'))
 
 	parser = DescriptionParser(full_title, item.description, item.link,	settings)
-	print '-------------------------------------------------------------------------'
+	debug('-------------------------------------------------------------------------')
 	
 	if parser.need_skipped(full_title):
 		return
@@ -104,7 +108,7 @@ def write_movie(item, settings):
 		if not filename:
 			return
 		
-		print 'filename: ' + filename.encode('utf-8')
+		debug('filename: ' + filename.encode('utf-8'))
 		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
 		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
 		from downloader import TorrentDownloader
@@ -126,15 +130,15 @@ def write_movies(rss_url, path, settings):
 	except filesystem.MakeCHDirException as e:
 		filesystem.chdir(e.path)
 	except BaseException as e:
-		print e
+		debug(e)
 		filesystem.chdir(original_dir)
 
 def write_tvshow(item, settings):
 	full_title = item.title
-	print 'full_title: ' + full_title.encode('utf-8')
+	debug('full_title: ' + full_title.encode('utf-8'))
 
 	parser = DescriptionParser(full_title, item.description, item.link, settings)
-	print '-------------------------------------------------------------------------'
+	debug('-------------------------------------------------------------------------')
 
 	if parser.need_skipped(full_title):
 		return
@@ -158,7 +162,7 @@ def write_tvshows(rss_url, path, settings):
 	except filesystem.MakeCHDirException as e:
 		filesystem.chdir(e.path)
 	except BaseException as e:
-		print e
+		debug(e)
 		filesystem.chdir(original_dir)
 
 def get_rss_url(f_id, passkey):
@@ -190,5 +194,5 @@ def download_torrent(url, path, settings):
 			shutil.copyfileobj(response, f)
 		return True
 	except BaseException as e:
-		print e
+		debug(e)
 		return False

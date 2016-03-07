@@ -1,4 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
+import log
+from log import debug
+
 
 import os, re, filesystem
 from bs4 import BeautifulSoup
@@ -15,16 +18,16 @@ def make_fullpath(title, ext):
 	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
 	
 def skipped(item):
-	print item.title.encode('utf-8') + '\t\t\t[Skipped]'
+	debug(item.title.encode('utf-8') + '\t\t\t[Skipped]')
 	
 def clean_html(page):
 	#pattern = r"(?is)<script[^>]*>(.*?)</script>"
 	#pattern = r'<script(.*?)</script>'
 	#flags = re.M + re.S + re.I
 	#r = re.compile(pattern, flags=flags)
-	#print r
+	#debug(r)
 	#page = r.sub('', page)
-	#print page.encode('utf-8')
+	#debug(page.encode('utf-8'))
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 	
 def striphtml(data):
@@ -38,12 +41,27 @@ def get_rank(full_title, parser, settings):
 	preffered_resolution_v = 1080 if settings.preffered_type == QulityType.Q1080 else 720
 	preffered_bitrate	= settings.preffered_bitrate
 	
-	print 'preffered_type: %s' % settings.preffered_type
-	print 'preffered_bitrate: %d' % preffered_bitrate
+	debug('preffered_type: %s' % settings.preffered_type)
+	debug('preffered_bitrate: %d' % preffered_bitrate)
 	
 	rank = 0.0
 	conditions = 0
-	
+
+	if 'seeds' in parser:
+		seeds = parser['seeds']
+		if seeds == 0:
+			rank += 1000
+		elif seeds < 5:
+			rank += 1 + 3.0 / seeds
+		else:
+			rank += 1 + 1.0 / seeds
+		conditions += 1
+	else:
+		rank += 1.5
+		conditions += 1
+
+		parser = dict(parser, **info)
+
 	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
 		conditions += 1
@@ -91,7 +109,7 @@ def get_rank(full_title, parser, settings):
 			bitrate = ''.join(find).replace(',', '.')
 			try:
 				if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
-					print 'bitrate: %d kbps' % int(float(bitrate) * multiplier)
+					debug('bitrate: %d kbps' % int(float(bitrate) * multiplier))
 					if float(bitrate) * multiplier > preffered_bitrate:
 						rank += float(bitrate) * multiplier / preffered_bitrate
 					else:
@@ -100,11 +118,11 @@ def get_rank(full_title, parser, settings):
 				else:
 					rank += 10
 					conditions += 1
-					print 'bitrate: not parsed'
+					debug('bitrate: not parsed')
 			except:
 				rank += 10
 				conditions += 1
-				print 'bitrate: not parsed'
+				debug('bitrate: not parsed')
 		else:
 			rank += 2
 			conditions += 1
@@ -126,7 +144,42 @@ def make_utf8(s):
 	if isinstance(s, unicode):
 		return s.encode('utf-8')
 	return s
-	
+
+def seeds_peers(item):
+	import player
+	res = {}
+	try:
+		link = urllib.unquote(item['link'])
+		settings = player.load_settings()
+		if 'nnm-club' in link:
+			debug('seeds_peers: ' + link)
+			t_id = re.search(r't=(\d+)', link).group(1)
+			fn = filesystem.join(settings.addon_data_path, 'nnmclub', t_id + '.stat')
+			debug(fn)
+			with filesystem.fopen(fn, 'r') as stat_file:
+				import json
+				res = json.load(stat_file)
+				debug(str(res))
+		elif 'hdclub' in link:
+			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
+			fn = filesystem.join(settings.addon_data_path, 'hdclub', t_id + '.torrent')
+			debug(fn)
+			tp = TorrentPlayer()
+			tp.AddTorrent(fn)
+			data = tp.GetLastTorrentData()
+			debug(str(data))
+			if data:
+				hashes = [data['info_hash']]
+				import scraper
+				res = scraper.scrape(data['announce'], hashes)
+				debug(str(res))
+				return res[data['info_hash']]
+
+	except BaseException as e:
+		debug(str(e))
+	return res
+
+
 class STRMWriterBase(object):
 	def make_alternative(self, strmFilename, link, parser):
 		strmFilename_alt = strmFilename + '.alternative'
@@ -148,7 +201,7 @@ class STRMWriterBase(object):
 				pass
 
 	@staticmethod
-	def get_links_with_ranks(strmFilename, settings):
+	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
 		strmFilename_alt = strmFilename + '.alternative'
 		items = []
 		saved_dict = {}
@@ -167,6 +220,10 @@ class STRMWriterBase(object):
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif not line.startswith('#'):
 						try:
+							if use_scrape_info:
+								saved_dict['link'] = line.strip(u'\r\n\t ')
+								sp = seeds_peers(saved_dict)
+								saved_dict = dict(saved_dict, **sp)
 							if 'rank' in saved_dict:
 								curr_rank = float(saved_dict['rank'])
 							else:
@@ -179,8 +236,8 @@ class STRMWriterBase(object):
 						saved_dict.clear()
 
 		items.sort(key=operator.itemgetter('rank'))
-		print 'Sorded items'
-		print items
+		debug('Sorded items')
+		debug(items)
 		return items
 
 
@@ -243,9 +300,9 @@ class DescriptionParserBase(Informer):
 	_dict = {}
 
 	def Dump(self):
-		print '-------------------------------------------------------------------------'
+		debug('-------------------------------------------------------------------------')
 		for key, value in self._dict.iteritems():
-			print key.encode('utf-8') + '\t: ' + value.encode('utf-8')
+			debug(key.encode('utf-8') + '\t: ' + value.encode('utf-8'))
 
 	def Dict(self):
 		return self._dict
@@ -316,12 +373,12 @@ class DescriptionParserBase(Informer):
 		
 		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'[Season', u'Half-SBS']:
 			if phrase in full_title:
-				print 'Skipped by: ' + phrase.encode('utf-8')
+				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
 		
 				
 			if re.search('\(\d\d\d\d[-/]', full_title.encode('utf-8')):
-				print 'Skipped by: Year'
+				debug('Skipped by: Year')
 				return True
 		
 		return False
@@ -356,7 +413,7 @@ class TorrentPlayer(object):
 			from bencode import bdecode
 			decoded = bdecode(data)
 		except BTFailure:
-			print "Can't decode torrent data (invalid torrent link?)"
+			debug("Can't decode torrent data (invalid torrent link?)")
 			return None
 
 		info = decoded['info']
@@ -364,22 +421,22 @@ class TorrentPlayer(object):
 		import hashlib
 		from bencode import bencode
 		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
-		print self.info_hash
+		debug(self.info_hash)
 
 		playable_items = []
 		if 'files' in info:
 			for i, f in enumerate(info['files']):
-				# print i
-				# print f
+				# debug(i)
+				# debug(f)
 				name = os.sep.join(f['path'])
 				size = f['length']
-				print name
+				debug(name)
 				if TorrentPlayer.is_playable(name):
 					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
 		else:
-			return { 'info_hash': self.info_hash, 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
+			return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
 
-		return { 'info_hash': self.info_hash, 'files': playable_items }
+		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items }
 
 	def StartBufferFile(self, fileIndex):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")

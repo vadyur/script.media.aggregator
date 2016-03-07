@@ -1,5 +1,9 @@
 # coding: utf-8
 
+import log
+from log import debug
+
+
 import sys
 import xml.etree.ElementTree as ET
 import xml.dom.minidom as minidom
@@ -55,7 +59,7 @@ def write_tree(fn, root):
 			xml_text += ET.tostring(root).encode('utf-8')
 			f.write(prettify(xml_text))
 	except IOError as e:
-		print "I/O error({0}): {1}".format(e.errno, e.strerror)
+		debug("I/O error({0}): {1}".format(e.errno, e.strerror))
 
 
 class NFOWriter:
@@ -193,14 +197,14 @@ class NFOWriter:
 
 	def write_set(self, root):
 		try:
-			print 'Collection: ' + self.movie_api.Collection().encode('utf-8')
+			debug('Collection: ' + self.movie_api.Collection().encode('utf-8'))
 			ET.SubElement(root, 'set').text = self.movie_api.Collection()
 		except:
 			pass
 
 	def write_rating(self, root):
 		try:
-			print self.movie_api.imdbRating()
+			debug(self.movie_api.imdbRating())
 			ET.SubElement(root, 'rating').text = self.movie_api.imdbRating()
 		except:
 			pass
@@ -233,7 +237,7 @@ class NFOWriter:
 
 	def write_runtime(self, root):
 		try:
-			print self.movie_api.Runtime()
+			debug(self.movie_api.Runtime())
 			ET.SubElement(root, 'runtime').text = self.movie_api.Runtime()
 		except:
 			pass
@@ -290,7 +294,7 @@ class NFOWriter:
 
 	def write_mpaa(self, root):
 		try:
-			print 'Rated: ' + self.movie_api.Rated()
+			debug('Rated: ' + self.movie_api.Rated())
 			ET.SubElement(root, 'mpaa').text = self.movie_api.Rated()
 		except:
 			pass

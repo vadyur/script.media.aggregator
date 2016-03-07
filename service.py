@@ -1,4 +1,5 @@
 # coding: utf-8
+import log
 
 import xbmc, xbmcaddon
 
@@ -10,6 +11,7 @@ from time import gmtime
 from time import sleep
 
 import anidub, hdclub, nnmclub
+import filesystem
 from player import load_settings
 
 _ADDON_NAME =   'script.media.aggregator'
@@ -31,11 +33,55 @@ def update_service():
 	if anidub_enable or hdclub_enable or nnmclub_enable:
 		xbmc.executebuiltin('UpdateLibrary("video")')
 
+def chunks(l, n):
+	"""Yield successive n-sized chunks from l."""
+	for i in xrange(0, len(l), n):
+		yield l[i:i+n]
+
+def scrape_nnm(settings = None):
+	import json
+
+	if settings is None:
+		settings = load_settings()
+	data_path = settings.addon_data_path
+
+	hashes = []
+	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
+		if torr.endswith('.torrent'):
+			from base import TorrentPlayer
+			tp = TorrentPlayer()
+			tp.AddTorrent(filesystem.join(data_path, 'nnmclub', torr))
+			data = tp.GetLastTorrentData()
+			if data:
+				hashes.append((data['announce'], data['info_hash'], torr.replace('.torrent', '.stat')))
+
+	for chunk in chunks(hashes, 32):
+		import scraper
+		seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
+
+		for item in chunk:
+			filename = filesystem.join(data_path, 'nnmclub', item[2])
+			remove_file = False
+			with filesystem.fopen(filename, 'w') as stat_file:
+				try:
+					json.dump(seeds_peers[item[1]], stat_file)
+				except KeyError as e:
+					remove_file = True
+					log.debug(e)
+			if remove_file:
+				filesystem.remove(filename)
+
 def main():
 	previous_time = time()
+	prev_scrape_time = time()
+
 	every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
+	scrape_every = 30 * 60
 
 	delay_startup = int(_addon.getSetting('delay_startup')) * 60
+
+	scrape_nnm()
+	xbmc.log('scrape_nnm')
 
 	if _addon.getSetting('service_startup') == 'true':
 		
@@ -45,15 +91,22 @@ def main():
 			sleep(1)
 			
 		xbmc.log("Persistent Update Service starting...")
-		print _addon.getSetting('service_startup')
+		log.debug(_addon.getSetting('service_startup'))
 		update_service()
 		
-	while (not xbmc.abortRequested) and _addon.getSetting('service_generate_persistent') == 'true':
-		if time() >= previous_time + every:  # verification
-			previous_time = time()
-			update_service()
-			xbmc.log('Update List at %s' % asctime(localtime(previous_time)))
-			xbmc.log('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+	while (not xbmc.abortRequested):
+		if time() >= prev_scrape_time + scrape_every:
+			prev_scrape_time = time()
+			scrape_nnm()
+			xbmc.log('scrape_nnm')
+
+		if _addon.getSetting('service_generate_persistent') == 'true':
+			if time() >= previous_time + every:  # verification
+				previous_time = time()
+				update_service()
+				xbmc.log('Update List at %s' % asctime(localtime(previous_time)))
+				xbmc.log('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+
 		sleep(1)
 
 if __name__ == '__main__':

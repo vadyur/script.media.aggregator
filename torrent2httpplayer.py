@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import log
+
 from torrent2http import State, Engine, MediaType, Encryption
 #from contextlib import closing
 from base import TorrentPlayer
@@ -22,7 +24,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 	
 	def debug(self, msg):
 		try:
-			print '[Torrent2HTTPPlayer] %s' % msg
+			import log
+			log.debug('[Torrent2HTTPPlayer] %s' % msg)
 		except:
 			pass
 			
@@ -89,7 +92,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		try:
 			self.engine.resume_file = filesystem.join(self.settings.addon_data_path, self.info_hash + '.resume')
 		except BaseException as e:
-			print e
+			debug(e)
 			self.engine.resume_file = filesystem.join(download_path, self.info_hash + '.resume')
 		self.debug('resume file is: ' + self.engine.resume_file)
 
@@ -138,21 +141,21 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		'''
 		try:
 			files = self.engine.list()
-			print 'StartBufferFile: has files'
+			debug('StartBufferFile: has files')
 			item = files[fileIndex]
-			print 'StartBufferFile: has item'
+			debug('StartBufferFile: has item')
 			local_file = filesystem.join(self.download_path, item.name)
-			print 'StartBufferFile: local_file = ' + local_file.encode('utf-8')
+			debug('StartBufferFile: local_file = ' + local_file.encode('utf-8'))
 			if filesystem.exists(local_file):
-				print 'StartBufferFile: %s exists' % local_file.encode('utf-8')
+				debug('StartBufferFile: %s exists' % local_file.encode('utf-8'))
 				self.download_path = local_file
 				self.engine.close()	
 				return
 			else:
-				print 'StartBufferFile: %s is not exists' % local_file.encode('utf-8')
+				debug('StartBufferFile: %s is not exists' % local_file.encode('utf-8'))
 				self.download_path = None
 		except:
-			print 'StartBufferFile: exception trown'
+			debug('StartBufferFile: exception trown')
 			self.download_path = None
 		'''
 

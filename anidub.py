@@ -1,4 +1,7 @@
 ﻿# coding: utf-8
+import log
+from log import debug
+
 
 from settings import Settings
 from base import *
@@ -98,7 +101,7 @@ class DescriptionParser(DescriptionParserBase):
 		
 		for title in self.soup.select('#news-title'):
 			full_title = title.get_text()
-			print full_title.encode('utf-8')
+			debug(full_title.encode('utf-8'))
 			self._dict['title'] = self.get_title(full_title)
 			self._dict['originaltitle'] = self.get_original_title(full_title)
 			self.parse_season_from_title(full_title)
@@ -122,9 +125,9 @@ class DescriptionParser(DescriptionParserBase):
 				text = text.split(u'Скриншоты')[0]
 				text = text.strip()
 				self._dict['plot'] = text
-				#print '---'
-				#print text.encode('utf-8')
-				#print '---'
+				#debug('---')
+				#debug(text.encode('utf-8'))
+				#debug('---')
 			except:
 				pass
 				
@@ -133,21 +136,21 @@ class DescriptionParser(DescriptionParserBase):
 				text = b.get_text()
 				text = text.split(' ')[0]
 				self._dict['rating'] = float(text) * 2
-				print 'rating: ' + str(self._dict['rating'])
+				debug('rating: ' + str(self._dict['rating']))
 			except:
 				pass
 				
 		for img in self.soup.select('span.poster img'):
 			try:
 				self._dict['thumbnail'] = img['src'].strip()
-				print self._dict['thumbnail']
+				debug(self._dict['thumbnail'])
 			except:
 				pass
 				
 		fanart = []
 		for a in self.soup.select('ul.clr li a'):
 			try:
-				print a['href']
+				debug(a['href'])
 				fanart.append(a['href'].strip())
 			except:
 				pass
@@ -157,7 +160,7 @@ class DescriptionParser(DescriptionParserBase):
 		for img in self.soup.select('div.video_info a img'):
 			try:
 				self._dict['studio'] = img['alt'].strip()
-				print self._dict['studio']
+				debug(self._dict['studio'])
 			except:
 				pass
 
@@ -172,7 +175,7 @@ class DescriptionParser(DescriptionParserBase):
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
-	print filesystem.getcwd().encode('utf-8')
+	debug(filesystem.getcwd().encode('utf-8'))
 	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
 	return
 
@@ -188,27 +191,27 @@ def write_tvshow(content, path, settings):
 	d = feedparser.parse(content)
 	
 	for item in d.entries:
-		print '-------------------------------------------------------------------------'
-		print item.link
+		debug('-------------------------------------------------------------------------')
+		debug(item.link)
 		parser = DescriptionParser(item.link)
 		
 		if parser.parsed():
 			title = parser.get_value('title')
-			print title.encode('utf-8')
+			debug(title.encode('utf-8'))
 			originaltitle = parser.get_value('originaltitle')
-			print originaltitle.encode('utf-8')
+			debug(originaltitle.encode('utf-8'))
 			season = parser.get_value('season')
 			filename = title
 
 			from downloader import TorrentDownloader
 			TorrentDownloader(item.link, settings.addon_data_path, settings).download()
 			
-			print 'Episodes: ' + str(parser.get_value('episodes'))
+			debug('Episodes: ' + str(parser.get_value('episodes')))
 			
 			save_path = filesystem.getcwd()
 			
 			tvshow_path = make_fullpath(title, '')
-			print tvshow_path.encode('utf-8')
+			debug(tvshow_path.encode('utf-8'))
 			
 			if not filesystem.exists(tvshow_path):
 				filesystem.makedirs(tvshow_path)
@@ -220,7 +223,7 @@ def write_tvshow(content, path, settings):
 			filesystem.chdir(save_path)
 			
 			season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
-			print season_path.encode('utf-8')
+			debug(season_path.encode('utf-8'))
 			if not filesystem.exists(season_path):
 				filesystem.makedirs(season_path)
 
@@ -245,7 +248,7 @@ def write_tvshow(content, path, settings):
 				
 				if episodeNumber <= parser.get_value('episodes'):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
-					print filename.encode('utf-8')
+					debug(filename.encode('utf-8'))
 
 					ep = tvshow_api.Episode(season, episodeNumber)
 					if ep:
@@ -265,20 +268,20 @@ def write_tvshow(content, path, settings):
 	
 def download_torrent(url, path, settings):
 	url = urllib2.unquote(url)
-	print 'download_torrent:' + url
+	debug('download_torrent:' + url)
 	s = requests.Session()
 	login = s.post("http://tr.anidub.com/", data = {"login_name": settings.anidub_login, "login_password": settings.anidub_password, "login": "submit"})
-	print 'Login status: %d' % login.status_code
+	debug('Login status: %d' % login.status_code)
 	
 	page = s.get(url)
-	#print page.text.encode('utf-8')
+	#debug(page.text.encode('utf-8'))
 	soup = BeautifulSoup(page.text, 'html.parser')
 	a = soup.select('#tv720 div.torrent_h a')
 	if len(a) > 0:
 		href = 'http://tr.anidub.com' + a[0]['href']
-		print s.headers
+		debug(s.headers)
 		r = s.get(href, headers={'Referer': url})
-		print r.headers
+		debug(r.headers)
 		
 		# 'Content-Type': 'application/x-bittorrent'
 		if 'Content-Type' in r.headers:
