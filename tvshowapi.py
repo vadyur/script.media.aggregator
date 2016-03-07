@@ -13,7 +13,7 @@ from movieapi import KinopoiskAPI
 import io
 
 import filesystem
-from base import TorrentPlayer, make_fullpath, get_rank
+from base import TorrentPlayer, make_fullpath
 
 
 def debug(s):

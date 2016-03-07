@@ -10,49 +10,16 @@ import urllib
 import pyxbmct.addonwindow as pyxbmct
 
 import filesystem
-from base import STRMWriterBase, TorrentPlayer
-
-
-def seeds_peers(item):
-	import player
-	res = {}
-	try:
-		link = urllib.unquote(item['link'])
-		settings = player.load_settings()
-		if 'nnm-club' in link:
-			debug('seeds_peers: ' + link)
-			t_id = re.search(r't=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'nnmclub', t_id + '.stat')
-			debug(fn)
-			with filesystem.fopen(fn, 'r') as stat_file:
-				import json
-				res = json.load(stat_file)
-				debug(str(res))
-		elif 'hdclub' in link:
-			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'hdclub', t_id + '.torrent')
-			debug(fn)
-			tp = TorrentPlayer()
-			tp.AddTorrent(fn)
-			data = tp.GetLastTorrentData()
-			debug(str(data))
-			if data:
-				hashes = [data['info_hash']]
-				import scraper
-				res = scraper.scrape(data['announce'], hashes)
-				debug(str(res))
-				return res[data['info_hash']]
-
-	except BaseException as e:
-		debug(str(e))
-	return res
+from base import STRMWriterBase, seeds_peers
 
 class MyWindow(pyxbmct.AddonDialogWindow):
-	def __init__(self, title='', links = []):
+	def __init__(self, title, settings, links = []):
 		# Вызываем конструктор базового класса.
 		super(MyWindow, self).__init__(title)
 		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
 		self.setGeometry(850, 550, 1, 1)
+
+		self.settings = settings
 
 		self.files = None
 		self.list = pyxbmct.List('font14', _itemHeight=100)
@@ -84,8 +51,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			except:
 				pass
 			try:
-				info = seeds_peers(item)
-				s +=  '\n' + u'Сиды: %d        пиры: %d' % (info['seeds'], info['peers'])
+				#info = seeds_peers(item)
+				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
 			except BaseException as e:
 				debug(str(e))
 				pass
@@ -142,7 +109,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 		from downloader import TorrentDownloader
 		import player
-		settings = player.load_settings()
+		settings = self.settings
 		import urllib
 		torr_downloader = TorrentDownloader(urllib.unquote(link), tempPath, settings)
 		path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
@@ -185,13 +152,16 @@ def main():
 
 	debug(xbmc.getInfoLabel('Container.FolderPath'))
 
-	links = STRMWriterBase.get_links_with_ranks(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), None)
+	# import rpdb2
+	# rpdb2.start_embedded_debugger('pw')
 
-	window = MyWindow('Media Aggregator', links=links)
+	import player
+	settings = player.load_settings()
+
+	links = STRMWriterBase.get_links_with_ranks(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), settings, use_scrape_info=True)
+
+	window = MyWindow('Media Aggregator', settings=settings, links=links)
 	window.doModal()
-
-	#import rpdb2
-	#rpdb2.start_embedded_debugger('pw')
 
 	debug(window.has_choice)
 	debug(window.has_select_file)

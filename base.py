@@ -46,7 +46,22 @@ def get_rank(full_title, parser, settings):
 	
 	rank = 0.0
 	conditions = 0
-	
+
+	if 'seeds' in parser:
+		seeds = parser['seeds']
+		if seeds == 0:
+			rank += 1000
+		elif seeds < 5:
+			rank += 1 + 3.0 / seeds
+		else:
+			rank += 1 + 1.0 / seeds
+		conditions += 1
+	else:
+		rank += 1.5
+		conditions += 1
+
+		parser = dict(parser, **info)
+
 	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
 		conditions += 1
@@ -129,7 +144,42 @@ def make_utf8(s):
 	if isinstance(s, unicode):
 		return s.encode('utf-8')
 	return s
-	
+
+def seeds_peers(item):
+	import player
+	res = {}
+	try:
+		link = urllib.unquote(item['link'])
+		settings = player.load_settings()
+		if 'nnm-club' in link:
+			debug('seeds_peers: ' + link)
+			t_id = re.search(r't=(\d+)', link).group(1)
+			fn = filesystem.join(settings.addon_data_path, 'nnmclub', t_id + '.stat')
+			debug(fn)
+			with filesystem.fopen(fn, 'r') as stat_file:
+				import json
+				res = json.load(stat_file)
+				debug(str(res))
+		elif 'hdclub' in link:
+			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
+			fn = filesystem.join(settings.addon_data_path, 'hdclub', t_id + '.torrent')
+			debug(fn)
+			tp = TorrentPlayer()
+			tp.AddTorrent(fn)
+			data = tp.GetLastTorrentData()
+			debug(str(data))
+			if data:
+				hashes = [data['info_hash']]
+				import scraper
+				res = scraper.scrape(data['announce'], hashes)
+				debug(str(res))
+				return res[data['info_hash']]
+
+	except BaseException as e:
+		debug(str(e))
+	return res
+
+
 class STRMWriterBase(object):
 	def make_alternative(self, strmFilename, link, parser):
 		strmFilename_alt = strmFilename + '.alternative'
@@ -151,7 +201,7 @@ class STRMWriterBase(object):
 				pass
 
 	@staticmethod
-	def get_links_with_ranks(strmFilename, settings):
+	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
 		strmFilename_alt = strmFilename + '.alternative'
 		items = []
 		saved_dict = {}
@@ -170,6 +220,10 @@ class STRMWriterBase(object):
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif not line.startswith('#'):
 						try:
+							if use_scrape_info:
+								saved_dict['link'] = line.strip(u'\r\n\t ')
+								sp = seeds_peers(saved_dict)
+								saved_dict = dict(saved_dict, **sp)
 							if 'rank' in saved_dict:
 								curr_rank = float(saved_dict['rank'])
 							else:

@@ -361,7 +361,7 @@ def play_torrent(settings, params):
 	nfoReader 		= NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
 	debug(strmFilename.encode('utf-8'))
-	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
+	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
