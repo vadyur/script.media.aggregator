@@ -85,7 +85,7 @@ def main():
 	delay_startup = int(_addon.getSetting('delay_startup')) * 60
 
 	scrape_nnm()
-	xbmc.log('scrape_nnm')
+	log.debug('scrape_nnm')
 
 	if _addon.getSetting('service_startup') == 'true':
 		
@@ -94,7 +94,7 @@ def main():
 				return
 			sleep(1)
 			
-		xbmc.log("Persistent Update Service starting...")
+		log.debug("Persistent Update Service starting...")
 		log.debug(_addon.getSetting('service_startup'))
 		update_service()
 		
@@ -102,14 +102,14 @@ def main():
 		if time() >= prev_scrape_time + scrape_every:
 			prev_scrape_time = time()
 			scrape_nnm()
-			xbmc.log('scrape_nnm')
+			log.debug('scrape_nnm')
 
 		if _addon.getSetting('service_generate_persistent') == 'true':
 			if time() >= previous_time + every:  # verification
 				previous_time = time()
 				update_service()
-				xbmc.log('Update List at %s' % asctime(localtime(previous_time)))
-				xbmc.log('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+				log.debug('Update List at %s' % asctime(localtime(previous_time)))
+				log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
 
 		sleep(1)
 
