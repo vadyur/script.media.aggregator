@@ -191,88 +191,101 @@ def write_tvshow(content, path, settings):
 	d = feedparser.parse(content)
 	
 	for item in d.entries:
-		debug('-------------------------------------------------------------------------')
-		debug(item.link)
-		parser = DescriptionParser(item.link)
-		
-		if parser.parsed():
-			title = parser.get_value('title')
-			debug(title.encode('utf-8'))
-			originaltitle = parser.get_value('originaltitle')
-			debug(originaltitle.encode('utf-8'))
-			season = parser.get_value('season')
-			filename = title
-
-			from downloader import TorrentDownloader
-			TorrentDownloader(item.link, settings.addon_data_path, settings).download()
-			
-			debug('Episodes: ' + str(parser.get_value('episodes')))
-			
-			save_path = filesystem.getcwd()
-			
-			tvshow_path = make_fullpath(title, '')
-			debug(tvshow_path.encode('utf-8'))
-			
-			if not filesystem.exists(tvshow_path):
-				filesystem.makedirs(tvshow_path)
-			
-			filesystem.chdir(tvshow_path)
-			
-			tvshow_api = TVShowAPI(originaltitle, title)
-			write_tvshow_nfo(parser, tvshow_api)
-			filesystem.chdir(save_path)
-			
-			season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
-			debug(season_path.encode('utf-8'))
-			if not filesystem.exists(season_path):
-				filesystem.makedirs(season_path)
-
-			filesystem.chdir(season_path)
-				
-			episodes = tvshow_api.episodes(season)
-
-			if len(episodes) == 0:
-				for i in range(1, parser.get_value('episodes')):
-					episodes.append({
-						'title': title,
-						'showtitle': title,
-						'short': 's%02de%02d' % (season, i),
-						'episode': i,
-						'season': season
-					})
-
-			for episode in episodes:
-				title 			= episode['title']
-				shortName 		= episode['short']
-				episodeNumber	= episode['episode']
-				
-				if episodeNumber <= parser.get_value('episodes'):
-					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
-					debug(filename.encode('utf-8'))
-
-					ep = tvshow_api.Episode(season, episodeNumber)
-					if ep:
-						episode = ep
-
-					STRMWriter(item.link).write(filename, episodeNumber = episodeNumber, settings = settings)
-					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
-
-				
-			filesystem.chdir(save_path)
-		else:
-			skipped(item)
-			
-		del parser
+		write_tvshow_item(item, path, settings)
 			
 	filesystem.chdir(original_dir)
+
+
+def write_tvshow_item(item, path, settings):
+	debug('-------------------------------------------------------------------------')
+	debug(item.link)
+	parser = DescriptionParser(item.link)
+	if parser.parsed():
+		title = parser.get_value('title')
+		debug(title.encode('utf-8'))
+		originaltitle = parser.get_value('originaltitle')
+		debug(originaltitle.encode('utf-8'))
+		season = parser.get_value('season')
+		filename = title
+
+		from downloader import TorrentDownloader
+		TorrentDownloader(item.link, settings.addon_data_path, settings).download()
+
+		debug('Episodes: ' + str(parser.get_value('episodes')))
+
+		save_path = filesystem.getcwd()
+
+		tvshow_path = make_fullpath(title, '')
+		debug(tvshow_path.encode('utf-8'))
+
+		if not filesystem.exists(tvshow_path):
+			filesystem.makedirs(tvshow_path)
+
+		filesystem.chdir(tvshow_path)
+
+		tvshow_api = TVShowAPI(originaltitle, title)
+		write_tvshow_nfo(parser, tvshow_api)
+		filesystem.chdir(save_path)
+
+		season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
+		debug(season_path.encode('utf-8'))
+		if not filesystem.exists(season_path):
+			filesystem.makedirs(season_path)
+
+		filesystem.chdir(season_path)
+
+		episodes = tvshow_api.episodes(season)
+
+		if len(episodes) < parser.get_value('episodes'):
+			for i in range(len(episodes) + 1, parser.get_value('episodes') + 1):
+				episodes.append({
+					'title': title,
+					'showtitle': title,
+					'short': 's%02de%02d' % (season, i),
+					'episode': i,
+					'season': season
+				})
+
+		for episode in episodes:
+			title = episode['title']
+			shortName = episode['short']
+			episodeNumber = episode['episode']
+
+			if episodeNumber <= parser.get_value('episodes'):
+				filename = str(episodeNumber) + '. ' + 'episode_' + shortName
+				debug(filename.encode('utf-8'))
+
+				ep = tvshow_api.Episode(season, episodeNumber)
+				if ep:
+					episode = ep
+
+				STRMWriter(item.link).write(filename, episodeNumber=episodeNumber, settings=settings)
+				NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
+
+		filesystem.chdir(save_path)
+	else:
+		skipped(item)
+	del parser
+	original_dir = filesystem.getcwd()
+
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
+
+	filesystem.chdir(path)
+
+
+def get_session(settings):
+	s = requests.Session()
+	login = s.post("http://tr.anidub.com/", data = {"login_name": settings.anidub_login, "login_password": settings.anidub_password, "login": "submit"})
+	debug('Login status: %d' % login.status_code)
+	return s
 	
 def download_torrent(url, path, settings):
 	url = urllib2.unquote(url)
 	debug('download_torrent:' + url)
-	s = requests.Session()
-	login = s.post("http://tr.anidub.com/", data = {"login_name": settings.anidub_login, "login_password": settings.anidub_password, "login": "submit"})
-	debug('Login status: %d' % login.status_code)
-	
+
+	s = get_session(settings)
+
 	page = s.get(url)
 	#debug(page.text.encode('utf-8'))
 	soup = BeautifulSoup(page.text, 'html.parser')
@@ -297,10 +310,38 @@ def download_torrent(url, path, settings):
 			pass
 	return False
 
+def write_favorites(path, settings):
+	s = get_session(settings)
+	page = s.get('http://tr.anidub.com/favorites/')
+	soup = BeautifulSoup(page.text, 'html.parser')
+
+	original_dir = filesystem.getcwd()
+
+	if not filesystem.exists(path):
+		filesystem.makedirs(path)
+
+	filesystem.chdir(path)
+
+	class Item:
+		def __init__(self, link, title):
+			self.link = link
+			self.title = title
+
+
+	for a in soup.select('article.story > div.story_h > div.lcol > h2 > a'):
+		log.debug(a['href'])
+		link = a['href']
+		title = a.get_text()
+		write_tvshow_item(Item(link, title), path, settings)
+
+	filesystem.chdir(original_dir)
+
+
 ###################################################################################################
 def run(settings):
 	if settings.anime_save:
 		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
+		write_favorites(settings.anime_tvshow_path(), settings)
 
 
 if __name__ == '__main__':
