@@ -31,7 +31,8 @@ def update_service():
 		nnmclub.run(settings)
 	
 	if anidub_enable or hdclub_enable or nnmclub_enable:
-		xbmc.executebuiltin('UpdateLibrary("video")')
+		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+			xbmc.executebuiltin('UpdateLibrary("video")')
 
 def chunks(l, n):
 	"""Yield successive n-sized chunks from l."""

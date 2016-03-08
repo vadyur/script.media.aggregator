@@ -317,6 +317,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		k_db.PlayerPostProccessing()
 
 		xbmc.executebuiltin('Container.Refresh')
+		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
+		log.debug(UpdateLibrary_path)
+		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
 
 	except TPError as e:
 		debug(e)
@@ -473,7 +477,8 @@ def main():
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 1
 				else:
-					xbmc.executebuiltin('UpdateLibrary("video")')
+					if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+						xbmc.executebuiltin('UpdateLibrary("video")')
 
 			if rep == 1:
 				save_nnmclub_login = settings.nnmclub_login
