@@ -119,19 +119,12 @@ def write_movie(item, settings):
 	del parser
 		
 def write_movies(rss_url, path, settings):
-	try:
-		original_dir = filesystem.save_make_chdir(path)
+	with filesystem.save_make_chdir_context(path):
 	
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			write_movie(item, settings)
 
-		filesystem.chdir(original_dir)
-	except filesystem.MakeCHDirException as e:
-		filesystem.chdir(e.path)
-	except BaseException as e:
-		debug(e)
-		filesystem.chdir(original_dir)
 
 def write_tvshow(item, settings):
 	full_title = item.title
@@ -151,19 +144,12 @@ def write_tvshow(item, settings):
 
 def write_tvshows(rss_url, path, settings):
 
-	try:
-		original_dir = filesystem.save_make_chdir(path)
+	with filesystem.save_make_chdir_context(path):
 
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			write_tvshow(item, settings)
 
-		filesystem.chdir(original_dir)
-	except filesystem.MakeCHDirException as e:
-		filesystem.chdir(e.path)
-	except BaseException as e:
-		debug(e)
-		filesystem.chdir(original_dir)
 
 def get_rss_url(f_id, passkey):
 	return 'http://hdclub.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey

@@ -181,19 +181,11 @@ def write_tvshow_nfo(parser, tvshow_api):
 
 ###################################################################################################
 def write_tvshow(content, path, settings):
-	original_dir = filesystem.getcwd()
-	
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-		
-	filesystem.chdir(path)
-	
-	d = feedparser.parse(content)
-	
-	for item in d.entries:
-		write_tvshow_item(item, path, settings)
-			
-	filesystem.chdir(original_dir)
+	with filesystem.save_make_chdir_context(path):
+		d = feedparser.parse(content)
+
+		for item in d.entries:
+			write_tvshow_item(item, path, settings)
 
 
 def write_tvshow_item(item, path, settings):
@@ -206,72 +198,55 @@ def write_tvshow_item(item, path, settings):
 		originaltitle = parser.get_value('originaltitle')
 		debug(originaltitle.encode('utf-8'))
 		season = parser.get_value('season')
-		filename = title
 
 		from downloader import TorrentDownloader
 		TorrentDownloader(item.link, settings.addon_data_path, settings).download()
 
 		debug('Episodes: ' + str(parser.get_value('episodes')))
 
-		save_path = filesystem.getcwd()
-
 		tvshow_path = make_fullpath(title, '')
 		debug(tvshow_path.encode('utf-8'))
 
-		if not filesystem.exists(tvshow_path):
-			filesystem.makedirs(tvshow_path)
-
-		filesystem.chdir(tvshow_path)
-
-		tvshow_api = TVShowAPI(originaltitle, title)
-		write_tvshow_nfo(parser, tvshow_api)
-		filesystem.chdir(save_path)
+		with filesystem.save_make_chdir_context(tvshow_path):
+			tvshow_api = TVShowAPI(originaltitle, title)
+			write_tvshow_nfo(parser, tvshow_api)
 
 		season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
 		debug(season_path.encode('utf-8'))
-		if not filesystem.exists(season_path):
-			filesystem.makedirs(season_path)
 
-		filesystem.chdir(season_path)
+		with filesystem.save_make_chdir_context(season_path):
 
-		episodes = tvshow_api.episodes(season)
+			episodes = tvshow_api.episodes(season)
 
-		if len(episodes) < parser.get_value('episodes'):
-			for i in range(len(episodes) + 1, parser.get_value('episodes') + 1):
-				episodes.append({
-					'title': title,
-					'showtitle': title,
-					'short': 's%02de%02d' % (season, i),
-					'episode': i,
-					'season': season
-				})
+			if len(episodes) < parser.get_value('episodes'):
+				for i in range(len(episodes) + 1, parser.get_value('episodes') + 1):
+					episodes.append({
+						'title': title,
+						'showtitle': title,
+						'short': 's%02de%02d' % (season, i),
+						'episode': i,
+						'season': season
+					})
 
-		for episode in episodes:
-			title = episode['title']
-			shortName = episode['short']
-			episodeNumber = episode['episode']
+			for episode in episodes:
+				title = episode['title']
+				shortName = episode['short']
+				episodeNumber = episode['episode']
 
-			if episodeNumber <= parser.get_value('episodes'):
-				filename = str(episodeNumber) + '. ' + 'episode_' + shortName
-				debug(filename.encode('utf-8'))
+				if episodeNumber <= parser.get_value('episodes'):
+					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
+					debug(filename.encode('utf-8'))
 
-				ep = tvshow_api.Episode(season, episodeNumber)
-				if ep:
-					episode = ep
+					ep = tvshow_api.Episode(season, episodeNumber)
+					if ep:
+						episode = ep
 
-				STRMWriter(item.link).write(filename, episodeNumber=episodeNumber, settings=settings)
-				NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
+					STRMWriter(item.link).write(filename, episodeNumber=episodeNumber, settings=settings)
+					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
 
-		filesystem.chdir(save_path)
 	else:
 		skipped(item)
 	del parser
-	original_dir = filesystem.getcwd()
-
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-
-	filesystem.chdir(path)
 
 
 def get_session(settings):
@@ -315,26 +290,17 @@ def write_favorites(path, settings):
 	page = s.get('http://tr.anidub.com/favorites/')
 	soup = BeautifulSoup(page.text, 'html.parser')
 
-	original_dir = filesystem.getcwd()
-
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-
-	filesystem.chdir(path)
-
 	class Item:
 		def __init__(self, link, title):
 			self.link = link
 			self.title = title
 
-
-	for a in soup.select('article.story > div.story_h > div.lcol > h2 > a'):
-		log.debug(a['href'])
-		link = a['href']
-		title = a.get_text()
-		write_tvshow_item(Item(link, title), path, settings)
-
-	filesystem.chdir(original_dir)
+	with filesystem.save_make_chdir_context(path):
+		for a in soup.select('article.story > div.story_h > div.lcol > h2 > a'):
+			log.debug(a['href'])
+			link = a['href']
+			title = a.get_text()
+			write_tvshow_item(Item(link, title), path, settings)
 
 
 ###################################################################################################

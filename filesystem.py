@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 
-import os, sys
+import os, sys, log
 
 __DEBUG__ = False
 
@@ -16,7 +16,7 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 		string = string.decode(encoding)
 		
 	if __DEBUG__:
-		print '\tensure_unicode(%s, encoding=%s)' % (string.encode('utf-8'), encoding)
+		log.debug('\tensure_unicode(%s, encoding=%s)' % (string.encode('utf-8'), encoding))
 		
 	return string
 	
@@ -50,11 +50,30 @@ def save_make_chdir(new_path):
 			makedirs(new_path)
 		chdir(new_path)
 	except BaseException as e:
-		print e
+		log.debug(e)
 		raise MakeCHDirException(current)
 	finally:
 		return current
-	
+
+class save_make_chdir_context(object):
+
+	def __init__(self, path):
+		self.newPath = path
+
+	# context management
+	def __enter__(self):
+		self.savePath = getcwd()
+		if not exists(self.newPath):
+			makedirs(self.newPath)
+		chdir(self.newPath)
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		chdir(self.savePath)
+		if exc_type:
+			log.debug("!!error!! " + str(exc_val))
+			return True
+
 def isfile(path):
 	return os.path.isfile(get_path(path))
 	
@@ -84,24 +103,29 @@ def remove(path):
 	os.remove(get_path(path))
 
 def test():	
-	print 'Filesystem encoding: %s' % get_filesystem_encoding()
-	print 'getcwd(): %s' % getcwd().encode('utf-8')
-	print 'relpath(getcwd(), ".."): %s' % relpath(getcwd(), "..").encode('utf-8')
+	log.debug('Filesystem encoding: %s' % get_filesystem_encoding())
+	log.debug('getcwd(): %s' % getcwd().encode('utf-8'))
+	log.debug('relpath(getcwd(), ".."): %s' % relpath(getcwd(), "..").encode('utf-8'))
 	
 	subpath = u'Подпапка'
 	subpath2 = u'файл.ext'
-	fullpath = join(getcwd(), subpath, subpath2)
+
+	with save_make_chdir_context(join(getcwd(), subpath)):
+		log.debug('aaaaa')
+		raise Exception('save_make_chdir')
+		log.debug('bbbbb')
 	
-	print 'subpath: %s' % subpath.encode('utf-8')
-	print 'subpath2: %s' % subpath2.encode('utf-8')
-	print 'join(getcwd(), subpath, subpath2): %s' % fullpath.encode('utf-8')
+	fullpath = join(getcwd(), subpath, subpath2)
+	log.debug('subpath: %s' % subpath.encode('utf-8'))
+	log.debug('subpath2: %s' % subpath2.encode('utf-8'))
+	log.debug('join(getcwd(), subpath, subpath2): %s' % fullpath.encode('utf-8'))
 
 	remote_file = u'smb://vd/Incoming/test.txt'
 	if isfile(remote_file):
 		with fopen(remote_file, "r") as f:
-			print f.read()
+			log.debug(f.read())
 
-	
+
 if __name__ == '__main__':
 	__DEBUG__ = True
 	test()
