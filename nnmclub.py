@@ -320,13 +320,7 @@ def write_movie(post, settings, tracker):
 
 def write_movies(content, path, settings, tracker=False):
 
-	original_dir = filesystem.getcwd()
-
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-
-	try:
-		filesystem.chdir(path)
+	with filesystem.save_make_chdir_context(path):
 		# ---------------------------------------------
 		if tracker:
 			_ITEMS_ON_PAGE = 50
@@ -340,8 +334,6 @@ def write_movies(content, path, settings, tracker=False):
 		for post in enumerator.items():
 			write_movie(post, settings, tracker)
 		# ---------------------------------------------
-	finally:
-		filesystem.chdir(original_dir)
 
 def save_download_link(parser, settings, link):
 	try:
@@ -363,13 +355,7 @@ def write_tvshow(fulltitle, description, link, settings):
 		save_download_link(parser, settings, link)
 
 def write_tvshows(rss_url, path, settings):
-	original_dir = filesystem.getcwd()
-
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-
-	try:
-		filesystem.chdir(path)
+	with filesystem.save_make_chdir_context(path):
 
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
@@ -382,18 +368,11 @@ def write_tvshows(rss_url, path, settings):
 				description=item.description,
 				link=item.link,
 				settings=settings)
-	finally:
-		filesystem.chdir(original_dir)
+
 
 def write_movies_rss(rss_url, path, settings):
-	original_dir = filesystem.getcwd()
 
-	if not filesystem.exists(path):
-		filesystem.makedirs(path)
-
-	try:
-		filesystem.chdir(path)
-
+	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(rss_url)
 		for item in d.entries:
 			try:
@@ -405,11 +384,11 @@ def write_movies_rss(rss_url, path, settings):
 				description=item.description,
 				link=item.link,
 				settings=settings)
-	finally:
-		filesystem.chdir(original_dir)
+
 
 def get_rss_url(f_id, passkey):
 	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=168&t=1&uk=' + passkey
+
 
 def run(settings):
 	passkey = get_passkey(settings)

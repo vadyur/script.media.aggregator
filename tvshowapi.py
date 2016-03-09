@@ -312,8 +312,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
 		debug(tvshow_path.encode('utf-8'))
 
-		try:
-			save_path = filesystem.save_make_chdir(tvshow_path)
+		with filesystem.save_make_chdir_context(tvshow_path):
 
 			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
@@ -335,9 +334,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 				except:
 					continue
 
-				try:
-					tvshow_full_path = filesystem.getcwd()
-					filesystem.save_make_chdir(season_path)
+				with filesystem.save_make_chdir_context(season_path):
 
 					results = filter(lambda x: x['season'] == f['season'] and x['episode'] == f['episode'], files)
 					if len(results) > 1:	# Has duplicate episodes
@@ -358,21 +355,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
 					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
 
-					filesystem.chdir(tvshow_full_path)
-
-				except filesystem.MakeCHDirException as e:
-					filesystem.chdir(e.path)
-				except BaseException as e:
-					filesystem.chdir(tvshow_full_path)
-
 				# end for
-
-			filesystem.chdir(save_path)
-
-		except filesystem.MakeCHDirException as e:
-			filesystem.chdir(e.path)
-		except BaseException as e:
-			filesystem.chdir(save_path)
 
 
 def test(link):
