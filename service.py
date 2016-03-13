@@ -49,12 +49,16 @@ def scrape_nnm(settings = None):
 	hashes = []
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
 		if torr.endswith('.torrent'):
-			from base import TorrentPlayer
-			tp = TorrentPlayer()
-			tp.AddTorrent(filesystem.join(data_path, 'nnmclub', torr))
-			data = tp.GetLastTorrentData()
-			if data:
-				hashes.append((data['announce'], data['info_hash'], torr.replace('.torrent', '.stat')))
+			try:
+				from base import TorrentPlayer
+				tp = TorrentPlayer()
+				tp.AddTorrent(filesystem.join(data_path, 'nnmclub', torr))
+				data = tp.GetLastTorrentData()
+				if data:
+					hashes.append((data['announce'], data['info_hash'], torr.replace('.torrent', '.stat')))
+			except BaseException as e:
+				log.debug(str(e))
+
 
 	for chunk in chunks(hashes, 32):
 		import scraper
@@ -85,8 +89,11 @@ def main():
 
 	delay_startup = int(_addon.getSetting('delay_startup')) * 60
 
-	scrape_nnm()
-	log.debug('scrape_nnm')
+	try:
+		scrape_nnm()
+		log.debug('scrape_nnm')
+	except BaseException as e:
+		log.debug(str(e))
 
 	if _addon.getSetting('service_startup') == 'true':
 		
@@ -94,23 +101,32 @@ def main():
 			if xbmc.abortRequested:
 				return
 			sleep(1)
-			
-		log.debug("Persistent Update Service starting...")
-		log.debug(_addon.getSetting('service_startup'))
-		update_service()
-		
+
+		try:
+			log.debug("Persistent Update Service starting...")
+			log.debug(_addon.getSetting('service_startup'))
+			update_service()
+		except BaseException as e:
+			log.debug(str(e))
+
 	while (not xbmc.abortRequested):
 		if time() >= prev_scrape_time + scrape_every:
-			prev_scrape_time = time()
-			scrape_nnm()
-			log.debug('scrape_nnm')
+			try:
+				prev_scrape_time = time()
+				scrape_nnm()
+				log.debug('scrape_nnm')
+			except BaseException as e:
+				log.debug(str(e))
 
 		if _addon.getSetting('service_generate_persistent') == 'true':
 			if time() >= previous_time + every:  # verification
-				previous_time = time()
-				update_service()
-				log.debug('Update List at %s' % asctime(localtime(previous_time)))
-				log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+				try:
+					previous_time = time()
+					update_service()
+					log.debug('Update List at %s' % asctime(localtime(previous_time)))
+					log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
+				except BaseException as e:
+					log.debug(str(e))
 
 		sleep(1)
 
