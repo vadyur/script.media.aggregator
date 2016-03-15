@@ -98,15 +98,18 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 
 		#self.engine.start()
 		
-	def _CheckTorrentAdded(self):
-		status = self.engine.status()		
-		self.engine.check_torrent_error(status)
-		
-		self.debug('CheckTorrentAdded')
-		
-		if status.state == State.CHECKING_FILES:
-			self.debug('State.CHECKING_FILES')
-			return False
+	def CheckTorrentAdded(self):
+		if self.engine:
+			status = self.engine.status()
+			self.engine.check_torrent_error(status)
+
+			self.debug('CheckTorrentAdded')
+
+			if status.state == State.CHECKING_FILES:
+				self.debug('State.CHECKING_FILES')
+				return False
+		else:
+			return TorrentPlayer.CheckTorrentAdded(self)
 		
 		return True
 		

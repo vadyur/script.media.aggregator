@@ -223,6 +223,13 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		player.StartBufferFile(index)
 
+		if not player.CheckTorrentAdded():
+			info_dialog.update(0, 'Media Aggregator: проверка файлов')
+
+		while not info_dialog.iscanceled() and not player.CheckTorrentAdded():
+			xbmc.sleep(1000)
+			start_time = time.time()
+
 		info_dialog.update(0, 'Media Aggregator: буфферизация')
 
 		while not info_dialog.iscanceled():
@@ -450,6 +457,11 @@ def main():
 														# u'-ТЕСТ',
 														u'Выход'])
 			if rep == 0:
+				from service import start_generate
+				start_generate()
+				break
+
+				'''
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
@@ -464,12 +476,14 @@ def main():
 						_addon.setSetting('nnmclub_passkey', settings.nnmclub_passkey)
 					except:
 						pass
+						_addon.setSetting('nnm_last_time_generate', str(time.time()))
 				if not (anidub_enable or hdclub_enable or nnmclub_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 1
 				else:
 					if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 						xbmc.executebuiltin('UpdateLibrary("video")')
+				'''
 
 			if rep == 1:
 				save_nnmclub_login = settings.nnmclub_login

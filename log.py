@@ -7,7 +7,10 @@ except:
 prefix = 'script.media.aggregator'
 
 def debug(s, line = None):
-	if isinstance(s, unicode):
+
+	if isinstance(s, BaseException):
+		s = str(s.args)
+	elif isinstance(s, unicode):
 		s = s.encode('utf-8')
 	elif not isinstance(s, str):
 		s = str(s)

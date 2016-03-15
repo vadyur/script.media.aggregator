@@ -184,8 +184,14 @@ def write_tvshow(content, path, settings):
 	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(content)
 
+		cnt = 0
+		settings.progress_dialog.update(0, 'anidub', path)
+
 		for item in d.entries:
 			write_tvshow_item(item, path, settings)
+
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'anidub', path)
 
 
 def write_tvshow_item(item, path, settings):
@@ -296,11 +302,20 @@ def write_favorites(path, settings):
 			self.title = title
 
 	with filesystem.save_make_chdir_context(path):
-		for a in soup.select('article.story > div.story_h > div.lcol > h2 > a'):
+		selector = soup.select('article.story > div.story_h > div.lcol > h2 > a')
+
+		cnt = 0
+		settings.progress_dialog.update(0, 'anidub favorites', path)
+
+		for a in selector:
 			log.debug(a['href'])
 			link = a['href']
 			title = a.get_text()
 			write_tvshow_item(Item(link, title), path, settings)
+
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(selector), 'anidub favorites', path)
+
 
 
 ###################################################################################################

@@ -9,6 +9,10 @@ class TorrentPlayer:
 	YATP 		= 'YATP'
 	TORR2HTTP	= 'torrent2http'
 
+class FakeProgressDlg(object):
+	def update(self, *args):
+		pass
+
 class Settings:
 	# feed=dl&
 	
@@ -21,7 +25,7 @@ class Settings:
 		anime_path			= u'Anime',
 		hdclub_passkey 		= '', 
 		anidub_login = '', anidub_password = '', 
-		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1,
+		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
 		torrent_player = TorrentPlayer.YATP, storage_path = '',
 		movies_save			= True,
@@ -48,8 +52,8 @@ class Settings:
 
 		self.nnmclub_login 			= nnmclub_login
 		self.nnmclub_password 		= nnmclub_password
-		
 		self.nnmclub_pages			= nnmclub_pages
+		self.nnmclub_hours			= nnmclub_hours
 		self.use_kinopoisk			= True
 		
 		self.preffered_bitrate		= preffered_bitrate
@@ -65,7 +69,7 @@ class Settings:
 		self.tvshows_save 			= tvshows_save
 		self.animation_tvshows_save = animation_tvshows_save
 		
-
+		self.progress_dialog		= FakeProgressDlg()
 		
 	def __repr__(self):
 		attrs = vars(self)
