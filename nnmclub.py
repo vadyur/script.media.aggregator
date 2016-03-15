@@ -355,9 +355,14 @@ def write_tvshow(fulltitle, description, link, settings):
 		save_download_link(parser, settings, link)
 
 def write_tvshows(rss_url, path, settings):
-	with filesystem.save_make_chdir_context(path):
+	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
+	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(rss_url)
+
+		cnt = 0
+		settings.progress_dialog.update(0, 'nnm-club', path)
+
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
@@ -369,11 +374,20 @@ def write_tvshows(rss_url, path, settings):
 				link=item.link,
 				settings=settings)
 
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'nnm-club', path)
+
 
 def write_movies_rss(rss_url, path, settings):
 
+	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
+
 	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(rss_url)
+
+		cnt = 0
+		settings.progress_dialog.update(0, 'nnm-club', path)
+
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
@@ -385,26 +399,28 @@ def write_movies_rss(rss_url, path, settings):
 				link=item.link,
 				settings=settings)
 
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'nnm-club', path)
 
-def get_rss_url(f_id, passkey):
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=168&t=1&uk=' + passkey
 
+def get_rss_url(f_id, passkey, settings):
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey
 
 def run(settings):
 	passkey = get_passkey(settings)
 	settings.nnmclub_passkey = passkey
 
 	if settings.movies_save:
-		write_movies_rss(get_rss_url('227,954', passkey), settings.movies_path(), settings)
+		write_movies_rss(get_rss_url('227,954', passkey, settings), settings.movies_path(), settings)
 
 	if settings.animation_save:
-		write_movies_rss(get_rss_url(661, passkey), settings.animation_path(), settings)
+		write_movies_rss(get_rss_url(661, passkey, settings), settings.animation_path(), settings)
 
 	if settings.animation_tvshows_save:
-		write_tvshows(get_rss_url(232, passkey), settings.animation_tvshow_path(), settings)
+		write_tvshows(get_rss_url(232, passkey, settings), settings.animation_tvshow_path(), settings)
 
 	if settings.tvshows_save:
-		write_tvshows(get_rss_url(768, passkey), settings.tvshow_path(), settings)
+		write_tvshows(get_rss_url(768, passkey, settings), settings.tvshow_path(), settings)
 
 
 def get_magnet_link(url):

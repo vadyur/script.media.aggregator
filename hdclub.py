@@ -120,10 +120,16 @@ def write_movie(item, settings):
 		
 def write_movies(rss_url, path, settings):
 	with filesystem.save_make_chdir_context(path):
-	
 		d = feedparser.parse(rss_url)
+
+		cnt = 0
+		settings.progress_dialog.update(0, 'hdclub', path)
+
 		for item in d.entries:
 			write_movie(item, settings)
+
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'hdclub', path)
 
 
 def write_tvshow(item, settings):
@@ -145,10 +151,16 @@ def write_tvshow(item, settings):
 def write_tvshows(rss_url, path, settings):
 
 	with filesystem.save_make_chdir_context(path):
-
 		d = feedparser.parse(rss_url)
+
+		cnt = 0
+		settings.progress_dialog.update(0, 'hdclub', path)
+
 		for item in d.entries:
 			write_tvshow(item, settings)
+
+			cnt += 1
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'hdclub', path)
 
 
 def get_rss_url(f_id, passkey):

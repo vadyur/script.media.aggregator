@@ -421,7 +421,7 @@ class TorrentPlayer(object):
 		import hashlib
 		from bencode import bencode
 		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
-		debug(self.info_hash)
+		#debug(self.info_hash)
 
 		playable_items = []
 		if 'files' in info:
@@ -430,7 +430,7 @@ class TorrentPlayer(object):
 				# debug(f)
 				name = os.sep.join(f['path'])
 				size = f['length']
-				debug(name)
+				#debug(name)
 				if TorrentPlayer.is_playable(name):
 					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
 		else:
