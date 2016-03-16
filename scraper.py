@@ -81,7 +81,7 @@ def scrape_http(parsed_tracker, hashes):
 			ret[nice_hash] = { "seeds" : s, "peers" : p, "complete" : c}		
 		except BaseException as e:
 			print e
-	print ret
+	# print ret
 	return ret
 
 def udp_create_connection_request():

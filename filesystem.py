@@ -102,6 +102,13 @@ def listdir(path):
 def remove(path):
 	os.remove(get_path(path))
 
+def getmtime(path):
+	return os.path.getmtime(get_path(path))
+
+def getctime(path):
+	return os.path.getctime(get_path(path))
+
+
 def test():	
 	log.debug('Filesystem encoding: %s' % get_filesystem_encoding())
 	log.debug('getcwd(): %s' % getcwd().encode('utf-8'))
