@@ -14,37 +14,74 @@ from time import sleep
 
 import anidub, hdclub, nnmclub
 import filesystem
-from player import load_settings
+import player
 
 import xml.etree.ElementTree as ET
 
 _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 _addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
-_addon_xml 	= filesystem.join(_addondir, 'settings.xml')
 
+class AddonRO(object):
+	def __init__(self, xml_filename='settings.xml'):
+		self._addon_xml 	= filesystem.join(_addondir, xml_filename)
+		self.check_exists()
+		self.load()
 
-class Addon(object):
-	def __init__(self, xmlPath):
-		with filesystem.fopen(xmlPath, 'r') as f:
+	def check_exists(self):
+		pass
+
+	def load(self):
+		with filesystem.fopen(self._addon_xml, 'r') as f:
 			content = f.read()
 			self.root = ET.fromstring(content)
+		self.mtime = filesystem.getmtime(self._addon_xml)
+
 
 	# get setting no caching
 	def getSetting(self, s):
+		if self.mtime != filesystem.getmtime(self._addon_xml):
+			self.load()
+
 		for item in self.root:
 			if item.get('id') == s:
 				return item.get('value').encode('utf-8')
 		return u''
 
+class Addon(AddonRO):
+
+	@staticmethod
+	def _xml(data):
+		return data.replace("&", "&amp;").replace("<", "&lt;").replace("\"", "&quot;").replace(">", "&gt;")
+
+	def check_exists(self):
+		if not filesystem.exists(self._addon_xml):
+			with filesystem.fopen(self._addon_xml, 'w') as f:
+				f.write('<settings>\n')
+				f.write('</settings>\n')
+
+	def setSetting(self, id, val):
+		item = self.root.find("./setting[@id='%s']" % str(id))
+		if item is not None:
+			item.set('value', str(val))
+		else:
+			ET.SubElement(self.root, 'setting', attrib={'id': str(id), 'value': str(val)})
+
+		with filesystem.fopen(self._addon_xml, 'w') as f:
+			f.write('<settings>\n')
+			for item in self.root:
+				f.write('    <setting id="%s" value="%s" />\n' % (Addon._xml(item.get('id')), Addon._xml(item.get('value'))))
+			f.write('</settings>\n')
+
+		self.mtime = filesystem.getmtime(self._addon_xml)
+
 
 def update_service(show_progress=False):
-	addon = Addon(_addon_xml)
 
-	anidub_enable		= addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable		= addon.getSetting('hdclub_enable') == 'true'
-	nnmclub_enable		= addon.getSetting('nnmclub_enable') == 'true'
-	settings			= load_settings()
+	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
+	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	settings			= player.load_settings()
 
 	if show_progress:
 		info_dialog = xbmcgui.DialogProgressBG()
@@ -58,8 +95,10 @@ def update_service(show_progress=False):
 		hdclub.run(settings)
 
 	if nnmclub_enable:
+		addon = Addon('settings2.xml')
+
 		try:
-			settings.nnmclub_hours = int(math.ceil((time() - float(_addon.getSetting('nnm_last_generate'))) / 3600.0))
+			settings.nnmclub_hours = int(math.ceil((time() - float(addon.getSetting('nnm_last_generate'))) / 3600.0))
 		except BaseException as e:
 			settings.nnmclub_hours = 168
 			log.debug(e)
@@ -69,7 +108,7 @@ def update_service(show_progress=False):
 
 		log.debug('NNM hours: ' + str(settings.nnmclub_hours))
 
-		_addon.setSetting('nnm_last_generate', str(time()))
+		addon.setSetting('nnm_last_generate', str(time()))
 		nnmclub.run(settings)
 
 	if show_progress:
@@ -90,7 +129,7 @@ def chunks(l, n):
 def scrape_nnm():
 	import json
 
-	data_path = _addondir #settings.addon_data_path
+	data_path = _addondir
 
 	hashes = []
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
@@ -147,7 +186,7 @@ def update_case():
 
 	# Startup
 	if time() > update_case.first_start_time + delay_startup and update_case.first_start:
-		if Addon(_addon_xml).getSetting('service_startup') == 'true':
+		if _addon.getSetting('service_startup') == 'true':
 			try:
 				log.debug("Persistent Update Service starting...")
 				log.debug(_addon.getSetting('service_startup'))
@@ -158,7 +197,7 @@ def update_case():
 
 	# Persistent
 	if time() >= update_case.prev_generate_time + every:  # verification
-		if Addon(_addon_xml).getSetting('service_generate_persistent') == 'true':
+		if _addon.getSetting('service_generate_persistent') == 'true':
 			try:
 				update_case.prev_generate_time = time()
 				update_service(show_progress=False)
@@ -190,6 +229,10 @@ def scrape_case():
 
 
 def main():
+	global _addon
+	_addon = AddonRO()
+	player._addon = _addon
+
 	while not xbmc.abortRequested:
 
 		scrape_case()
