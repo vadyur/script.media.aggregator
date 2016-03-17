@@ -416,15 +416,18 @@ def write_movies_rss(rss_url, path, settings):
 def get_uid(settings, session=None):
 	if session is None:
 		session = create_session(settings)
-	page = session.get('http://nnm-club.me/')
-	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
-	a = soup.select_one('a[href*="profile.php"]')
-	if a is None:
-		return None
+	try:
+		page = session.get('http://nnm-club.me/')
+		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+		a = soup.select_one('a[href*="profile.php"]')
+		if a is None:
+			return None
 
-	m = re.search('u=(\d+)', a['href'])
-	if m:
-		return m.group(1)
+		m = re.search('u=(\d+)', a['href'])
+		if m:
+			return m.group(1)
+	except:
+		pass
 
 	return None
 
@@ -445,10 +448,11 @@ def run(settings):
 
 	uid = get_uid(settings, session)
 
-	write_movies_rss(get_fav_rss_url('227,954', passkey, uid), settings.movies_path(), settings)
-	write_movies_rss(get_fav_rss_url(661, passkey, uid), settings.animation_path(), settings)
-	write_tvshows(get_fav_rss_url(232, passkey, uid), settings.animation_tvshow_path(), settings)
-	write_tvshows(get_fav_rss_url(768, passkey, uid), settings.tvshow_path(), settings)
+	if uid is not None:
+		write_movies_rss(get_fav_rss_url('227,954', passkey, uid), settings.movies_path(), settings)
+		write_movies_rss(get_fav_rss_url(661, passkey, uid), settings.animation_path(), settings)
+		write_tvshows(get_fav_rss_url(232, passkey, uid), settings.animation_tvshow_path(), settings)
+		write_tvshows(get_fav_rss_url(768, passkey, uid), settings.tvshow_path(), settings)
 
 	if settings.movies_save:
 		write_movies_rss(get_rss_url('227,954', passkey, settings), settings.movies_path(), settings)
