@@ -335,6 +335,7 @@ def write_movies(content, path, settings, tracker=False):
 			write_movie(post, settings, tracker)
 		# ---------------------------------------------
 
+
 def save_download_link(parser, settings, link):
 	try:
 		path_store = filesystem.join(settings.addon_data_path, 'nnmclub')
@@ -348,11 +349,20 @@ def save_download_link(parser, settings, link):
 	except:
 		pass
 
+
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
 		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
 		save_download_link(parser, settings, link)
+
+
+def title(rss_url):
+	if 'dl=' in rss_url:
+		return 'nnm-club favorites'
+	else:
+		return 'nnm-club'
+
 
 def write_tvshows(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
@@ -361,7 +371,7 @@ def write_tvshows(rss_url, path, settings):
 		d = feedparser.parse(rss_url)
 
 		cnt = 0
-		settings.progress_dialog.update(0, 'nnm-club', path)
+		settings.progress_dialog.update(0, title(rss_url), path)
 
 		for item in d.entries:
 			try:
@@ -375,7 +385,7 @@ def write_tvshows(rss_url, path, settings):
 				settings=settings)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'nnm-club', path)
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
 
 
 def write_movies_rss(rss_url, path, settings):
@@ -386,7 +396,7 @@ def write_movies_rss(rss_url, path, settings):
 		d = feedparser.parse(rss_url)
 
 		cnt = 0
-		settings.progress_dialog.update(0, 'nnm-club', path)
+		settings.progress_dialog.update(0, title(rss_url), path)
 
 		for item in d.entries:
 			try:
@@ -400,15 +410,45 @@ def write_movies_rss(rss_url, path, settings):
 				settings=settings)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'nnm-club', path)
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
+
+
+def get_uid(settings, session=None):
+	if session is None:
+		session = create_session(settings)
+	page = session.get('http://nnm-club.me/')
+	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+	a = soup.select_one('a[href*="profile.php"]')
+	if a is None:
+		return None
+
+	m = re.search('u=(\d+)', a['href'])
+	if m:
+		return m.group(1)
+
+	return None
 
 
 def get_rss_url(f_id, passkey, settings):
 	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey
 
+
+def get_fav_rss_url(f_id, passkey, uid):
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1&uk=' + passkey
+
+
 def run(settings):
-	passkey = get_passkey(settings)
+	session = create_session(settings)
+
+	passkey = get_passkey(settings, session)
 	settings.nnmclub_passkey = passkey
+
+	uid = get_uid(settings, session)
+
+	write_movies_rss(get_fav_rss_url('227,954', passkey, uid), settings.movies_path(), settings)
+	write_movies_rss(get_fav_rss_url(661, passkey, uid), settings.animation_path(), settings)
+	write_tvshows(get_fav_rss_url(232, passkey, uid), settings.animation_tvshow_path(), settings)
+	write_tvshows(get_fav_rss_url(768, passkey, uid), settings.tvshow_path(), settings)
 
 	if settings.movies_save:
 		write_movies_rss(get_rss_url('227,954', passkey, settings), settings.movies_path(), settings)
@@ -473,6 +513,7 @@ def get_passkey(settings=None, session=None):
 
 	return None
 
+
 def find_direct_link(url, settings):
 	match = re.search(r'\.php.+?t=(\d+)', url)
 	if match:
@@ -482,6 +523,7 @@ def find_direct_link(url, settings):
 			with filesystem.fopen(path_store, 'r') as f:
 				return f.read()
 	return None
+
 
 def download_torrent(url, path, settings):
 	import shutil
