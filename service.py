@@ -22,15 +22,14 @@ _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
 _addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
 
-class Addon(object):
+class AddonRO(object):
 	def __init__(self, xml_filename='settings.xml'):
 		self._addon_xml 	= filesystem.join(_addondir, xml_filename)
-		if not filesystem.exists(self._addon_xml):
-			with filesystem.fopen(self._addon_xml, 'w') as f:
-				f.write('<settings>\n')
-				f.write('</settings>\n')
-
+		self.check_exists()
 		self.load()
+
+	def check_exists(self):
+		pass
 
 	def load(self):
 		with filesystem.fopen(self._addon_xml, 'r') as f:
@@ -49,9 +48,17 @@ class Addon(object):
 				return item.get('value').encode('utf-8')
 		return u''
 
+class Addon(AddonRO):
+
 	@staticmethod
 	def _xml(data):
 		return data.replace("&", "&amp;").replace("<", "&lt;").replace("\"", "&quot;").replace(">", "&gt;")
+
+	def check_exists(self):
+		if not filesystem.exists(self._addon_xml):
+			with filesystem.fopen(self._addon_xml, 'w') as f:
+				f.write('<settings>\n')
+				f.write('</settings>\n')
 
 	def setSetting(self, id, val):
 		item = self.root.find("./setting[@id='%s']" % str(id))
@@ -222,11 +229,9 @@ def scrape_case():
 
 
 def main():
-	addon = Addon()
-	player._addon = addon
-
-	_addon.getSetting = addon.getSetting
-	#_addon.setSetting = addon.setSetting
+	global _addon
+	_addon = AddonRO()
+	player._addon = _addon
 
 	while not xbmc.abortRequested:
 
