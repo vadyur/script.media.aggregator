@@ -191,9 +191,10 @@ def update_case():
 				log.debug("Persistent Update Service starting...")
 				log.debug(_addon.getSetting('service_startup'))
 				update_service(show_progress=False)
-				update_case.first_start = False
 			except BaseException as e:
 				log.debug(e)
+			finally:
+				update_case.first_start = False
 
 	# Persistent
 	if time() >= update_case.prev_generate_time + every:  # verification
@@ -201,11 +202,12 @@ def update_case():
 			try:
 				update_case.prev_generate_time = time()
 				update_service(show_progress=False)
-				update_case.first_start = False
 				log.debug('Update List at %s' % asctime(localtime(update_case.prev_generate_time)))
 				log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
 			except BaseException as e:
 				log.debug(e)
+			finally:
+				update_case.first_start = False
 
 
 def scrape_case():
