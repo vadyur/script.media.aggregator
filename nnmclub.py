@@ -430,11 +430,11 @@ def get_uid(settings, session=None):
 
 
 def get_rss_url(f_id, passkey, settings):
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey + '&r'
 
 
 def get_fav_rss_url(f_id, passkey, uid):
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1&uk=' + passkey
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1&uk=' + passkey + '&r'
 
 
 def run(settings):
