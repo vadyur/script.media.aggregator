@@ -316,9 +316,9 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
-			cnt = 0
+			# cnt = 0
 			for f in files:
-				cnt += 1
+				# cnt += 1
 				try:
 					episode = tvshow_api.Episode(f['season'], f['episode'])
 					if episode is None:
@@ -341,6 +341,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 						filename = f['name']
 					else:
 						try:
+							cnt = f['episode']
 							filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
 						except BaseException as e:
 							debug(e)

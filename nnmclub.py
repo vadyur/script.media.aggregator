@@ -353,8 +353,10 @@ def save_download_link(parser, settings, link):
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
+		if link:
+			save_download_link(parser, settings, link)
 		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
-		save_download_link(parser, settings, link)
+		#save_download_link(parser, settings, link)
 
 
 def title(rss_url):

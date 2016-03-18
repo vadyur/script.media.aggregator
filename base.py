@@ -60,7 +60,7 @@ def get_rank(full_title, parser, settings):
 		rank += 1.5
 		conditions += 1
 
-		parser = dict(parser, **info)
+		#parser = dict(parser, **info)
 
 	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
