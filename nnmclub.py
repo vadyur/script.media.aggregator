@@ -420,15 +420,19 @@ def get_uid(settings, session=None):
 		session = create_session(settings)
 	try:
 		page = session.get('http://nnm-club.me/')
-		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
-		a = soup.select_one('a[href*="profile.php"]')
-		if a is None:
-			return None
+		if page.status_code == requests.codes.ok:
+			soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+			a = soup.select_one('a[href*="profile.php"]')
+			if a is None:
+				return None
 
-		m = re.search('u=(\d+)', a['href'])
-		if m:
-			return m.group(1)
-	except:
+			m = re.search('u=(\d+)', a['href'])
+			if m:
+				return m.group(1)
+		else:
+			debug('page.status_code: ' + str(page.status_code))
+	except BaseException as e:
+		debug(e)
 		pass
 
 	return None
@@ -451,6 +455,8 @@ def run(settings):
 	uid = get_uid(settings, session)
 
 	if uid is not None:
+		debug('NNM uid: ' + str(uid))
+
 		write_movies_rss(get_fav_rss_url('227,954', passkey, uid), settings.movies_path(), settings)
 		write_movies_rss(get_fav_rss_url(661, passkey, uid), settings.animation_path(), settings)
 		write_tvshows(get_fav_rss_url(232, passkey, uid), settings.animation_tvshow_path(), settings)
