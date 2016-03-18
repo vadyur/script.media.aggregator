@@ -422,13 +422,15 @@ def get_uid(settings, session=None):
 		page = session.get('http://nnm-club.me/')
 		if page.status_code == requests.codes.ok:
 			soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+			'''
 			a = soup.select_one('a[href*="profile.php"]')
 			if a is None:
 				return None
-
-			m = re.search('u=(\d+)', a['href'])
-			if m:
-				return m.group(1)
+			'''
+			for a in soup.select('a.mainmenu'):
+				m = re.search('profile.php.+?u=(\d+)', a['href'])
+				if m:
+					return m.group(1)
 		else:
 			debug('page.status_code: ' + str(page.status_code))
 	except BaseException as e:
@@ -447,6 +449,9 @@ def get_fav_rss_url(f_id, passkey, uid):
 
 
 def run(settings):
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+
 	session = create_session(settings)
 
 	passkey = get_passkey(settings, session)
