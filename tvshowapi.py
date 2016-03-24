@@ -331,7 +331,8 @@ def write_tvshow(fulltitle, link, settings, parser):
 						}
 
 					season_path = 'Season %d' % f['season']
-				except:
+				except BaseException as e:
+					debug(e)
 					continue
 
 				with filesystem.save_make_chdir_context(season_path):
@@ -432,10 +433,13 @@ class TheTVDBAPI(object):
 					continue
 
 				for child in ep:
-					if child.tag in self.dictEpisodes and len(child.text) > 0:
-						res[self.dictEpisodes[child.tag]] = child.text
-					if child.tag == 'filename' and len(child.text) > 0:
-						res['thumb'] = 'http://thetvdb.com/banners/' + child.text
+					if child.text is not None:
+						if child.tag in self.dictEpisodes and len(child.text) > 0:
+							res[self.dictEpisodes[child.tag]] = child.text
+						if child.tag == 'filename' and len(child.text) > 0:
+							res['thumb'] = 'http://thetvdb.com/banners/' + child.text
+					else:
+						pass
 
 		return res
 
