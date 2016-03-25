@@ -389,7 +389,7 @@ def play_torrent(settings, params):
 			links_with_ranks.remove(v)
 		if not hdclub_enable and 'hdclub.org' in v['link']:
 			links_with_ranks.remove(v)
-		if not nnmclub_enable and 'nnmclub.to' in v['link']:
+		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
