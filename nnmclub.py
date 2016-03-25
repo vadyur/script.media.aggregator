@@ -22,11 +22,11 @@ from strmwriter import STRMWriter
 import tvshowapi
 
 
-_RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
-_BASE_URL = 'http://nnm-club.me/forum/'
+_RSS_URL = 'http://nnmclub.to/forum/rss-topic.xml'
+_BASE_URL = 'http://nnmclub.to/forum/'
 _HD_PORTAL_URL = _BASE_URL + 'portal.php?c=11'
 
-MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
+MULTHD_URL = 'http://nnmclub.to/forum/viewforum.php?f=661'
 
 _NEXT_PAGE_SUFFIX = '&start='
 
@@ -308,7 +308,7 @@ def write_movie(post, settings, tracker):
 				except:
 					pass
 			if link:
-				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
+				save_download_link(parser, settings, 'http://nnmclub.to/forum/' + link + '&uk=' + settings.nnmclub_passkey)
 
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
@@ -419,7 +419,7 @@ def get_uid(settings, session=None):
 	if session is None:
 		session = create_session(settings)
 	try:
-		page = session.get('http://nnm-club.me/')
+		page = session.get('http://nnmclub.to/')
 		if page.status_code == requests.codes.ok:
 			soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 			'''
@@ -441,11 +441,11 @@ def get_uid(settings, session=None):
 
 
 def get_rss_url(f_id, passkey, settings):
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey + '&r'
+	return 'http://nnmclub.to/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1&uk=' + passkey + '&r'
 
 
 def get_fav_rss_url(f_id, passkey, uid):
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1&uk=' + passkey + '&r'
+	return 'http://nnmclub.to/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1&uk=' + passkey + '&r'
 
 
 def run(settings):
@@ -493,7 +493,7 @@ def get_magnet_link(url):
 def create_session(settings):
 	s = requests.Session()
 
-	r = s.get("http://nnm-club.me/forum/login.php")
+	r = s.get("http://nnmclub.to/forum/login.php")
 
 	soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 
@@ -503,8 +503,8 @@ def create_session(settings):
 
 	data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password,
 			"autologin": "on", "code": code, "redirect": "", "login": ""}
-	login = s.post("http://nnm-club.me/forum/login.php", data=data,
-				   headers={'Referer': "http://nnm-club.me/forum/login.php"})
+	login = s.post("http://nnmclub.to/forum/login.php", data=data,
+				   headers={'Referer': "http://nnmclub.to/forum/login.php"})
 	debug('Login status: %d' % login.status_code)
 
 	return s
@@ -517,7 +517,7 @@ def get_passkey(settings=None, session=None):
 	if session is None:
 		session = create_session(settings)
 
-	page = session.get('http://nnm-club.me/forum/profile.php?mode=editprofile')
+	page = session.get('http://nnmclub.to/forum/profile.php?mode=editprofile')
 
 	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 
@@ -557,7 +557,7 @@ def download_torrent(url, path, settings):
 		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 		a = soup.select('td.gensmall > span.genmed > b > a')
 		if len(a) > 0:
-			href = 'http://nnm-club.me/forum/' + a[0]['href']
+			href = 'http://nnmclub.to/forum/' + a[0]['href']
 		debug(s.headers)
 	else:
 		href = link
