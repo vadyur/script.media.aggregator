@@ -449,6 +449,9 @@ def main():
 		# rpdb2.start_embedded_debugger('pw')
 		play_torrent(settings = settings, params = params)
 
+	elif params.get('action') == 'anidub-add-favorites':
+		debug('anidub-add-favorites')
+
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()
