@@ -460,6 +460,11 @@ def main():
 
 	elif params.get('action') == 'anidub-add-favorites':
 		debug('anidub-add-favorites')
+		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
+		if anidub_enable:
+			if settings.anime_save:
+				debug('scan for anidub-add-favorites')
+				anidub.write_favorites(settings.anime_tvshow_path(), settings)
 
 	else:
 		while True:
