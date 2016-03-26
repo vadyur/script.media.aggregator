@@ -34,7 +34,7 @@ except:
 debug(_addondir.encode('utf-8'))
 
 def get_params():
-	param=[]
+	param=dict()
 
 	paramstring=sys.argv[2]
 	if len(paramstring)>=2:
