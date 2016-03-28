@@ -127,8 +127,6 @@ def chunks(l, n):
 
 
 def scrape_nnm():
-	import json
-
 	data_path = _addondir
 
 	hashes = []
@@ -148,21 +146,36 @@ def scrape_nnm():
 		import scraper
 		try:
 			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
+		except RuntimeError as RunE:
+			if '414 status code returned' in RunE.message:
+				for c in chunks(chunk, 16):
+					try:
+						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c])
+						process_chunk(c, data_path, seeds_peers)
+					except BaseException as e:
+						log.debug(e)
+			continue
 		except BaseException as e:
 			log.debug(e)
 			continue
 
-		for item in chunk:
-			filename = filesystem.join(data_path, 'nnmclub', item[2])
-			remove_file = False
-			with filesystem.fopen(filename, 'w') as stat_file:
-				try:
-					json.dump(seeds_peers[item[1]], stat_file)
-				except KeyError as e:
-					remove_file = True
-					log.debug(e)
-			if remove_file:
-				filesystem.remove(filename)
+		process_chunk(chunk, data_path, seeds_peers)
+
+
+def process_chunk(chunk, data_path, seeds_peers):
+	import json
+
+	for item in chunk:
+		filename = filesystem.join(data_path, 'nnmclub', item[2])
+		remove_file = False
+		with filesystem.fopen(filename, 'w') as stat_file:
+			try:
+				json.dump(seeds_peers[item[1]], stat_file)
+			except KeyError as e:
+				remove_file = True
+				log.debug(e)
+		if remove_file:
+			filesystem.remove(filename)
 
 
 def update_case():
