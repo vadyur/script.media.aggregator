@@ -218,7 +218,7 @@ class STRMWriterBase(object):
 						parts = line.split('=')
 						if len(parts) > 1:
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
-					elif not line.startswith('#'):
+					elif line.startswith('plugin://script.media.aggregator'):
 						try:
 							if use_scrape_info:
 								saved_dict['link'] = line.strip(u'\r\n\t ')

@@ -30,6 +30,13 @@ MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
 
 _NEXT_PAGE_SUFFIX = '&start='
 
+def real_url(url):
+	return url.replace('nnm-club.me', 'nnmclub.to')
+
+
+def origin_url(url):
+	return url.replace('nnmclub.to', 'nnm-club.me')
+
 
 class DescriptionParser(DescriptionParserBase):
 	def __init__(self, content, settings=None, tracker=False):
@@ -108,7 +115,7 @@ class DescriptionParser(DescriptionParserBase):
 
 		if a != None:
 			try:
-				self._link = _BASE_URL + a['href']
+				self._link = origin_url(_BASE_URL + a['href'])
 				debug(self._link)
 			except:
 				# debug(a.__repr__())
@@ -127,7 +134,7 @@ class DescriptionParser(DescriptionParserBase):
 				debug('Already exists')
 				return False
 
-			r = requests.get(self._link)
+			r = requests.get(real_url(self._link))
 			if r.status_code == requests.codes.ok:
 				return self.parse_description(r.text)
 
@@ -192,7 +199,7 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 
 	def link(self):
-		return self._link
+		return origin_url(self._link)
 
 class DescriptionParserTVShows(DescriptionParser):
 
@@ -234,7 +241,7 @@ class DescriptionParserRSS(DescriptionParser):
 		result = self.parse_description(html_doc)
 
 		for a in self.soup.select('.postbody a'):
-			self._link = a['href']
+			self._link = origin_url(a['href'])
 			debug(self._link)
 			break
 
@@ -251,7 +258,7 @@ class PostsEnumerator(object):
 		self._s = requests.Session()
 
 	def process_page(self, url):
-		request = self._s.get(url)
+		request = self._s.get(real_url(url))
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -263,7 +270,7 @@ class PostsEnumerator(object):
 
 class TrackerPostsEnumerator(PostsEnumerator):
 	def process_page(self, url):
-		request = self._s.get(url)
+		request = self._s.get(real_url(url))
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -370,7 +377,7 @@ def write_tvshows(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
 	with filesystem.save_make_chdir_context(path):
-		d = feedparser.parse(rss_url)
+		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
 		settings.progress_dialog.update(0, title(rss_url), path)
@@ -383,7 +390,7 @@ def write_tvshows(rss_url, path, settings):
 			write_tvshow(
 				fulltitle=item.title,
 				description=item.description,
-				link=item.link,
+				link=origin_url(item.link),
 				settings=settings)
 
 			cnt += 1
@@ -395,7 +402,7 @@ def write_movies_rss(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
 	with filesystem.save_make_chdir_context(path):
-		d = feedparser.parse(rss_url)
+		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
 		settings.progress_dialog.update(0, title(rss_url), path)
@@ -408,7 +415,7 @@ def write_movies_rss(rss_url, path, settings):
 			write_movie_rss(
 				fulltitle=item.title,
 				description=item.description,
-				link=item.link,
+				link=origin_url(item.link),
 				settings=settings)
 
 			cnt += 1
@@ -419,7 +426,7 @@ def get_uid(settings, session=None):
 	if session is None:
 		session = create_session(settings)
 	try:
-		page = session.get('http://nnm-club.me/')
+		page = session.get(real_url('http://nnm-club.me/'))
 		if page.status_code == requests.codes.ok:
 			soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 			'''
@@ -481,7 +488,7 @@ def run(settings):
 
 
 def get_magnet_link(url):
-	r = requests.get(url)
+	r = requests.get(real_url(url))
 	if r.status_code == requests.codes.ok:
 		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
@@ -493,7 +500,7 @@ def get_magnet_link(url):
 def create_session(settings):
 	s = requests.Session()
 
-	r = s.get("http://nnm-club.me/forum/login.php")
+	r = s.get(real_url("http://nnm-club.me/forum/login.php"))
 
 	soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 
@@ -503,8 +510,8 @@ def create_session(settings):
 
 	data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password,
 			"autologin": "on", "code": code, "redirect": "", "login": ""}
-	login = s.post("http://nnm-club.me/forum/login.php", data=data,
-				   headers={'Referer': "http://nnm-club.me/forum/login.php"})
+	login = s.post(real_url("http://nnm-club.me/forum/login.php"), data=data,
+				   headers={'Referer': real_url("http://nnm-club.me/forum/login.php")})
 	debug('Login status: %d' % login.status_code)
 
 	return s
@@ -517,7 +524,7 @@ def get_passkey(settings=None, session=None):
 	if session is None:
 		session = create_session(settings)
 
-	page = session.get('http://nnm-club.me/forum/profile.php?mode=editprofile')
+	page = session.get(real_url('http://nnm-club.me/forum/profile.php?mode=editprofile'))
 
 	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 
@@ -551,7 +558,7 @@ def download_torrent(url, path, settings):
 	link = find_direct_link(url, settings)
 	if link is None:
 		s = create_session(settings)
-		page = s.get(url)
+		page = s.get(real_url(url))
 		# debug(page.text.encode('cp1251'))
 
 		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
@@ -561,7 +568,7 @@ def download_torrent(url, path, settings):
 		debug(s.headers)
 	else:
 		href = link
-		response = urllib2.urlopen(link)
+		response = urllib2.urlopen(real_url(link))
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
 			shutil.copyfileobj(response, f)
@@ -574,9 +581,9 @@ def download_torrent(url, path, settings):
 
 	if href:
 		if link:
-			r = requests.get(link)
+			r = requests.get(real_url(link))
 		else:
-			r = s.get(href, headers={'Referer': url})
+			r = s.get(real_url(href), headers={'Referer': real_url(url)})
 		debug(r.headers)
 
 		# 'Content-Type': 'application/x-bittorrent'
