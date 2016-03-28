@@ -583,7 +583,7 @@ def download_torrent(url, path, settings):
 		if link:
 			r = requests.get(real_url(link))
 		else:
-			r = s.get(real_url(href), headers={'Referer': real_url(url)})
+			r = s.get(real_url(href), headers={'Referer': real_url(url)}, verify=False)
 		debug(r.headers)
 
 		# 'Content-Type': 'application/x-bittorrent'
