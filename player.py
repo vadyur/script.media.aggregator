@@ -501,7 +501,7 @@ def main():
 				#rpdb2.start_embedded_debugger('pw')
 
 				import sources
-				sources.create(settings)
+				#sources.create(settings)
 				dialog = xbmcgui.Dialog()
 				if sources.create(settings):
 					if dialog.yesno('Media Aggregator', restart_msg):
