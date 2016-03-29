@@ -1,6 +1,6 @@
 import log
 
-import xbmc, json, filesystem, xbmcvfs, os, re
+import xbmc, filesystem, xbmcvfs, os
 import xml.etree.ElementTree as ET
 
 import inspect
@@ -64,12 +64,16 @@ BASE_PATH = 'special://database'
 class VideoDatabase(object):
 	@staticmethod
 	def find_last_version(name):
-		dirs, files = xbmcvfs.listdir(BASE_PATH)
-		matched_files = [f for f in files if f.startswith(name)]
-		versions = [int(os.path.splitext(f[len(name):])[0]) for f in matched_files]
-		if not versions:
-			return 0
-		return max(versions)		
+		try:
+			dirs, files = xbmcvfs.listdir(BASE_PATH)
+			matched_files = [f for f in files if f.startswith(name)]
+			versions = [int(os.path.splitext(f[len(name):])[0]) for f in matched_files]
+			if not versions:
+				return 0
+			return max(versions)
+		except BaseException as e:
+			log.debug(e, lineno())
+			return 999
 
 	@staticmethod
 	def get_db_version():

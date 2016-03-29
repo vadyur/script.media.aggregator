@@ -65,6 +65,8 @@ def load_settings():
 	#rpdb2.start_embedded_debugger('pw')
 
 	base_path 			= getSetting('base_path', '').decode('utf-8')
+	if base_path == u'Videos':
+		base_path = filesystem.join(_addondir, base_path)
 
 	movies_path			= getSetting('movies_path', 'Movies').decode('utf-8')
 	animation_path		= getSetting('animation_path', 'Animation').decode('utf-8')
@@ -447,6 +449,23 @@ def play_torrent(settings, params):
 		# Open in torrenter
 		openInTorrenter(nfoReader)
 
+restart_msg = u'Чтобы изменения вступили в силу, нужно перезапустить KODI. Перезапустить?'
+
+def check_sources(settings):
+	import sources
+	if sources.need_create(settings):
+		dialog = xbmcgui.Dialog()
+		if dialog.yesno('Media Aggregator', u'Источники категорий не созданы. Создать?'):
+			if sources.create(settings):
+				if dialog.yesno('Media Aggregator', restart_msg):
+					xbmc.executebuiltin('Quit')
+			return True
+		else:
+			return False
+
+	return True
+
+
 def main():
 	params 		= get_params()
 	debug(params)
@@ -470,39 +489,34 @@ def main():
 		while True:
 			dialog = xbmcgui.Dialog()
 			rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
+														u'Создать источники',
 														u'-НАСТРОЙКИ',
-														# u'-ТЕСТ',
 														u'Выход'])
 			if rep == 0:
-				from service import start_generate
-				start_generate()
-				break
-
-				'''
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-
-				if anidub_enable:
-					anidub.run(settings)
-				if hdclub_enable:
-					hdclub.run(settings)
-				if nnmclub_enable:
-					nnmclub.run(settings)
-					try:
-						_addon.setSetting('nnmclub_passkey', settings.nnmclub_passkey)
-					except:
-						pass
-						_addon.setSetting('nnm_last_time_generate', str(time.time()))
 				if not (anidub_enable or hdclub_enable or nnmclub_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
-					rep = 1
+					rep = 2
 				else:
-					if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-						xbmc.executebuiltin('UpdateLibrary("video")')
-				'''
+					from service import start_generate
+					#if check_sources(settings):
+					start_generate()
+					break
 
 			if rep == 1:
+				#import rpdb2
+				#rpdb2.start_embedded_debugger('pw')
+
+				import sources
+				sources.create(settings)
+				dialog = xbmcgui.Dialog()
+				if sources.create(settings):
+					if dialog.yesno('Media Aggregator', restart_msg):
+						xbmc.executebuiltin('Quit')
+
+			if rep == 2:
 				save_nnmclub_login = settings.nnmclub_login
 				save_nnmclub_password = settings.nnmclub_password
 				_addon.openSettings()
@@ -513,7 +527,9 @@ def main():
 					_addon.setSetting('nnmclub_passkey', passkey)
 					settings.nnmclub_passkey = passkey
 
-			if rep > 1 or rep < 0:
+				# check_sources(settings)
+
+			if rep > 2 or rep < 0:
 				break
 
 

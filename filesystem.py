@@ -82,6 +82,9 @@ def abspath(path):
 
 def relpath(path, start=getcwd()):
 	return ensure_unicode(os.path.relpath(get_path(path), get_path(start)), get_filesystem_encoding())
+
+def normpath(path):
+	return ensure_unicode(os.path.normpath(get_path(path)), get_filesystem_encoding())
 	
 def fopen(path, mode):
 	return open(get_path(path), mode)

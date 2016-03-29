@@ -255,6 +255,8 @@ def main():
 
 		sleep(1)
 
+	log.debug('service exit')
+
 
 def start_generate():
 	path = filesystem.join(_addondir, 'start_generate')
