@@ -69,7 +69,16 @@ class Addon(AddonRO):
 				f.write('</settings>\n')
 
 	def setSetting(self, id, val):
-		item = self.root.find("./setting[@id='%s']" % str(id))
+		# not work in Python 2.6
+		# item = self.root.find("./setting[@id='%s']" % str(id))
+
+		item = None
+		settings = self.root.findall("setting")
+		for setting in settings:
+			if setting.attrib.get('id') == id:
+				item = setting
+				break
+
 		if item is not None:
 			item.set('value', str(val))
 		else:
