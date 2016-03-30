@@ -505,6 +505,8 @@ def main():
 				dialog = xbmcgui.Dialog()
 				if sources.create(settings):
 					if dialog.yesno('Media Aggregator', restart_msg):
+						from service import update_library_next_start
+						update_library_next_start()
 						xbmc.executebuiltin('Quit')
 
 			if rep == 2:
