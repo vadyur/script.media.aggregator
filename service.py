@@ -32,6 +32,11 @@ class AddonRO(object):
 		pass
 
 	def load(self):
+		if not filesystem.exists(self._addon_xml):
+			self.root = None
+			self.mtime = 0
+			return
+
 		with filesystem.fopen(self._addon_xml, 'r') as f:
 			content = f.read()
 			self.root = ET.fromstring(content)
@@ -40,6 +45,9 @@ class AddonRO(object):
 
 	# get setting no caching
 	def getSetting(self, s):
+		if not filesystem.exists(self._addon_xml):
+			return u''
+
 		if self.mtime != filesystem.getmtime(self._addon_xml):
 			self.load()
 
@@ -184,8 +192,13 @@ def update_case():
 		update_case.first_start = True
 		update_case.first_start_time = time()
 		update_case.prev_generate_time = update_case.first_start_time
-	every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
-	delay_startup = int(_addon.getSetting('delay_startup')) * 60
+
+	try:
+		every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
+		delay_startup = int(_addon.getSetting('delay_startup')) * 60
+	except ValueError:
+		every = 8 * 3600
+		delay_startup = 0
 
 	# User action
 	path = filesystem.join(_addondir, 'start_generate')
@@ -248,6 +261,13 @@ def main():
 	_addon = AddonRO()
 	player._addon = _addon
 
+	path = filesystem.join(_addondir, 'update_library_next_start')
+	if filesystem.exists(path):
+		log.debug('User action!!! update_library_next_start')
+		xbmc.executebuiltin('UpdateLibrary("video")')
+		filesystem.remove(path)
+
+
 	while not xbmc.abortRequested:
 
 		scrape_case()
@@ -260,6 +280,12 @@ def main():
 
 def start_generate():
 	path = filesystem.join(_addondir, 'start_generate')
+	if not filesystem.exists(path):
+		with filesystem.fopen(path, 'w'):
+			pass
+
+def update_library_next_start():
+	path = filesystem.join(_addondir, 'update_library_next_start')
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass

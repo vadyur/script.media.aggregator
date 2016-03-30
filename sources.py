@@ -153,6 +153,7 @@ class Sources(object):
 		raise UnknownMediaType(media_type=media_type)
 
 	def add_video(self, path, label, content):
+		path = filesystem.join(path, '')
 		try:
 			self.add('video', path, label)
 		except SourceAlreadyExists as e:
