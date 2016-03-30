@@ -270,10 +270,12 @@ def main():
 
 	while not xbmc.abortRequested:
 
-		scrape_case()
-		update_case()
+		try:
+			scrape_case()
+			update_case()
 
-		sleep(1)
+		finally:
+			sleep(1)
 
 	log.debug('service exit')
 
