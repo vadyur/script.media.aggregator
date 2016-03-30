@@ -462,6 +462,10 @@ def run(settings):
 	session = create_session(settings)
 
 	passkey = get_passkey(settings, session)
+
+	if passkey is None:
+		return 
+
 	settings.nnmclub_passkey = passkey
 
 	uid = get_uid(settings, session)
