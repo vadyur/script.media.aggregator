@@ -464,7 +464,7 @@ def run(settings):
 	passkey = get_passkey(settings, session)
 
 	if passkey is None:
-		return 
+		return
 
 	settings.nnmclub_passkey = passkey
 
