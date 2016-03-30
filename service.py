@@ -265,6 +265,7 @@ def main():
 	if filesystem.exists(path):
 		log.debug('User action!!! update_library_next_start')
 		xbmc.executebuiltin('UpdateLibrary("video")')
+		filesystem.remove(path)
 
 
 	while not xbmc.abortRequested:
