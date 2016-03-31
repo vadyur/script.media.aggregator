@@ -1,6 +1,4 @@
-﻿import log
-
-
+﻿from log import *
 
 import json
 import re
@@ -14,10 +12,6 @@ import io
 
 import filesystem
 from base import TorrentPlayer, make_fullpath
-
-
-def debug(s):
-	log.debug(s)
 
 
 def cutStr(s):
@@ -332,7 +326,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 					season_path = 'Season %d' % f['season']
 				except BaseException as e:
-					debug(e)
+					print_tb(e)
 					continue
 
 				with filesystem.save_make_chdir_context(season_path):
@@ -345,7 +339,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 							cnt = f['episode']
 							filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
 						except BaseException as e:
-							debug(e)
+							print_tb(e)
 							filename = f['name']
 
 					try:
@@ -427,7 +421,7 @@ class TheTVDBAPI(object):
 					episode_number = int(ep.find('EpisodeNumber').text)
 					season_number = int(ep.find('SeasonNumber').text)
 				except BaseException as e:
-					debug(e)
+					print_tb(e)
 					continue
 				if int(episode_number) != episode or int(season_number) != season:
 					continue

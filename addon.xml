@@ -9,6 +9,7 @@
 	<import addon="script.module.feedparser" optional="false"/>
 	<import addon="script.module.myconnpy" optional="false"/>
     <import addon="script.module.pyxbmct" version="1.1.4"/>
+    <import addon="script.module.chardet" />
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
 	<provides>video</provides>

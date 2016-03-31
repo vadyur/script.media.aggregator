@@ -3,10 +3,6 @@ import log
 import xbmc, filesystem, xbmcvfs, os
 import xml.etree.ElementTree as ET
 
-import inspect
-def lineno():
-	"""Returns the current line number in our program."""
-	return inspect.currentframe().f_back.f_lineno
 
 class AdvancedSettingsReader(object):
 	dict = {}
@@ -72,7 +68,7 @@ class VideoDatabase(object):
 				return 0
 			return max(versions)
 		except BaseException as e:
-			log.debug(e, lineno())
+			log.debug(e, log.lineno())
 			return 999
 
 	@staticmethod
@@ -136,9 +132,9 @@ class KodiDB(object):
 	
 	def __init__(self, strmName, strmPath, pluginUrl):
 		
-		self.debug('strmName: ' + strmName, lineno())
-		self.debug('strmPath: ' + strmPath, lineno())
-		self.debug('pluginUrl: ' + pluginUrl, lineno())
+		self.debug('strmName: ' + strmName, log.lineno())
+		self.debug('strmPath: ' + strmPath, log.lineno())
+		self.debug('pluginUrl: ' + pluginUrl, log.lineno())
 		
 		self.timeOffset	= 0
 		
@@ -152,27 +148,27 @@ class KodiDB(object):
 		xbmc.sleep(1000)
 		self.db = self.videoDB.create_connection()
 		try:
-			self.debug('PlayerPreProccessing: ', lineno())
+			self.debug('PlayerPreProccessing: ', log.lineno())
 			strmItem = self.getFileItem(self.strmName, self.strmPath)
 			if not strmItem is None:
-				self.debug('\tstrmItem = ' + str(strmItem), lineno())
+				self.debug('\tstrmItem = ' + str(strmItem), log.lineno())
 				bookmarkItem = self.getBookmarkItem(strmItem['idFile'])
-				self.debug('\tbookmarkItem = ' + str(bookmarkItem), lineno())
+				self.debug('\tbookmarkItem = ' + str(bookmarkItem), log.lineno())
 				self.timeOffset = bookmarkItem['timeInSeconds'] if bookmarkItem != None else 0
-				self.debug('\ttimeOffset: ' + str(self.timeOffset / 60) , lineno())
+				self.debug('\ttimeOffset: ' + str(self.timeOffset / 60) , log.lineno())
 			else:
-				self.debug('\tstrmItem is None', lineno())
+				self.debug('\tstrmItem is None', log.lineno())
 		finally:
 			self.db.close()
 	
 	def PlayerPostProccessing(self):
 		self.db = self.videoDB.create_connection()
 		try:
-			self.debug('PlayerPostProccessing: ', lineno())
+			self.debug('PlayerPostProccessing: ', log.lineno())
 			pluginItem = self.getFileItem(self.pluginUrl)
-			self.debug('\tpluginItem = ' + str(pluginItem), lineno())
+			self.debug('\tpluginItem = ' + str(pluginItem), log.lineno())
 			strmItem = self.getFileItem(self.strmName, self.strmPath)
-			self.debug('\tstrmItem = ' + str(strmItem), lineno())
+			self.debug('\tstrmItem = ' + str(strmItem), log.lineno())
 			
 			self.CopyWatchedStatus(pluginItem, strmItem)
 			self.ChangeBookmarkId(pluginItem, strmItem)
@@ -195,7 +191,7 @@ class KodiDB(object):
 		sql += 	' SET playCount=' + str(pluginItem['playCount'])
 		sql += 	' WHERE idFile = ' + str(strmItem['idFile'])
 		
-		self.debug('CopyWatchedStatus: ' + sql, lineno())
+		self.debug('CopyWatchedStatus: ' + sql, log.lineno())
 		
 		cur.execute(sql)
 		self.db.commit()
@@ -211,7 +207,7 @@ class KodiDB(object):
 		
 		#delete previous
 		sql = "DELETE FROM bookmark WHERE idFile=" + str(strmItem['idFile'])
-		self.debug('ChangeBookmarkId: ' + sql, lineno())
+		self.debug('ChangeBookmarkId: ' + sql, log.lineno())
 		cur.execute(sql)
 		self.db.commit()
 		
@@ -219,7 +215,7 @@ class KodiDB(object):
 		#set new
 		sql =  'UPDATE bookmark SET idFile=' + str(strmItem['idFile'])
 		sql += ' WHERE idFile = ' +  str(pluginItem['idFile'])
-		self.debug('ChangeBookmarkId: ' + sql, lineno())
+		self.debug('ChangeBookmarkId: ' + sql, log.lineno())
 		
 		cur.execute(sql)
 		self.db.commit()
@@ -231,7 +227,7 @@ class KodiDB(object):
 		cur.execute(sql)
 		bookmarks = cur.fetchall()
 		for item in bookmarks:
-			self.debug('Bookmark: ' + item.__repr__(), lineno())
+			self.debug('Bookmark: ' + item.__repr__(), log.lineno())
 			return { 'idBookmark': item[0], 'idFile': item[1], 'timeInSeconds': item[2], 'totalTimeInSeconds': item[3] }
 			
 		return None
@@ -242,17 +238,17 @@ class KodiDB(object):
 		sql = 	"SELECT idFile, idPath, strFilename, playCount, lastPlayed " + \
 				"FROM files WHERE strFilename" + \
 				"='" + strFilename.replace("'", "''")	+ "'" #.split('&nfo=')[0] + "%'"
-		self.debug(sql, lineno())
+		self.debug(sql, log.lineno())
 		cur.execute(sql)
 		files = cur.fetchall()
 		
 		if len(files) == 0:
-			self.debug('getFileItem: len(files) == 0', lineno())
+			self.debug('getFileItem: len(files) == 0', log.lineno())
 			return None
 
 		if strPath is None:
 			for item in files:
-				self.debug('File: ' + item.__repr__(), lineno())
+				self.debug('File: ' + item.__repr__(), log.lineno())
 				return { 'idFile': item[0], 'idPath': item[1], 'strFilename': item[2], 'playCount': item[3], 'lastPlayed': item[4] }
 		else:
 			sql = 'SELECT idPath, strPath FROM path WHERE idPath IN ( '
@@ -260,7 +256,7 @@ class KodiDB(object):
 			for item in files:
 				ids.append( str( item[1]))
 			sql += ', '.join(ids) + ' )'
-			self.debug(sql, lineno())
+			self.debug(sql, log.lineno())
 			cur.execute(sql)
 			paths = cur.fetchall()
 			for path in paths:
@@ -268,10 +264,10 @@ class KodiDB(object):
 				if path[1].replace('\\', '/').endswith(strPath + '/') or path[1].replace('/', '\\').endswith(strPath + '\\'):
 					for item in files:
 						if path[0] == item[1]:
-							self.debug('File: ' + item.__repr__(), lineno())
+							self.debug('File: ' + item.__repr__(), log.lineno())
 							return { 'idFile': item[0], 'idPath': item[1], 'strFilename': item[2], 'playCount': item[3], 'lastPlayed': item[4] }
 		
-		self.debug('return None', lineno())
+		self.debug('return None', log.lineno())
 		return None
 		
 	def getPathId(self, strPath):
@@ -279,7 +275,7 @@ class KodiDB(object):
 		
 		sql = 	"SELECT idPath, strPath FROM path " + \
 				"WHERE strPath LIKE '%" + strPath.encode('utf-8').replace("'", "''") + "%'"
-		self.debug(sql, lineno())
+		self.debug(sql, log.lineno())
 		cur.execute(sql)
 		return cur.fetchall()
 		

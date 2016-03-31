@@ -71,7 +71,7 @@ class TorrentDownloader(Downloader):
                 return None
         except BaseException as e:
             from log import debug
-            debug(e)
+            print_tb(e)
             return None
 
     def download(self):

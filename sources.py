@@ -157,7 +157,7 @@ class Sources(object):
 		try:
 			self.add('video', path, label)
 		except SourceAlreadyExists as e:
-			log.debug(e)
+			log.print_tb(e)
 
 		db = VideoDB()
 		scan_recursive = bool(content is 'movies')

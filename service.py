@@ -118,7 +118,7 @@ def update_service(show_progress=False):
 			settings.nnmclub_hours = int(math.ceil((time() - float(addon.getSetting('nnm_last_generate'))) / 3600.0))
 		except BaseException as e:
 			settings.nnmclub_hours = 168
-			log.debug(e)
+			log.print_tb(e)
 
 		if settings.nnmclub_hours > 168:
 			settings.nnmclub_hours = 168
@@ -157,7 +157,7 @@ def scrape_nnm():
 				if data:
 					hashes.append((data['announce'], data['info_hash'], torr.replace('.torrent', '.stat')))
 			except BaseException as e:
-				log.debug(e)
+				log.print_tb(e)
 
 	for chunk in chunks(hashes, 32):
 		import scraper
@@ -170,10 +170,10 @@ def scrape_nnm():
 						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c])
 						process_chunk(c, data_path, seeds_peers)
 					except BaseException as e:
-						log.debug(e)
+						log.print_tb(e)
 			continue
 		except BaseException as e:
-			log.debug(e)
+			log.print_tb(e)
 			continue
 
 		process_chunk(chunk, data_path, seeds_peers)
@@ -188,9 +188,8 @@ def process_chunk(chunk, data_path, seeds_peers):
 		with filesystem.fopen(filename, 'w') as stat_file:
 			try:
 				json.dump(seeds_peers[item[1]], stat_file)
-			except KeyError as e:
+			except KeyError:
 				remove_file = True
-				log.debug(e)
 		if remove_file:
 			filesystem.remove(filename)
 
@@ -227,7 +226,7 @@ def update_case():
 				log.debug(_addon.getSetting('service_startup'))
 				update_service(show_progress=False)
 			except BaseException as e:
-				log.debug(e)
+				log.print_tb(e)
 			finally:
 				update_case.first_start = False
 
@@ -240,7 +239,7 @@ def update_case():
 				log.debug('Update List at %s' % asctime(localtime(update_case.prev_generate_time)))
 				log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
 			except BaseException as e:
-				log.debug(e)
+				log.print_tb(e)
 			finally:
 				update_case.first_start = False
 
@@ -252,7 +251,7 @@ def scrape_case():
 			scrape_nnm()
 			log.debug('scrape_nnm')
 		except BaseException as e:
-			log.debug(e)
+			log.print_tb(e)
 		scrape_case.prev_scrape_time = time()
 
 	scrape_every = 30 * 60
@@ -262,7 +261,7 @@ def scrape_case():
 			scrape_nnm()
 			log.debug('scrape_nnm')
 		except BaseException as e:
-			log.debug(e)
+			log.print_tb(e)
 
 
 def main():

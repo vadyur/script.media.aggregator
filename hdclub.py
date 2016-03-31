@@ -192,5 +192,5 @@ def download_torrent(url, path, settings):
 			shutil.copyfileobj(response, f)
 		return True
 	except BaseException as e:
-		debug(e)
+		print_tb(e)
 		return False
