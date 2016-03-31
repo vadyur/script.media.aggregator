@@ -397,7 +397,23 @@ class TorrentPlayer(object):
 	def CheckTorrentAdded(self):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		return filesystem.exists(self.path)
-		
+
+	def Name(self, name):
+		try:
+			return name.decode('utf-8')
+		except UnicodeDecodeError:
+			import chardet
+			enc = chardet.detect(name)
+			debug('UnicodeDecodeError detected', log.lineno())
+			# debug(enc['confidence'])
+			# debug(enc['encoding'])
+			if enc['confidence'] > 0.7:
+				name = name.decode(enc['encoding'])
+				debug(name)
+				return name
+			else:
+				log.print_tb()
+
 	def GetLastTorrentData(self):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 
@@ -432,9 +448,9 @@ class TorrentPlayer(object):
 				size = f['length']
 				#debug(name)
 				if TorrentPlayer.is_playable(name):
-					playable_items.append({'index': i, 'name': name.decode('utf-8'), 'size': size})
+					playable_items.append({'index': i, 'name': self.Name(name), 'size': size})
 		else:
-			return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': [ {'index': 0, 'name': info['name'].decode('utf-8'), 'size': info['length'] } ] }
+			playable_items = [ {'index': 0, 'name': self.Name(info['name']), 'size': info['length'] } ]
 
 		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items }
 

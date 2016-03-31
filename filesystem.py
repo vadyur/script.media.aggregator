@@ -50,7 +50,7 @@ def save_make_chdir(new_path):
 			makedirs(new_path)
 		chdir(new_path)
 	except BaseException as e:
-		log.debug(e)
+		log.print_tb(e)
 		raise MakeCHDirException(current)
 	finally:
 		return current
@@ -71,6 +71,8 @@ class save_make_chdir_context(object):
 	def __exit__(self, exc_type, exc_val, exc_tb):
 		chdir(self.savePath)
 		if exc_type:
+			import traceback
+			traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)
 			log.debug("!!error!! " + str(exc_val))
 			return True
 

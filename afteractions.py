@@ -29,7 +29,7 @@ class Runner(object):
 				raise Exception('Not in Kodi')
 			return path
 		except BaseException as e:
-			debug(e)
+			print_tb(e)
 			return filesystem.getcwd()
 
 	@property
@@ -58,7 +58,7 @@ class Runner(object):
 			import xbmc
 			return xbmc.getInfoLabel('ListItem.DBTYPE')
 		except BaseException as e:
-			debug(e)
+			print_tb(e)
 			return ''
 
 	@property
@@ -86,7 +86,7 @@ class Runner(object):
 		try:
 			return str(round(info['downloaded'] * 100 / info['size']))
 		except BaseException as e:
-			debug(e)
+			print_tb(e)
 			return 0
 
 	def process_params(self):
@@ -126,5 +126,5 @@ class Runner(object):
 		except OSError, e:
 			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:
-			debug(e)
+			print_tb(e)
 
