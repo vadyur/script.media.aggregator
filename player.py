@@ -332,7 +332,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
 
 	except TPError as e:
-		print_tb(e)
+		log.print_tb(e)
 		return play_torrent_variant.resultTryNext
 
 	finally:
