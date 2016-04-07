@@ -440,17 +440,20 @@ class TorrentPlayer(object):
 		#debug(self.info_hash)
 
 		playable_items = []
-		if 'files' in info:
-			for i, f in enumerate(info['files']):
-				# debug(i)
-				# debug(f)
-				name = os.sep.join(f['path'])
-				size = f['length']
-				#debug(name)
-				if TorrentPlayer.is_playable(name):
-					playable_items.append({'index': i, 'name': self.Name(name), 'size': size})
-		else:
-			playable_items = [ {'index': 0, 'name': self.Name(info['name']), 'size': info['length'] } ]
+		try:
+			if 'files' in info:
+				for i, f in enumerate(info['files']):
+					# debug(i)
+					# debug(f)
+					name = os.sep.join(f['path'])
+					size = f['length']
+					#debug(name)
+					if TorrentPlayer.is_playable(name):
+						playable_items.append({'index': i, 'name': self.Name(name), 'size': size})
+			else:
+				playable_items = [ {'index': 0, 'name': self.Name(info['name']), 'size': info['length'] } ]
+		except UnicodeDecodeError:
+			return None
 
 		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items }
 
