@@ -1,6 +1,6 @@
 import log
 
-import xbmc, filesystem, xbmcvfs, os
+import xbmc, filesystem, xbmcvfs, os, time
 import xml.etree.ElementTree as ET
 
 
@@ -165,8 +165,17 @@ class KodiDB(object):
 		self.db = self.videoDB.create_connection()
 		try:
 			self.debug('PlayerPostProccessing: ', log.lineno())
-			pluginItem = self.getFileItem(self.pluginUrl)
-			self.debug('\tpluginItem = ' + str(pluginItem), log.lineno())
+
+			for cnt in range(3):
+				pluginItem = self.getFileItem(self.pluginUrl)
+				self.debug('\tpluginItem = ' + str(pluginItem), log.lineno())
+
+				if pluginItem:
+					break
+
+				self.debug('Try again #' + str(cnt + 2))
+				time.sleep(2)
+
 			strmItem = self.getFileItem(self.strmName, self.strmPath)
 			self.debug('\tstrmItem = ' + str(strmItem), log.lineno())
 			

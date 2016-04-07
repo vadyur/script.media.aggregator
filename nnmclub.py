@@ -441,7 +441,7 @@ def get_uid(settings, session=None):
 		else:
 			debug('page.status_code: ' + str(page.status_code))
 	except BaseException as e:
-		print_tb(e)
+		log.print_tb(e)
 		pass
 
 	return None

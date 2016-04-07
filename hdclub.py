@@ -1,7 +1,7 @@
 ﻿# coding: utf-8
 
 import log
-from log import debug
+from log import debug, print_tb
 
 
 import feedparser, filesystem
