@@ -59,33 +59,38 @@ DB_VERSIONS = {
 BASE_PATH = 'special://database'		
 class VideoDatabase(object):
 	@staticmethod
-	def find_last_version(name):
+	def find_last_version(name, path=BASE_PATH):
+		import re
 		try:
-			dirs, files = xbmcvfs.listdir(BASE_PATH)
-			matched_files = [f for f in files if f.startswith(name)]
+			dirs, files = xbmcvfs.listdir(path)
+			matched_files = [f for f in files if bool(re.match(name, f, re.I))]  #f.startswith(name)]
 			versions = [int(os.path.splitext(f[len(name):])[0]) for f in matched_files]
 			if not versions:
 				return 0
 			return max(versions)
 		except BaseException as e:
 			log.debug(e, log.lineno())
-			return 999
+			return 0
 
 	@staticmethod
-	def get_db_version():
+	def get_db_version(name=None):
 		major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
-		return DB_VERSIONS.get(major)
+		ver = DB_VERSIONS.get(major)
+		if ver:
+			return ver
+
+		return VideoDatabase.find_last_version(name, 'special://home/dbversions')
 
 	def __init__(self):
 		try:
 			
 			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos'
-			self.DB_NAME += self.get_db_version()
+			self.DB_NAME += self.get_db_version(self.DB_NAME)
 			xbmc.log('kodidb: DB name is ' + self.DB_NAME )
 
 			self.DB_USER = reader['user']
 			self.DB_PASS = reader['pass']
-			self.DB_ADDRESS = reader['host'] #+ ':' + reader['port']
+			self.DB_ADDRESS = reader['host']
 			self.DB_PORT=reader['port']
 		  
 			if reader['type'] == 'mysql' and \
