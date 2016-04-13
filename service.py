@@ -249,7 +249,7 @@ def scrape_case():
 	if not hasattr(scrape_case, 'prev_scrape_time'):
 		try:
 			scrape_nnm()
-			log.debug('scrape_nnm')
+			log.debug('scrape_nnm at %s' % asctime())
 		except BaseException as e:
 			log.print_tb(e)
 		scrape_case.prev_scrape_time = time()
@@ -259,7 +259,7 @@ def scrape_case():
 		try:
 			scrape_case.prev_scrape_time = time()
 			scrape_nnm()
-			log.debug('scrape_nnm')
+			log.debug('scrape_nnm at %s' % asctime())
 		except BaseException as e:
 			log.print_tb(e)
 
@@ -276,6 +276,7 @@ def main():
 		filesystem.remove(path)
 
 
+	cnt = 0
 	while not xbmc.abortRequested:
 
 		try:
@@ -284,6 +285,10 @@ def main():
 
 		finally:
 			sleep(1)
+
+		if cnt % 3600 == 0:
+			log.debug("I'm alive at %s" % asctime())
+		cnt += 1
 
 	log.debug('service exit')
 
@@ -294,6 +299,7 @@ def start_generate():
 		with filesystem.fopen(path, 'w'):
 			pass
 
+
 def update_library_next_start():
 	path = filesystem.join(_addondir, 'update_library_next_start')
 	if not filesystem.exists(path):
@@ -301,5 +307,31 @@ def update_library_next_start():
 			pass
 
 
+def save_dbs():
+	path = filesystem.join(_addondir, 'dbversions')
+
+	with filesystem.save_make_chdir_context(path):
+
+		for fn in filesystem.listdir(path):
+			filesystem.remove(fn)
+
+		log_dir = xbmc.translatePath('special://home').decode('utf-8')
+		log_path = filesystem.join(log_dir, 'kodi.log')
+		log.debug(log_path)
+		with filesystem.fopen(log_path, 'r') as lf:
+			for line in lf.readlines():
+				if 'Running database version' in line:
+					log.debug(line)
+					name = line.split(' ')[-1].strip('\r\n\t ').decode('utf-8')
+					with filesystem.fopen(name, 'w'):
+						pass
+
+
 if __name__ == '__main__':
+	try:
+		save_dbs()
+	except BaseException as e:
+		log.print_tb(e)
+		pass
+
 	main()
