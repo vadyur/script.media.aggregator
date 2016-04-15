@@ -98,6 +98,7 @@ def update_service(show_progress=False):
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 	settings			= player.load_settings()
 
 	if show_progress:
@@ -128,11 +129,15 @@ def update_service(show_progress=False):
 		addon.setSetting('nnm_last_generate', str(time()))
 		nnmclub.run(settings)
 
+	if rutor_enable:
+		import rutor
+		rutor.run(settings)
+
 	if show_progress:
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or hdclub_enable or nnmclub_enable:
+	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
 

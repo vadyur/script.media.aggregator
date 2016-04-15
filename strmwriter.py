@@ -11,7 +11,7 @@ class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
 		self.link = link
 		
-	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, parser = None, settings = None):
+	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, index = None, parser = None, settings = None):
 		strmFilename = make_fullpath(filename, u'.strm')
 		
 		#------------------------------------------
@@ -24,6 +24,8 @@ class STRMWriter(STRMWriterBase):
 			link += u'&seasonNumber=' + str(seasonNumber)
 		if cutname != None:
 			link += u'&cutName=' + urllib2.quote(cutname)
+		if index != None:
+			link += u'&index=' + str(index)
 
 		#------------------------------------------
 		if parser is not None:

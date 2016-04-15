@@ -78,6 +78,8 @@ class Runner(object):
 			return 'nnmclub'
 		if 'hdclub' in self.torrent_source:
 			return 'hdclub'
+		if 'rutor' in self.torrent_source:
+			return 'rutor'
 		return None
 
 	@property

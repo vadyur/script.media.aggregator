@@ -63,6 +63,7 @@ def sortext(filelist):
 			i = i + 1
 	result = sweetpair(result)
 	debug('[sortext]: result:' + str(result))
+
 	return result
 
 
@@ -72,8 +73,15 @@ def cutFileNames(l):
 	d = Differ()
 
 	text = sortext(l)
+
+
+	indexes = []
+	for i in l:
+		indexes.append(l[i])
+
 	newl = []
-	for li in l: newl.append(cutStr(li[0:len(li) - 1 - len(li.split('.')[-1])]))
+	for li in l:
+		newl.append(cutStr(li[0:len(li) - 1 - len(li.split('.')[-1])]))
 	l = newl
 
 	text1 = cutStr(text[0][0:len(text[0]) - 1 - len(text[0].split('.')[-1])])
@@ -96,10 +104,10 @@ def cutFileNames(l):
 		end = sep_file + str(res).strip() + end
 
 	newl = l
-	l = []
+	l = {}
 	debug('[cutFileNames] [start] ' + start)
 	debug('[cutFileNames] [end] ' + end)
-	for fl in newl:
+	for i, fl in enumerate(newl):
 		if cutStr(fl[0:len(start)]) == cutStr(start): fl = fl[len(start):]
 		if cutStr(fl[len(fl) - len(end):]) == cutStr(end): fl = fl[0:len(fl) - len(end)]
 		try:
@@ -107,7 +115,7 @@ def cutFileNames(l):
 			fl = fl.split(sep_file)[0]
 		except:
 			pass
-		l.append(fl)
+		l[fl] = indexes[i]
 	debug('[cutFileNames] [sorted l]  ' + unicode(sorted(l, key=lambda x: x)))
 	return l
 
@@ -161,6 +169,8 @@ def FileNamesPrepare(filename):
 				pass
 			return [my_season, my_episode, filename]
 
+	return None
+
 
 def get_list(dirlist):
 	files = []
@@ -170,7 +180,11 @@ def get_list(dirlist):
 		cutlist = dirlist
 	for fn in cutlist:
 		x = FileNamesPrepare(fn)
-		files.append(x)
+		if x:
+			x.append(cutlist[fn])
+			files.append(x)
+		else:
+			debug(fn, lineno())
 
 	return files
 
@@ -196,37 +210,52 @@ def parse_torrent(data, season=None):
 		return []
 
 	info = decoded['info']
-	dirlist = []
-	parent_list = []
+	dirlists = dict()
+	#filelists = dict()
 	if 'files' in info:
 		for i, f in enumerate(info['files']):
 			# debug(i)
 			# debug(f)
 			fname = f['path'][-1]
+			try:
+				parent = f['path'][-2]
+			except:
+				parent = '.'
+
+			if parent not in dirlists:
+				dirlists[parent] = dict()
+				#filelists[parent] = dict()
+
 			debug(fname)
 			if TorrentPlayer.is_playable(fname):
-				dirlist.append(fname)  # .decode('utf-8').encode('cp1251')
+				dirlists[parent][fname] = i  # .decode('utf-8').encode('cp1251')
+				#filelists[parent].append({fname: i})
 
-	save_season = season
 	files = []
-	for item in get_list(dirlist):
-		if item is not None:
-			if season is None:
-				if item[0] is None:
-					season = seasonfromname(info['name'])
-					if season is None:
-						f_item = next((f for f in info['files'] if item[2] in f['path'][-1]), None )
-						try:
-							season = seasonfromname(f_item['path'][-2])
-						except:
-							pass
-				else:
-					season = item[0]
-			files.append({'name': item[2], 'season': season, 'episode': item[1]})
-			season = save_season
-		else:
-			# TODO
-			continue
+	for dirname in dirlists:
+		dirlist = dirlists[dirname]
+		save_season = season
+		for item in get_list(dirlist):
+			if item is not None:
+				if season is None:
+					if item[0] is None:
+						season = seasonfromname(info['name'])
+						if season is None:
+							try:
+								season = seasonfromname(dirname)
+							except:
+								pass
+					else:
+						season = item[0]
+
+				name = item[2]
+				index = item[3]
+
+				files.append({'name': name, 'season': season, 'episode': item[1], 'index': index})
+				season = save_season
+			else:
+				# TODO
+				continue
 
 	files.sort(key=lambda x: (x['season'], x['episode']))
 	return files
@@ -306,52 +335,54 @@ def write_tvshow(fulltitle, link, settings, parser):
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
 		debug(tvshow_path.encode('utf-8'))
 
-		with filesystem.save_make_chdir_context(tvshow_path):
+		if tvshow_path:
+			with filesystem.save_make_chdir_context(tvshow_path):
 
-			NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
+				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 
-			# cnt = 0
-			for f in files:
-				# cnt += 1
-				try:
-					episode = tvshow_api.Episode(f['season'], f['episode'])
-					if episode is None:
-						episode = {
-							'title': title,
-							'seasonNumber': f['season'],
-							'episodeNumber': f['episode'],
-							'image': '',
-							'airDate': ''
-						}
-
-					season_path = 'Season %d' % f['season']
-				except BaseException as e:
-					print_tb(e)
-					continue
-
-				with filesystem.save_make_chdir_context(season_path):
-
-					results = filter(lambda x: x['season'] == f['season'] and x['episode'] == f['episode'], files)
-					if len(results) > 1:	# Has duplicate episodes
-						filename = f['name']
-					else:
-						try:
-							cnt = f['episode']
-							filename = '%02d. episode_s%02de%02d' % (cnt, f['season'], f['episode'])
-						except BaseException as e:
-							print_tb(e)
-							filename = f['name']
-
+				# cnt = 0
+				for f in files:
+					# cnt += 1
+					s_num = f['season'] if f['season'] else 1
 					try:
-						debug(filename)
-						filename = filename.decode('utf-8')
-					except:
-						debug([filename])
+						episode = tvshow_api.Episode(s_num, f['episode'])
+						if not episode:
+							episode = {
+								'title': title,
+								'seasonNumber': s_num,
+								'episodeNumber': f['episode'],
+								'image': '',
+								'airDate': ''
+							}
 
-					STRMWriter(parser.link()).write(filename, cutname=f['name'], settings=settings, parser=parser)
-					NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
+						season_path = 'Season %d' % s_num
+					except BaseException as e:
+						print_tb(e)
+						continue
 
-				# end for
+					with filesystem.save_make_chdir_context(season_path):
+
+						results = filter(lambda x: x['season'] == s_num and x['episode'] == f['episode'], files)
+						if len(results) > 1:	# Has duplicate episodes
+							filename = f['name']
+						else:
+							try:
+								cnt = f['episode']
+								filename = '%02d. episode_s%02de%02d' % (cnt, s_num, f['episode'])
+							except BaseException as e:
+								print_tb(e)
+								filename = f['name']
+
+						try:
+							debug(filename)
+							filename = filename.decode('utf-8')
+						except:
+							debug([filename])
+
+						STRMWriter(parser.link()).write(filename, index=f['index'], settings=settings, parser=parser)
+						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
+
+					# end for
 
 
 def test(link):

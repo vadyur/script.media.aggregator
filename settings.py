@@ -26,6 +26,7 @@ class Settings:
 		hdclub_passkey 		= '', 
 		anidub_login = '', anidub_password = '', 
 		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
+		rutor_domain = 'rutor.info',
 		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
 		torrent_player = TorrentPlayer.YATP, storage_path = '',
 		movies_save			= True,
@@ -55,6 +56,8 @@ class Settings:
 		self.nnmclub_pages			= nnmclub_pages
 		self.nnmclub_hours			= nnmclub_hours
 		self.use_kinopoisk			= True
+
+		self.rutor_domain           = rutor_domain
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type

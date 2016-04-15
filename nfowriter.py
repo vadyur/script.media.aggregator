@@ -203,6 +203,10 @@ class NFOWriter:
 			pass
 
 	def write_rating(self, root):
+		if self.parser.get('rating', None):
+			ET.SubElement(root, 'rating').text = self.parser.get_value('rating')
+			return
+
 		try:
 			debug(self.movie_api.imdbRating())
 			ET.SubElement(root, 'rating').text = self.movie_api.imdbRating()

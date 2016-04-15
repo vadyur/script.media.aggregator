@@ -81,6 +81,8 @@ def load_settings():
 	nnmclub_login		= getSetting('nnmclub_login')
 	nnmclub_password	= getSetting('nnmclub_password')
 
+	rutor_domain           = getSetting('rutor_domain')
+
 	preffered_bitrate 	= int(getSetting('preffered_bitrate'))
 	preffered_type 		= getSetting('preffered_type')
 
@@ -105,6 +107,7 @@ def load_settings():
 									nnmclub_pages 		= nnmclub_pages,
 									nnmclub_login 		= nnmclub_login,
 									nnmclub_password 	= nnmclub_password,
+									rutor_domain        = rutor_domain,
 									preffered_bitrate 	= preffered_bitrate,
 									preffered_type 		= preffered_type,
 									torrent_player 		= torrent_player,
@@ -379,6 +382,7 @@ def play_torrent(settings, params):
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable        = _addon.getSetting('rutor_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -392,6 +396,8 @@ def play_torrent(settings, params):
 		if not hdclub_enable and 'hdclub.org' in v['link']:
 			links_with_ranks.remove(v)
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
+			links_with_ranks.remove(v)
+		if not rutor_enable and 'rutor.info' in v['link']:
 			links_with_ranks.remove(v)
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
@@ -487,7 +493,9 @@ def main():
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-				if not (anidub_enable or hdclub_enable or nnmclub_enable):
+				rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+
+				if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 2
 				else:
