@@ -5,7 +5,7 @@ from log import debug
 
 
 import re
-import urllib2
+import urllib2, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -22,11 +22,19 @@ from strmwriter import STRMWriter
 import tvshowapi
 
 def real_url(url, settings):
-	return url.replace('rutor.info', settings.rutor_domain)
+	res = urlparse.urlparse(url)
+	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', settings.rutor_domain, res.path, res.params, res.query, res.fragment)
+	res = urlparse.urlunparse(res)
+	debug('real_url(%s, ...) return %s' % (url, res))
+	return res
 
 
 def origin_url(url, settings):
-	return url.replace(settings.rutor_domain, 'rutor.info')
+	res = urlparse.urlparse(url)
+	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', 'rutor.info', res.path, res.params, res.query, res.fragment)
+	res = urlparse.urlunparse(res)
+	debug('original_url(%s, ...) return %s' % (url, res))
+	return res
 
 
 class DescriptionParser(DescriptionParserBase):
@@ -346,6 +354,8 @@ def download_torrent(url, path, settings):
 		link = None
 
 	if link:
+		#if not link.startswith('http'):
+		#	link = 'http://' + settings.rutor_domain + link
 		r = requests.get(real_url(link, settings))
 
 	debug(r.headers)
@@ -368,4 +378,5 @@ def download_torrent(url, path, settings):
 if __name__ == '__main__':
 	settings = Settings('../../..')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
+	settings.rutor_domain = 'rutor.is'
 	run(settings)
