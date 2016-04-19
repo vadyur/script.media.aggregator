@@ -320,7 +320,7 @@ def save_dbs():
 		for fn in filesystem.listdir(path):
 			filesystem.remove(fn)
 
-		log_dir = xbmc.translatePath('special://home').decode('utf-8')
+		log_dir = xbmc.translatePath('special://logpath').decode('utf-8')
 		log_path = filesystem.join(log_dir, 'kodi.log')
 		log.debug(log_path)
 		with filesystem.fopen(log_path, 'r') as lf:
