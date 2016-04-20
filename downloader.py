@@ -52,6 +52,11 @@ class Downloader(object):
     def move_file_to(self, path):
         import shutil
         src = self.get_filename()
+
+        dirname = filesystem.dirname(path)
+        if not filesystem.exists(dirname):
+            filesystem.makedirs(dirname)
+
         shutil.copy2(src, path)
         os.remove(src)
 
