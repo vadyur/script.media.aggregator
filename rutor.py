@@ -167,6 +167,30 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 
+		if count_id == 0:
+			div_index = self.soup.select('#index')
+			if div_index:
+				for a in div_index[0].findAll('a', recursive=True):
+					if '/torrent/' in a['href']:
+						parts = a['href'].split('/')
+						href = parts[0] + '/' + parts[1] + '/' + parts[2]
+						html = urllib2.urlopen(real_url(href, settings))
+						soup = BeautifulSoup(clean_html(html.read()), 'html.parser')
+
+						for a in soup.select('a[href*="www.imdb.com/title/"]'):
+							try:
+								href = a['href']
+
+								components = href.split('/')
+								if components[2] == u'www.imdb.com' and components[3] == u'title':
+									self._dict['imdb_id'] = components[4]
+									count_id += 1
+							except:
+								pass
+
+					if 'imdb_id' in self._dict:
+						break
+
 		if count_id > 1:
 			return False
 
