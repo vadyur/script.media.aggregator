@@ -127,7 +127,15 @@ class DescriptionParser(DescriptionParserBase):
 		return False
 
 	def parse_description(self, html_text):
-		self.soup = BeautifulSoup(clean_html(html_text), 'html.parser')
+		from HTMLParser import HTMLParseError
+
+		html_text = clean_html(html_text)
+		try:
+			self.soup = BeautifulSoup(html_text, 'html.parser')
+		except HTMLParseError as e:
+			log.print_tb(e)
+			log.debug(html_text)
+			return False
 
 		tag = u''
 
