@@ -20,6 +20,11 @@ def make_fullpath(title, ext):
 def skipped(item):
 	debug(item.title.encode('utf-8') + '\t\t\t[Skipped]')
 
+def remove_script_tags(file):
+	pattern = re.compile(r'<script[\s\S]+?/script>')
+	subst = ""
+	return re.sub(pattern, subst, file)
+
 def clean_html(page):
 	#pattern = r"(?is)<script[^>]*>(.*?)</script>"
 	#pattern = r'<script(.*?)</script>'
@@ -28,6 +33,8 @@ def clean_html(page):
 	#debug(r)
 	#page = r.sub('', page)
 	#debug(page.encode('utf-8'))
+	page = remove_script_tags(page)
+
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 
 def striphtml(data):
