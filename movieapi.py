@@ -23,7 +23,7 @@ def write_movie(fulltitle, link, settings, parser):
 		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename)
 
 		from downloader import TorrentDownloader
-		TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
+		TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
 def get_tmdb_api_key():
 	try:

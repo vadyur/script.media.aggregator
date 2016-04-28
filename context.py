@@ -114,7 +114,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		settings = self.settings
 		import urllib
 		torr_downloader = TorrentDownloader(urllib.unquote(link), tempPath, settings)
-		path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 		if not filesystem.exists(path):
 			torr_downloader.download()
 			path = torr_downloader.get_filename()

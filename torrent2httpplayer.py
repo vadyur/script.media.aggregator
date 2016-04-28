@@ -90,7 +90,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 							log_files_progress=True)
 
 		try:
-			self.engine.resume_file = filesystem.join(self.settings.addon_data_path, self.info_hash + '.resume')
+			self.engine.resume_file = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
 		except BaseException as e:
 			log.print_tb(e)
 			self.engine.resume_file = filesystem.join(download_path, self.info_hash + '.resume')

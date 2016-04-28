@@ -15,6 +15,8 @@
 		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" />
 		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false"/>
 		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
+
+        <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default=""/>
     </category>
 
     <category label="Дополнительно">

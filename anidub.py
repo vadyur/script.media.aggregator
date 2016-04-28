@@ -206,7 +206,7 @@ def write_tvshow_item(item, path, settings):
 		season = parser.get_value('season')
 
 		from downloader import TorrentDownloader
-		TorrentDownloader(item.link, settings.addon_data_path, settings).download()
+		TorrentDownloader(item.link, settings.torrents_path(), settings).download()
 
 		debug('Episodes: ' + str(parser.get_value('episodes')))
 

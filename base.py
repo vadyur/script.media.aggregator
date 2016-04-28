@@ -178,7 +178,7 @@ def seeds_peers(item):
 		if 'nnm-club' in link:
 			debug('seeds_peers: ' + link)
 			t_id = re.search(r't=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'nnmclub', t_id + '.stat')
+			fn = filesystem.join(settings.torrents_path(), 'nnmclub', t_id + '.stat')
 			debug(fn)
 			with filesystem.fopen(fn, 'r') as stat_file:
 				import json
@@ -186,11 +186,11 @@ def seeds_peers(item):
 				debug(str(res))
 		elif 'hdclub' in link:
 			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'hdclub', t_id + '.torrent')
+			fn = filesystem.join(settings.torrents_path(), 'hdclub', t_id + '.torrent')
 			return scrape_now(fn)
 		elif 'rutor' in link:
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'rutor', t_id + '.torrent')
+			fn = filesystem.join(settings.torrents_path(), 'rutor', t_id + '.torrent')
 			return scrape_now(fn)
 
 	except BaseException as e:

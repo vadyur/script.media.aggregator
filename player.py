@@ -96,6 +96,8 @@ def load_settings():
 	tvshows_save 		= getSetting('tvshows_save') == 'true'
 	animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
 
+	torrent_path        = getSetting('torrent_path')
+
 	settings 			= Settings(	base_path,
 									movies_path			= movies_path,
 									animation_path		= animation_path,
@@ -117,7 +119,8 @@ def load_settings():
 									documentary_save 	= documentary_save,
 									anime_save 			= anime_save,
 									tvshows_save 		= tvshows_save,
-									animation_tvshows_save = animation_tvshows_save)
+									animation_tvshows_save = animation_tvshows_save,
+									torrent_path        = torrent_path)
 
 	settings.addon_data_path		= _addondir
 	settings.run_script				= getSetting('run_script') == 'true'
@@ -338,7 +341,7 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
 
-	path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
 		torr_downloader.download()
 		torr_downloader.move_file_to(path)

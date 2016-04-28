@@ -312,7 +312,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 	import requests
 
 	from downloader import TorrentDownloader
-	dl = TorrentDownloader(parser.link(), settings.addon_data_path, settings)
+	dl = TorrentDownloader(parser.link(), settings.torrents_path(), settings)
 	if not dl.download():
 		return
 
