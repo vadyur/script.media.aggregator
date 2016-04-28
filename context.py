@@ -160,7 +160,17 @@ def main():
 	import player
 	settings = player.load_settings()
 
-	links = STRMWriterBase.get_links_with_ranks(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), settings, use_scrape_info=True)
+	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+	name = xbmc.getInfoLabel('ListItem.FileName')
+	
+	import xbmcvfs
+	tempPath = xbmc.translatePath('special://temp')
+	if xbmcvfs.exists(path+'.alternative'):
+		debug('path exists')
+		xbmcvfs.copy(path + '.alternative', tempPath + name + '.alternative')
+		path = tempPath + name
+
+	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
 	window = MyWindow('Media Aggregator', settings=settings, links=links)
 	window.doModal()
