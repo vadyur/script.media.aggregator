@@ -163,12 +163,12 @@ def main():
 	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
 	name = xbmc.getInfoLabel('ListItem.FileName')
 	
-	import xbmcvfs
+	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
 	if xbmcvfs.exists(path+'.alternative'):
 		debug('path exists')
-		xbmcvfs.copy(path + '.alternative', tempPath + name + '.alternative')
-		path = tempPath + name
+		xbmcvfs.copy(path + '.alternative', os.path.join(tempPath, name + '.alternative'))
+		path = os.path.join(tempPath, name)
 
 	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
