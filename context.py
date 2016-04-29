@@ -167,6 +167,7 @@ def main():
 	tempPath = xbmc.translatePath('special://temp')
 	if xbmcvfs.exists(path+'.alternative'):
 		debug('path exists')
+		xbmcvfs.copy(path, os.path.join(tempPath, name))
 		xbmcvfs.copy(path + '.alternative', os.path.join(tempPath, name + '.alternative'))
 		path = os.path.join(tempPath, name)
 
@@ -194,7 +195,7 @@ def main():
 	del window
 
 
-	with filesystem.fopen(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), 'r') as strm:
+	with filesystem.fopen(path.decode('utf-8'), 'r') as strm:
 		src_link = strm.read()
 		debug(src_link)
 		pattern = 'torrent=(.+?)&'
@@ -215,6 +216,9 @@ def main():
 
 			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
+	if tempPath in path:
+		xbmcvfs.delete(path)
+		xbmcvfs.delete(path + '.alternative')
 
 if __name__ == '__main__':
 	main()
