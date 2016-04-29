@@ -120,6 +120,9 @@ class DescriptionParser(DescriptionParserBase):
 			if self.need_skipped(full_title):
 				return False
 
+			if self.need_skipped_by_filter(full_title, self.settings.rutor_filter):
+				return False
+
 			r = requests.get(real_url(self._link, self.settings))
 			if r.status_code == requests.codes.ok:
 				return self.parse_description(r.text)
@@ -163,6 +166,11 @@ class DescriptionParser(DescriptionParserBase):
 		if 'genre' in self._dict:
 			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
 
+
+		for tag in [u'title', u'year', u'genre', u'director', u'actor', u'plot']:
+			if tag not in self._dict:
+				return False
+		
 		count_id = 0
 		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):
 			try:
@@ -202,6 +210,9 @@ class DescriptionParser(DescriptionParserBase):
 		if count_id > 1:
 			return False
 
+		if 'imdb_id' not in self._dict:
+			return False
+
 		for det in self.soup.select('#details'):
 			tr = det.find('tr', recursive=False)
 			if tr:
@@ -227,6 +238,20 @@ class DescriptionParser(DescriptionParserBase):
 
 	def link(self):
 		return origin_url(self._link, self.settings)
+
+	def need_skipped_by_filter(self, full_title, rutor_filter):
+		keywords = rutor_filter.split()
+		m = re.search(r'\d+\)(.+?)\|', full_title)
+		if m:
+			quality_str = m.group(1)
+			for key in keywords:
+				if key in quality_str:
+					return True
+
+			return False
+
+		return True
+
 
 class DescriptionParserTVShows(DescriptionParser):
 

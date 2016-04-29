@@ -27,6 +27,7 @@ class Settings:
 		anidub_login = '', anidub_password = '', 
 		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 		rutor_domain = 'rutor.info',
+		rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
 		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
 		torrent_player = TorrentPlayer.YATP, storage_path = '',
 		movies_save			= True,
@@ -59,6 +60,7 @@ class Settings:
 		self.use_kinopoisk			= True
 
 		self.rutor_domain           = rutor_domain
+		self.rutor_filter           = rutor_filter
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type

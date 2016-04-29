@@ -81,7 +81,8 @@ def load_settings():
 	nnmclub_login		= getSetting('nnmclub_login')
 	nnmclub_password	= getSetting('nnmclub_password')
 
-	rutor_domain           = getSetting('rutor_domain')
+	rutor_domain        = getSetting('rutor_domain')
+	rutor_filter        = getSetting('rutor_filter')
 
 	preffered_bitrate 	= int(getSetting('preffered_bitrate'))
 	preffered_type 		= getSetting('preffered_type')
@@ -110,6 +111,7 @@ def load_settings():
 									nnmclub_login 		= nnmclub_login,
 									nnmclub_password 	= nnmclub_password,
 									rutor_domain        = rutor_domain,
+									rutor_filter        = rutor_filter,
 									preffered_bitrate 	= preffered_bitrate,
 									preffered_type 		= preffered_type,
 									torrent_player 		= torrent_player,

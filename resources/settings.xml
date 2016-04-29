@@ -72,5 +72,6 @@
     <category label="Rutor">
         <setting label="Использовать" type="bool" id="rutor_enable" default="false"/>
         <setting label="Домен" type="text" id="rutor_domain" default="rutor.info"/>
+        <setting label="Фильтр" type="text" id="rutor_filter" default="CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP"/>
     </category>
 </settings>
