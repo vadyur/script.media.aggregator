@@ -116,8 +116,15 @@ def join(path, *paths):
 
 def listdir(path):
 	ld = []
-	for p in os.listdir(get_path(path)):
-		ld.append(ensure_unicode(p))
+	path = get_path(path)
+	if path.startswith(r'\\'):
+		with save_make_chdir_context(path):
+			for p in os.listdir('.'):
+				ld.append(ensure_unicode(p))
+	else:
+		for p in os.listdir(path):
+			ld.append(ensure_unicode(p))
+
 	return ld
 
 

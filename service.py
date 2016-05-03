@@ -149,7 +149,8 @@ def chunks(l, n):
 
 
 def scrape_nnm():
-	data_path = _addondir
+	settings = player.load_settings()
+	data_path = settings.torrents_path()
 
 	hashes = []
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
