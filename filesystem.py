@@ -124,6 +124,10 @@ def listdir(path):
 def remove(path):
 	os.remove(get_path(path))
 
+def copyfile(src, dst):
+	import shutil
+	shutil.copyfile(get_path(src), get_path(dst))
+
 
 def getmtime(path):
 	return os.path.getmtime(get_path(path))
