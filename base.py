@@ -418,7 +418,8 @@ class TorrentPlayer(object):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		return filesystem.exists(self.path)
 
-	def Name(self, name):
+	@staticmethod
+	def Name(name):
 		try:
 			return name.decode('utf-8')
 		except UnicodeDecodeError:
@@ -469,9 +470,9 @@ class TorrentPlayer(object):
 					size = f['length']
 					#debug(name)
 					if TorrentPlayer.is_playable(name):
-						playable_items.append({'index': i, 'name': self.Name(name), 'size': size})
+						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
 			else:
-				playable_items = [ {'index': 0, 'name': self.Name(info['name']), 'size': info['length'] } ]
+				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info['name']), 'size': info['length'] } ]
 		except UnicodeDecodeError:
 			return None
 

@@ -8,15 +8,46 @@ import urllib
 import filesystem
 
 class Runner(object):
-	def __init__(self, settings, params, player, playable_item):
+	def __init__(self, settings, params, playable_item, torrent_info, torrent_path):
 		self.command = settings.script_params.split(u' ')
 		self.settings = settings
 		self.params = params
-		self.player = player
+		self.torrent_info = torrent_info
+		self.torrent_path = torrent_path
 		self.playable_item = playable_item
+		
+		debug('-' * 30 + ' Runner ' + '-' * 30)
+		debug('torrent: ' + self.torrent)
+		debug('videofile: ' + self.videofile)
+		debug('relativevideofile: ' + self.relativevideofile)
+		debug('torrent_source: ' + self.torrent_source)
+		debug('short_name: ' + self.short_name)
+		debug('downloaded: ' + self.downloaded)
+		debug('videotype: ' + self.videotype)
 
-		self.process_params()
-		self.run()
+		if settings.run_script:
+			self.process_params()
+			self.run()
+
+		if settings.remove_files:
+			debug('Runner: remove_files')
+			filesystem.remove(self.videofile)
+
+		if float(self.downloaded) > 99:
+
+			if settings.move_video and settings.copy_video_path and filesystem.exists(settings.copy_video_path):
+				debug('Runner: move video')
+				dest_path = filesystem.join(settings.copy_video_path, self.relativevideofile)
+
+				if not filesystem.exists(filesystem.dirname(dest_path)):
+					filesystem.makedirs(filesystem.dirname(dest_path))
+
+				filesystem.movefile(self.videofile, dest_path)
+
+			if settings.copy_torrent and settings.copy_torrent_path and filesystem.exists(settings.copy_torrent_path):
+				debug('Runner: copy torrent')
+				dest_path = filesystem.join(settings.copy_torrent_path, filesystem.basename(self.torrent_path))
+				filesystem.copyfile(self.torrent_path, dest_path)
 
 	@staticmethod
 	def get_addon_path():
@@ -34,11 +65,11 @@ class Runner(object):
 
 	@property
 	def torrent(self):
-		return self.player.path
+		return self.torrent_path
 
 	@property
 	def videofile(self):
-		return filesystem.join(self.settings.storage_path, self.playable_item['name'])
+		return filesystem.join(self.settings.storage_path, self.relativevideofile)
 
 	@property
 	def videotype(self):
@@ -63,6 +94,26 @@ class Runner(object):
 
 	@property
 	def relativevideofile(self):
+		with filesystem.fopen(self.torrent_path, 'rb') as torr:
+			data = torr.read()
+
+			if data is None:
+				return self.playable_item['name']
+
+			from bencode import BTFailure
+			try:
+				from bencode import bdecode
+				decoded = bdecode(data)
+			except BTFailure:
+				debug("Can't decode torrent data (invalid torrent link?)")
+				return self.playable_item['name']
+
+			info = decoded['info']
+
+			if 'files' in info:
+				from base import TorrentPlayer
+				return filesystem.join(TorrentPlayer.Name(info['name']), self.playable_item['name'])
+
 		return self.playable_item['name']
 
 	@property
@@ -84,7 +135,10 @@ class Runner(object):
 
 	@property
 	def downloaded(self):
-		info = self.player.GetTorrentInfo()
+		info = self.torrent_info
+		if info is None:
+			return 0
+
 		try:
 			return str(round(info['downloaded'] * 100 / info['size']))
 		except BaseException as e:
@@ -123,8 +177,12 @@ class Runner(object):
 			startupinfo.wShowWindow = 0
 			u8runner = filesystem.abspath(filesystem.join(Runner.get_addon_path(), 'bin/u8runner.exe')).encode('mbcs')
 
+		shell = self.command[0].startswith('@')
+		if shell:
+			self.command[0] = self.command[0][1:]
+
 		try:
-			subprocess.call(executable=u8runner, args=self.command, startupinfo=startupinfo)
+			subprocess.call(executable=u8runner, args=self.command, startupinfo=startupinfo, shell=shell)
 		except OSError, e:
 			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:

@@ -131,9 +131,15 @@ def listdir(path):
 def remove(path):
 	os.remove(get_path(path))
 
+
 def copyfile(src, dst):
 	import shutil
 	shutil.copyfile(get_path(src), get_path(dst))
+
+
+def movefile(src, dst):
+	import shutil
+	shutil.move(get_path(src), get_path(dst))
 
 
 def getmtime(path):
@@ -146,6 +152,10 @@ def getctime(path):
 
 def dirname(path):
 	return ensure_unicode(os.path.dirname(get_path(path)))
+
+
+def basename(path):
+	return ensure_unicode(os.path.basename(get_path(path)))
 
 
 def test():	

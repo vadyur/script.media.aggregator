@@ -21,17 +21,20 @@
 
     <category label="Дополнительно">
         <setting label="Выполнить скрипт/программу по завершению просмотра" type="bool" id="run_script" default="false"/>
-        <setting label="" type="text"   id="script_params" enable="eq(-1,true)" default=""/>
-        <setting label="Можно использовать параметры" type="lsep"/>
-        <setting label="    %t - путь к torrent-файлу" type="text" enable="false" />
-        <setting label="    %f - путь к проигрываемому файлу" type="text" enable="false" />
-        <setting label="    %F - путь к проигрываемому файлу, относительно каталага загрузки" type="text" enable="false" />
-        <setting label="    %u - URL раздачи" type="text" enable="false" />
-        <setting label="    %s - короткое имя источника (anidub, hdclub, nnmclub)" type="text" enable="false" />
-        <setting label="    %p - количество загруженного (%)" type="text" enable="false" />
-        <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" />
+        <setting label="" type="text"   id="script_params" enable="eq(-1,true)" default="" visible="eq(-1,true)" />
+        <setting label="Можно использовать параметры" type="lsep" visible="eq(-2,true)" />
+        <setting label="    %t - путь к torrent-файлу" type="text" enable="false" visible="eq(-3,true)" />
+        <setting label="    %f - путь к проигрываемому файлу" type="text" enable="false" visible="eq(-4,true)" />
+        <setting label="    %F - путь к проигрываемому файлу, относительно каталага загрузки" type="text" enable="false" visible="eq(-5,true)" />
+        <setting label="    %u - URL раздачи" type="text" enable="false" visible="eq(-6,true)" />
+        <setting label="    %s - короткое имя источника (anidub, hdclub, nnmclub)" type="text" enable="false" visible="eq(-7,true)" />
+        <setting label="    %p - количество загруженного (%)" type="text" enable="false" visible="eq(-8,true)" />
+        <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" visible="eq(-9,true)" />
+        <setting label="Видео файлы по завершению просмотра" type="select" id="action_files" values="оставить|переместить|удалить" default="оставить"/>
+        <setting label="Путь"	type="folder" id="copy_video_path" 	default="" visible="eq(-1,переместить)" />
+        <setting label="Копировать торрент файлы в" type="bool"   id="copy_torrent" default="false"/>
+        <setting label="Путь"	type="folder" id="copy_torrent_path" 	default="" visible="eq(-1,true)" />
     </category>
-
 
     <category label="Предпочтения">
 		<setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>

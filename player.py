@@ -128,7 +128,13 @@ def load_settings():
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
-	#debug(settings)
+	settings.move_video             = getSetting('action_files').decode('utf-8') == u'переместить'
+	settings.remove_files           = getSetting('action_files').decode('utf-8') == u'удалить'
+	settings.copy_video_path        = getSetting('copy_video_path').decode('utf-8')
+
+	settings.copy_torrent           = getSetting('copy_torrent') == 'true'
+	settings.copy_torrent_path      = getSetting('copy_torrent_path').decode('utf-8')
+
 	return settings
 
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
@@ -154,6 +160,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	if downloader:
 		downloader.start(True)
+
+	torrent_info = None
+	torrent_path = path
 
 	try:
 		if settings.torrent_player == 'YATP':
@@ -318,11 +327,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		# import rpdb2
 		# rpdb2.start_embedded_debugger('pw')
 
-		if settings.run_script:
-			import afteractions
-			afteractions.Runner(settings, params, player, playable_item)
-
 		k_db.PlayerPostProccessing()
+
+		torrent_info = player.GetTorrentInfo()
+		torrent_path = player.path
 
 		xbmc.executebuiltin('Container.Refresh')
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
@@ -336,6 +344,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	finally:
 		player.close()
+
+	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:
+		import afteractions
+		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path)
 
 	return play_torrent_variant.resultOK
 
