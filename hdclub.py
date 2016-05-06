@@ -112,7 +112,7 @@ def write_movie(item, settings):
 		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
 		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
 		from downloader import TorrentDownloader
-		TorrentDownloader(item.link, settings.addon_data_path, settings).download()
+		TorrentDownloader(item.link, settings.torrents_path(), settings).download()
 	else:
 		skipped(item)
 		

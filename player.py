@@ -81,6 +81,9 @@ def load_settings():
 	nnmclub_login		= getSetting('nnmclub_login')
 	nnmclub_password	= getSetting('nnmclub_password')
 
+	rutor_domain        = getSetting('rutor_domain')
+	rutor_filter        = getSetting('rutor_filter')
+
 	preffered_bitrate 	= int(getSetting('preffered_bitrate'))
 	preffered_type 		= getSetting('preffered_type')
 
@@ -94,6 +97,8 @@ def load_settings():
 	tvshows_save 		= getSetting('tvshows_save') == 'true'
 	animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
 
+	torrent_path        = getSetting('torrent_path')
+
 	settings 			= Settings(	base_path,
 									movies_path			= movies_path,
 									animation_path		= animation_path,
@@ -105,6 +110,8 @@ def load_settings():
 									nnmclub_pages 		= nnmclub_pages,
 									nnmclub_login 		= nnmclub_login,
 									nnmclub_password 	= nnmclub_password,
+									rutor_domain        = rutor_domain,
+									rutor_filter        = rutor_filter,
 									preffered_bitrate 	= preffered_bitrate,
 									preffered_type 		= preffered_type,
 									torrent_player 		= torrent_player,
@@ -114,13 +121,20 @@ def load_settings():
 									documentary_save 	= documentary_save,
 									anime_save 			= anime_save,
 									tvshows_save 		= tvshows_save,
-									animation_tvshows_save = animation_tvshows_save)
+									animation_tvshows_save = animation_tvshows_save,
+									torrent_path        = torrent_path)
 
 	settings.addon_data_path		= _addondir
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
-	#debug(settings)
+	settings.move_video             = getSetting('action_files').decode('utf-8') == u'переместить'
+	settings.remove_files           = getSetting('action_files').decode('utf-8') == u'удалить'
+	settings.copy_video_path        = getSetting('copy_video_path').decode('utf-8')
+
+	settings.copy_torrent           = getSetting('copy_torrent') == 'true'
+	settings.copy_torrent_path      = getSetting('copy_torrent_path').decode('utf-8')
+
 	return settings
 
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
@@ -146,6 +160,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	if downloader:
 		downloader.start(True)
+
+	torrent_info = None
+	torrent_path = path
 
 	try:
 		if settings.torrent_player == 'YATP':
@@ -319,11 +336,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		# import rpdb2
 		# rpdb2.start_embedded_debugger('pw')
 
-		if settings.run_script:
-			import afteractions
-			afteractions.Runner(settings, params, player, playable_item)
-
 		k_db.PlayerPostProccessing()
+
+		torrent_info = player.GetTorrentInfo()
+		torrent_path = player.path
 
 		xbmc.executebuiltin('Container.Refresh')
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
@@ -338,13 +354,17 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	finally:
 		player.close()
 
+	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:
+		import afteractions
+		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path)
+
 	return play_torrent_variant.resultOK
 
 def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
 
-	path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
 		torr_downloader.download()
 		torr_downloader.move_file_to(path)
@@ -388,6 +408,7 @@ def play_torrent(settings, params):
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable        = _addon.getSetting('rutor_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -401,6 +422,8 @@ def play_torrent(settings, params):
 		if not hdclub_enable and 'hdclub.org' in v['link']:
 			links_with_ranks.remove(v)
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
+			links_with_ranks.remove(v)
+		if not rutor_enable and 'rutor.info' in v['link']:
 			links_with_ranks.remove(v)
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
@@ -496,7 +519,9 @@ def main():
 				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-				if not (anidub_enable or hdclub_enable or nnmclub_enable):
+				rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+
+				if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
 					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 					rep = 2
 				else:

@@ -35,6 +35,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[NNM-Club] '
 				elif 'hdclub' in link:
 					s += '[HDclub] '
+				elif 'rutor' in link:
+					s += '[rutor] '
 			except:
 				pass
 			try:
@@ -112,7 +114,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		settings = self.settings
 		import urllib
 		torr_downloader = TorrentDownloader(urllib.unquote(link), tempPath, settings)
-		path = filesystem.join(settings.addon_data_path, torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
+		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 		if not filesystem.exists(path):
 			torr_downloader.download()
 			path = torr_downloader.get_filename()
@@ -158,7 +160,18 @@ def main():
 	import player
 	settings = player.load_settings()
 
-	links = STRMWriterBase.get_links_with_ranks(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), settings, use_scrape_info=True)
+	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+	name = xbmc.getInfoLabel('ListItem.FileName')
+	
+	import xbmcvfs, os
+	tempPath = xbmc.translatePath('special://temp')
+	if xbmcvfs.exists(path+'.alternative'):
+		debug('path exists')
+		xbmcvfs.copy(path, os.path.join(tempPath, name))
+		xbmcvfs.copy(path + '.alternative', os.path.join(tempPath, name + '.alternative'))
+		path = os.path.join(tempPath, name)
+
+	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
 	window = MyWindow('Media Aggregator', settings=settings, links=links)
 	window.doModal()
@@ -182,7 +195,7 @@ def main():
 	del window
 
 
-	with filesystem.fopen(xbmc.getInfoLabel('ListItem.FileNameAndPath').decode('utf-8'), 'r') as strm:
+	with filesystem.fopen(path.decode('utf-8'), 'r') as strm:
 		src_link = strm.read()
 		debug(src_link)
 		pattern = 'torrent=(.+?)&'
@@ -203,6 +216,9 @@ def main():
 
 			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
+	if tempPath in path:
+		xbmcvfs.delete(path)
+		xbmcvfs.delete(path + '.alternative')
 
 if __name__ == '__main__':
 	main()

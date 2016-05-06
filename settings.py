@@ -26,6 +26,8 @@ class Settings:
 		hdclub_passkey 		= '', 
 		anidub_login = '', anidub_password = '', 
 		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
+		rutor_domain = 'rutor.info',
+		rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
 		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
 		torrent_player = TorrentPlayer.YATP, storage_path = '',
 		movies_save			= True,
@@ -33,7 +35,8 @@ class Settings:
 		documentary_save	= True,
 		anime_save			= True,
 		tvshows_save		= True,
-		animation_tvshows_save = True):
+		animation_tvshows_save = True,
+		torrent_path        = ''):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -55,6 +58,9 @@ class Settings:
 		self.nnmclub_pages			= nnmclub_pages
 		self.nnmclub_hours			= nnmclub_hours
 		self.use_kinopoisk			= True
+
+		self.rutor_domain           = rutor_domain
+		self.rutor_filter           = rutor_filter
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type
@@ -68,6 +74,7 @@ class Settings:
 		self.anime_save 			= anime_save
 		self.tvshows_save 			= tvshows_save
 		self.animation_tvshows_save = animation_tvshows_save
+		self.torrent_path           = torrent_path
 		
 		self.progress_dialog		= FakeProgressDlg()
 		
@@ -86,16 +93,25 @@ class Settings:
 	
 	def base_path(self):
 		return self.__base_path
+
 	def movies_path(self):
 		return filesystem.join(self.__base_path, self.__movies_path)
+
 	def animation_path(self):
 		return filesystem.join(self.__base_path, self.__animation_path)
+
 	def documentary_path(self):
 		return filesystem.join(self.__base_path, self.__documentary_path)
+
 	def anime_tvshow_path(self):
 		return filesystem.join(self.__base_path, self.__anime_tvshow_path)
+
 	def animation_tvshow_path(self):
 		return filesystem.join(self.__base_path, 'Animation TVShows')
+
 	def tvshow_path(self):
 		return filesystem.join(self.__base_path, 'TVShows')
+
+	def torrents_path(self):
+		return self.torrent_path if self.torrent_path else self.addon_data_path
 

@@ -16,10 +16,15 @@ GB = KB * MB
 
 def make_fullpath(title, ext):
 	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
-	
+
 def skipped(item):
 	debug(item.title.encode('utf-8') + '\t\t\t[Skipped]')
-	
+
+def remove_script_tags(file):
+	pattern = re.compile(r'<script[\s\S]+?/script>')
+	subst = ""
+	return re.sub(pattern, subst, file)
+
 def clean_html(page):
 	#pattern = r"(?is)<script[^>]*>(.*?)</script>"
 	#pattern = r'<script(.*?)</script>'
@@ -28,22 +33,24 @@ def clean_html(page):
 	#debug(r)
 	#page = r.sub('', page)
 	#debug(page.encode('utf-8'))
+	page = remove_script_tags(page)
+
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
-	
+
 def striphtml(data):
 	p = re.compile(r'<.*?>')
 	return p.sub('', data)
 
 def get_rank(full_title, parser, settings):
-	
+
 	preffered_size = 7 * GB
 	#preffered_resolution_h = 1920
 	preffered_resolution_v = 1080 if settings.preffered_type == QulityType.Q1080 else 720
 	preffered_bitrate	= settings.preffered_bitrate
-	
-	debug('preffered_type: %s' % settings.preffered_type)
-	debug('preffered_bitrate: %d' % preffered_bitrate)
-	
+
+	#debug('preffered_type: %s' % settings.preffered_type)
+	#debug('preffered_bitrate: %d' % preffered_bitrate)
+
 	rank = 0.0
 	conditions = 0
 
@@ -65,18 +72,18 @@ def get_rank(full_title, parser, settings):
 	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
 		conditions += 1
-		
+
 	res_v = 1080
 	if '720p' in full_title:
 		res_v = 720
-		
+
 	if '2160p' in full_title:
 		res_v = 2160
-		
+
 	if abs(preffered_resolution_v - res_v) > 0:
 		rank += 2
 		conditions += 1
-		
+
 	size = parser.get('size', '')
 	if size != '':
 		if int(size) > preffered_size:
@@ -126,15 +133,15 @@ def get_rank(full_title, parser, settings):
 		else:
 			rank += 2
 			conditions += 1
-		
+
 	if parser.get('format', '') == 'MKV':
 		rank += 0.6
 		conditions += 1
-		
+
 	if 'ISO' in parser.get('format', ''):
 		rank += 100
 		conditions += 1
-	
+
 	if conditions != 0:
 		return rank / conditions
 	else:
@@ -145,6 +152,23 @@ def make_utf8(s):
 		return s.encode('utf-8')
 	return s
 
+def scrape_now(fn):
+	debug(fn)
+	tp = TorrentPlayer()
+	tp.AddTorrent(fn)
+	data = tp.GetLastTorrentData()
+	debug(str(data))
+	if data:
+		hashes = [data['info_hash']]
+		import scraper
+
+		res = scraper.scrape(data['announce'], hashes)
+		debug(str(res))
+		return res[data['info_hash']]
+	else:
+		return {}
+
+
 def seeds_peers(item):
 	import player
 	res = {}
@@ -154,7 +178,7 @@ def seeds_peers(item):
 		if 'nnm-club' in link:
 			debug('seeds_peers: ' + link)
 			t_id = re.search(r't=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'nnmclub', t_id + '.stat')
+			fn = filesystem.join(settings.torrents_path(), 'nnmclub', t_id + '.stat')
 			debug(fn)
 			with filesystem.fopen(fn, 'r') as stat_file:
 				import json
@@ -162,18 +186,12 @@ def seeds_peers(item):
 				debug(str(res))
 		elif 'hdclub' in link:
 			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
-			fn = filesystem.join(settings.addon_data_path, 'hdclub', t_id + '.torrent')
-			debug(fn)
-			tp = TorrentPlayer()
-			tp.AddTorrent(fn)
-			data = tp.GetLastTorrentData()
-			debug(str(data))
-			if data:
-				hashes = [data['info_hash']]
-				import scraper
-				res = scraper.scrape(data['announce'], hashes)
-				debug(str(res))
-				return res[data['info_hash']]
+			fn = filesystem.join(settings.torrents_path(), 'hdclub', t_id + '.torrent')
+			return scrape_now(fn)
+		elif 'rutor' in link:
+			t_id = re.search(r'/torrent/(\d+)', link).group(1)
+			fn = filesystem.join(settings.torrents_path(), 'rutor', t_id + '.torrent')
+			return scrape_now(fn)
 
 	except BaseException as e:
 		debug(str(e))
@@ -183,12 +201,12 @@ def seeds_peers(item):
 class STRMWriterBase(object):
 	def make_alternative(self, strmFilename, link, parser):
 		strmFilename_alt = strmFilename + '.alternative'
-			
+
 		s_alt = u''
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				s_alt = alternative.read().decode('utf-8')
-	
+
 		if not (link in s_alt):
 			try:
 				with filesystem.fopen(strmFilename_alt, "a+") as alternative:
@@ -199,6 +217,7 @@ class STRMWriterBase(object):
 					alternative.write(link.encode('utf-8') + '\n')
 			except:
 				pass
+
 
 	@staticmethod
 	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
@@ -236,20 +255,20 @@ class STRMWriterBase(object):
 						saved_dict.clear()
 
 		items.sort(key=operator.itemgetter('rank'))
-		debug('Sorded items')
-		debug(items)
+		#debug('Sorded items')
+		#debug(items)
 		return items
 
 
 	@staticmethod
 	def get_link_with_min_rank(strmFilename, settings):
 		items = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
-						
+
 		if len(items) == 0:
 			return None
 		else:
 			return items[0]['link']
-		
+
 	@staticmethod
 	def has_link(strmFilename, link):
 		strmFilename_alt = strmFilename + '.alternative'
@@ -261,16 +280,17 @@ class STRMWriterBase(object):
 							return True
 		return False
 
+
 class Informer(object):
 	def __init__(self):
 		self.__movie_api = None
-		
+
 	def make_movie_api(self, imdb_id, kp_id):
 		self.__movie_api = MovieAPI(imdb_id, kp_id)
-		
+
 	def movie_api(self):
 		return self.__movie_api
-		
+
 	def filename_with(self, title, originaltitle, year):
 		if title == originaltitle:
 			filename = title
@@ -279,23 +299,23 @@ class Informer(object):
 		elif title != '' and originaltitle == '':
 			filename = title
 		else:
-			filename = title + ' # ' + originaltitle 
-			
+			filename = title + ' # ' + originaltitle
+
 		if year != None or year != '' or year != 0:
 			filename += ' (' + str(year) + ')'
-		
+
 		return filename
-		
+
 	def make_filename_imdb(self):
 		if self.__movie_api:
 			title 			= self.__movie_api['title']
 			originaltitle	= self.__movie_api['original_title']
 			year			= self.__movie_api['release_date'].split('-')[0]
-			
+
 			return self.filename_with(title, originaltitle, year)
-			
+
 		return None
-		
+
 class DescriptionParserBase(Informer):
 	_dict = {}
 
@@ -315,13 +335,13 @@ class DescriptionParserBase(Informer):
 
 	def get(self, tag, def_value):
 		return self._dict.get(tag, def_value)
-			
+
 	def parsed(self):
 		return self.OK
 
-	def parse(self):	
+	def parse(self):
 		raise NotImplementedError("def parse(self): not imlemented.\nPlease Implement this method")
-		
+
 	def fanart(self):
 		if 'fanart' in self._dict:
 			return self._dict['fanart']
@@ -345,7 +365,7 @@ class DescriptionParserBase(Informer):
 
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
-		
+
 		self._dict.clear()
 		self._dict['full_title'] = full_title
 		self.content = content
@@ -355,50 +375,51 @@ class DescriptionParserBase(Informer):
 		self.OK = self.parse()
 
 	def make_filename(self):
-		
+
 		try:
 			if 'imdb_id' in self._dict:
 				return self.make_filename_imdb()
 		except:
 			pass
-			
+
 		title 			= self._dict.get('title', '')
 		originaltitle 	= self._dict.get('originaltitle', '')
 		year			= self._dict.get('year', '')
-		
+
 		return self.filename_with(title, originaltitle, year)
 		#return filename
-			
+
 	def need_skipped(self, full_title):
-		
+
 		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'[Season', u'Half-SBS']:
 			if phrase in full_title:
 				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
-		
-				
+
+
 			if re.search('\(\d\d\d\d[-/]', full_title.encode('utf-8')):
 				debug('Skipped by: Year')
 				return True
-		
+
 		return False
-		
+
 class TorrentPlayer(object):
 
 	@staticmethod
 	def is_playable(name):
 		filename, file_extension = os.path.splitext(name)
 		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
-	
+
 	def AddTorrent(self, path):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		self.path = path
-		
+
 	def CheckTorrentAdded(self):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		return filesystem.exists(self.path)
 
-	def Name(self, name):
+	@staticmethod
+	def Name(name):
 		try:
 			return name.decode('utf-8')
 		except UnicodeDecodeError:
@@ -449,9 +470,9 @@ class TorrentPlayer(object):
 					size = f['length']
 					#debug(name)
 					if TorrentPlayer.is_playable(name):
-						playable_items.append({'index': i, 'name': self.Name(name), 'size': size})
+						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
 			else:
-				playable_items = [ {'index': 0, 'name': self.Name(info['name']), 'size': info['length'] } ]
+				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info['name']), 'size': info['length'] } ]
 		except UnicodeDecodeError:
 			return None
 
@@ -459,12 +480,12 @@ class TorrentPlayer(object):
 
 	def StartBufferFile(self, fileIndex):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		
+
 	def CheckBufferComplete(self):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		
+
 	def GetBufferingProgress(self):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		
+
 	def GetStreamURL(self, playable_item):
 		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")

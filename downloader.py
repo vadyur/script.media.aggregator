@@ -15,6 +15,8 @@ class Downloader(object):
             return 'hdclub'
         elif 'anidub' in self.url:
             return 'anidub'
+        elif 'rutor' in self.url:
+            return 'rutor'
         else:
             return None
 
@@ -50,6 +52,11 @@ class Downloader(object):
     def move_file_to(self, path):
         import shutil
         src = self.get_filename()
+
+        dirname = filesystem.dirname(path)
+        if not filesystem.exists(dirname):
+            filesystem.makedirs(dirname)
+
         shutil.copy2(src, path)
         os.remove(src)
 
@@ -67,6 +74,8 @@ class TorrentDownloader(Downloader):
                 return re.search(r'\.php.+?id=(\d+)', self.url).group(1)
             elif 'anidub' in self.url:
                 return re.search(r'/(\d+)-', self.url).group(1)
+            elif 'rutor' in self.url:
+                return re.search(r'torrent/(\d+)/', self.url).group(1)
             else:
                 return None
         except BaseException as e:
@@ -84,6 +93,9 @@ class TorrentDownloader(Downloader):
         elif 'anidub' in self.url:
             import anidub
             return anidub.download_torrent(self.url, self.get_filename(), self.settings)
+        elif 'rutor' in self.url:
+            import rutor
+            return rutor.download_torrent(self.url, self.get_filename(), self.settings)
 
 
 

@@ -318,7 +318,7 @@ def write_movie(post, settings, tracker):
 				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
 
 			from downloader import TorrentDownloader
-			TorrentDownloader(parser.link(), settings.addon_data_path, settings).download()
+			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
 		# time.sleep(1)
 
@@ -345,7 +345,7 @@ def write_movies(content, path, settings, tracker=False):
 
 def save_download_link(parser, settings, link):
 	try:
-		path_store = filesystem.join(settings.addon_data_path, 'nnmclub')
+		path_store = filesystem.join(settings.torrents_path(), 'nnmclub')
 		if not filesystem.exists(path_store):
 			filesystem.makedirs(path_store)
 		source = parser.link()
@@ -545,7 +545,7 @@ def get_passkey(settings=None, session=None):
 def find_direct_link(url, settings):
 	match = re.search(r'\.php.+?t=(\d+)', url)
 	if match:
-		path_store = filesystem.join(settings.addon_data_path, 'nnmclub', match.group(1))
+		path_store = filesystem.join(settings.torrents_path(), 'nnmclub', match.group(1))
 		if filesystem.exists(path_store):
 			debug('[nnm-club] Direct link found')
 			with filesystem.fopen(path_store, 'r') as f:

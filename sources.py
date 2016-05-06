@@ -117,6 +117,27 @@ def comp_str_nc(s1, s2):
 class Sources(object):
 
 	def __init__(self):
+		if not filesystem.exists(SOURCES_REAL_PATH):
+			with filesystem.fopen(SOURCES_REAL_PATH, 'w') as src:
+				src.write('<sources>\n'
+						  '    <programs>\n'
+				          '        <default pathversion="1"></default>\n'
+				          '    </programs>\n'
+				          '    <video>\n'
+				          '        <default pathversion="1"></default>\n'
+				          '    </video>\n'
+				          '    <music>\n'
+				          '        <default pathversion="1"></default>\n'
+				          '    </music>\n'
+				          '    <pictures>\n'
+				          '        <default pathversion="1"></default>\n'
+				          '    </pictures>\n'
+				          '    <files>\n'
+				          '        <default pathversion="1"></default>\n'
+				          '    </files>\n'
+						  '</sources>\n'
+				)
+
 		self.xml_tree = ET.parse(SOURCES_REAL_PATH)
 		self.sources = None
 

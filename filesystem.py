@@ -8,8 +8,10 @@ class MakeCHDirException(Exception):
 	def __init__(self, path):
 		self.path = path
 
+
 def get_filesystem_encoding():
 	return sys.getfilesystemencoding() if os.name == 'nt' else 'utf-8'
+
 
 def ensure_unicode(string, encoding=get_filesystem_encoding()):
 	if isinstance(string, str):
@@ -19,7 +21,8 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 		log.debug('\tensure_unicode(%s, encoding=%s)' % (string.encode('utf-8'), encoding))
 		
 	return string
-	
+
+
 def get_path(path):
 	errors='strict'
 
@@ -31,18 +34,23 @@ def get_path(path):
 		return path
 	return path.encode(get_filesystem_encoding(), errors)
 
+
 def exists(path):
 	return os.path.exists(get_path(path))
-	
+
+
 def getcwd():
 	return ensure_unicode(os.getcwd(), get_filesystem_encoding())
-	
+
+
 def makedirs(path):
 	os.makedirs(get_path(path))
-	
+
+
 def chdir(path):
 	os.chdir(get_path(path))
-	
+
+
 def save_make_chdir(new_path):
 	current = getcwd()
 	try:
@@ -54,6 +62,7 @@ def save_make_chdir(new_path):
 		raise MakeCHDirException(current)
 	finally:
 		return current
+
 
 class save_make_chdir_context(object):
 
@@ -76,20 +85,26 @@ class save_make_chdir_context(object):
 			log.debug("!!error!! " + str(exc_val))
 			return True
 
+
 def isfile(path):
 	return os.path.isfile(get_path(path))
-	
+
+
 def abspath(path):
 	return ensure_unicode(os.path.abspath(get_path(path)), get_filesystem_encoding())
+
 
 def relpath(path, start=getcwd()):
 	return ensure_unicode(os.path.relpath(get_path(path), get_path(start)), get_filesystem_encoding())
 
+
 def normpath(path):
 	return ensure_unicode(os.path.normpath(get_path(path)), get_filesystem_encoding())
+
 	
 def fopen(path, mode):
 	return open(get_path(path), mode)
+
 	
 def join(path, *paths):
 	path = get_path(path)
@@ -98,20 +113,49 @@ def join(path, *paths):
 		fpaths.append( get_path(p) )
 	return ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
 
+
 def listdir(path):
 	ld = []
-	for p in os.listdir(get_path(path)):
-		ld.append(ensure_unicode(p))
+	path = get_path(path)
+	if path.startswith(r'\\'):
+		with save_make_chdir_context(path):
+			for p in os.listdir('.'):
+				ld.append(ensure_unicode(p))
+	else:
+		for p in os.listdir(path):
+			ld.append(ensure_unicode(p))
+
 	return ld
+
 
 def remove(path):
 	os.remove(get_path(path))
 
+
+def copyfile(src, dst):
+	import shutil
+	shutil.copyfile(get_path(src), get_path(dst))
+
+
+def movefile(src, dst):
+	import shutil
+	shutil.move(get_path(src), get_path(dst))
+
+
 def getmtime(path):
 	return os.path.getmtime(get_path(path))
 
+
 def getctime(path):
 	return os.path.getctime(get_path(path))
+
+
+def dirname(path):
+	return ensure_unicode(os.path.dirname(get_path(path)))
+
+
+def basename(path):
+	return ensure_unicode(os.path.basename(get_path(path)))
 
 
 def test():	
@@ -131,6 +175,8 @@ def test():
 	log.debug('subpath: %s' % subpath.encode('utf-8'))
 	log.debug('subpath2: %s' % subpath2.encode('utf-8'))
 	log.debug('join(getcwd(), subpath, subpath2): %s' % fullpath.encode('utf-8'))
+
+	log.debug(u'dirname(%s): %s' % (fullpath, dirname(fullpath)))
 
 	remote_file = u'smb://vd/Incoming/test.txt'
 	if isfile(remote_file):
