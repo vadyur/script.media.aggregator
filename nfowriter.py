@@ -60,6 +60,8 @@ def write_tree(fn, root):
 			f.write(prettify(xml_text))
 	except IOError as e:
 		debug("I/O error({0}): {1}".format(e.errno, e.strerror))
+	except TypeError as te:
+		debug("Type error({0}): {1}".format(te.errno, te.strerror))
 
 
 class NFOWriter:
@@ -149,6 +151,7 @@ class NFOWriter:
 		'''
 
 		fn = make_fullpath(filename, '.nfo')
+		debug(fn)
 		write_tree(fn, root)
 
 	def add_actors(self, root):
@@ -171,7 +174,7 @@ class NFOWriter:
 			for name in self.parser.get_value('actor').split(', '):
 				if name != '':
 					actor = ET.SubElement(root, 'actor')
-					ET.SubElement(actor, 'name').text = name
+					ET.SubElement(actor, 'name').text = unicode(name)
 
 	def add_trailer(self, root):
 		kp_id = self.parser.get_value('kp_id')
@@ -204,12 +207,12 @@ class NFOWriter:
 
 	def write_rating(self, root):
 		if self.parser.get('rating', None):
-			ET.SubElement(root, 'rating').text = self.parser.get_value('rating')
+			ET.SubElement(root, 'rating').text = str(self.parser.get_value('rating'))
 			return
 
 		try:
 			debug(self.movie_api.imdbRating())
-			ET.SubElement(root, 'rating').text = self.movie_api.imdbRating()
+			ET.SubElement(root, 'rating').text = str(self.movie_api.imdbRating())
 		except:
 			pass
 
@@ -242,7 +245,7 @@ class NFOWriter:
 	def write_runtime(self, root):
 		try:
 			debug(self.movie_api.Runtime())
-			ET.SubElement(root, 'runtime').text = self.movie_api.Runtime()
+			ET.SubElement(root, 'runtime').text = str(self.movie_api.Runtime())
 		except:
 			pass
 
@@ -299,7 +302,7 @@ class NFOWriter:
 	def write_mpaa(self, root):
 		try:
 			debug('Rated: ' + self.movie_api.Rated())
-			ET.SubElement(root, 'mpaa').text = self.movie_api.Rated()
+			ET.SubElement(root, 'mpaa').text = str(self.movie_api.Rated())
 		except:
 			pass
 
@@ -369,6 +372,7 @@ class NFOWriter:
 		self.write_studio(root)
 		self.write_actor(root)
 		fn = make_fullpath(filename, '.nfo')
+		debug(fn)
 		write_tree(fn, root)
 
 	def write_tvshow_nfo(self):
@@ -400,4 +404,5 @@ class NFOWriter:
 		self.write_studio(root)
 		self.write_actor(root)
 		fn = make_fullpath('tvshow', '.nfo')
+		debug(fn)
 		write_tree(fn, root)

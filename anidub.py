@@ -295,6 +295,7 @@ def write_favorites(path, settings):
 	s = get_session(settings)
 	page = s.get('http://tr.anidub.com/favorites/')
 	soup = BeautifulSoup(page.text, 'html.parser')
+	page_no = 1
 
 	class Item:
 		def __init__(self, link, title):
@@ -302,20 +303,28 @@ def write_favorites(path, settings):
 			self.title = title
 
 	with filesystem.save_make_chdir_context(path):
-		selector = soup.select('article.story > div.story_h > div.lcol > h2 > a')
+		while True:
+			selector = soup.select('article.story > div.story_h > div.lcol > h2 > a')
+			if not selector:
+				break
 
-		cnt = 0
-		settings.progress_dialog.update(0, 'anidub favorites', path)
+			cnt = 0
+			settings.progress_dialog.update(0, 'anidub favorites', path)
 
-		for a in selector:
-			log.debug(a['href'])
-			link = a['href']
-			title = a.get_text()
-			write_tvshow_item(Item(link, title), path, settings)
+			for a in selector:
+				log.debug(a['href'])
+				link = a['href']
+				title = a.get_text()
+				write_tvshow_item(Item(link, title), path, settings)
 
-			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(selector), 'anidub favorites', path)
+				cnt += 1
+				settings.progress_dialog.update(cnt * 100 / len(selector), 'anidub favorites', path)
 
+			page_no += 1
+			page = s.get('http://tr.anidub.com/favorites/page/%d/' % page_no)
+
+			if page.status_code == requests.codes.ok:
+				soup = BeautifulSoup(page.text, 'html.parser')
 
 
 ###################################################################################################
