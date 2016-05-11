@@ -169,6 +169,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
 			player = Torrent2HTTPPlayer(settings)
+		elif settings.torrent_player == 'Ace Stream':
+			import aceplayer
+			player = aceplayer.AcePlayer(settings)
 
 		debug('------------ Open torrent: ' + path)
 		player.AddTorrent(path)
@@ -318,6 +321,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		# Wait until playing finished or abort requested
 		while not xbmc.abortRequested and xbmc_player.isPlaying():
+			player.loop()
 			xbmc.sleep(1000)
 
 		debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')

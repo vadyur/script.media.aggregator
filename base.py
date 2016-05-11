@@ -479,13 +479,16 @@ class TorrentPlayer(object):
 		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items }
 
 	def StartBufferFile(self, fileIndex):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def CheckBufferComplete(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def GetBufferingProgress(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def GetStreamURL(self, playable_item):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
+
+	def loop(self):
+		pass

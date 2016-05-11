@@ -42,7 +42,7 @@
     </category>
 
     <category label="P2P Сеть">
-		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http" default="torrent2http" />
+		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http|Ace Stream" default="torrent2http" />
 		<setting label="Путь для сохранения видео файлов"	type="folder" id="storage_path"	default="" visible="eq(-1,torrent2http)" />
         <setting id="upload_limit"      type="number"   label="Ограничить скорость раздачи МБит/сек (0 - неограничено)" default="0"       visible="eq(-2,torrent2http)"/>
         <setting id="download_limit"    type="number"   label="Ограничить скорость закачки МБит/сек (0 - неограничено)" default="0"       visible="eq(-3,torrent2http)"/>
