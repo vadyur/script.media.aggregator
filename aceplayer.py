@@ -22,10 +22,10 @@ class AcePlayer(TorrentPlayer):
 			with filesystem.fopen(path, 'rb') as tfile:
 				content = tfile.read()
 
-				try:
-					self.status = self.engine.load_torrent(base64.b64encode(content), 'RAW')
-				except KeyError:
-					pass
+			try:
+				self.status = self.engine.load_torrent(base64.b64encode(content), 'RAW')
+			except KeyError:
+				pass
 
 				debug('AcePlayer: Torrent loaded')
 
@@ -35,7 +35,7 @@ class AcePlayer(TorrentPlayer):
 
 	def GetStreamURL(self, playable_item):
 		file_path = playable_item['name'].replace('\\', '/').encode('utf-8')
-		link = self.engine.get_link(int(self.fileIndex), file_path)
+		link = str(self.engine.get_link(int(self.fileIndex), file_path))
 		debug('AcePlayer: GetStreamURL - ' + link)
 		return  link
 
