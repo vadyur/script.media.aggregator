@@ -20,6 +20,7 @@ user_agent 			= 'uTorrent/2200(24683)'
 def getSetting(settings_name):
 	return _addon.getSetting(settings_name)
 
+
 class Torrent2HTTPPlayer(TorrentPlayer):
 	
 	def debug(self, msg):
@@ -69,8 +70,13 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			uri = path2url(path)
 		else:
 			uri = path
-		self.debug('AddTorrent: ' + uri) 
-		
+		self.debug('AddTorrent: ' + uri)
+
+
+		add_trackers = []
+		if getSetting('add_tracker'):
+			add_trackers.append(getSetting('add_tracker'))
+
 		download_path = self.settings.storage_path
 		if download_path == '':
 			download_path = xbmc.translatePath('special://temp')
@@ -94,7 +100,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
 							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
 							keep_incomplete=False, keep_complete=True, keep_files=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
-							log_files_progress=True)
+							log_files_progress=True, trackers=add_trackers)
 
 		try:
 			self.engine.resume_file = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
