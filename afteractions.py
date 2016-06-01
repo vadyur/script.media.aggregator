@@ -42,7 +42,11 @@ class Runner(object):
 				if not filesystem.exists(filesystem.dirname(dest_path)):
 					filesystem.makedirs(filesystem.dirname(dest_path))
 
-				filesystem.movefile(self.videofile, dest_path)
+				if not filesystem.exists(dest_path):
+					#Move file if no exists
+					filesystem.movefile(self.videofile, dest_path)
+				else:
+					filesystem.remove(self.videofile)
 
 			if settings.copy_torrent and settings.copy_torrent_path and filesystem.exists(settings.copy_torrent_path):
 				debug('Runner: copy torrent')
