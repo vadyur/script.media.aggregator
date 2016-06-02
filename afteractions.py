@@ -22,7 +22,7 @@ class Runner(object):
 		debug('relativevideofile: ' + self.relativevideofile)
 		debug('torrent_source: ' + self.torrent_source)
 		debug('short_name: ' + self.short_name)
-		debug('downloaded: ' + self.downloaded)
+		debug('downloaded: ' + str(self.downloaded))
 		debug('videotype: ' + self.videotype)
 
 		if settings.run_script:
@@ -33,7 +33,7 @@ class Runner(object):
 			debug('Runner: remove_files')
 			filesystem.remove(self.videofile)
 
-		if float(self.downloaded) > 99:
+		if float(self.downloaded) > 99 and self.all_torrent_files_exists():
 
 			if settings.move_video and settings.copy_video_path and filesystem.exists(settings.copy_video_path):
 				debug('Runner: move video')
@@ -52,6 +52,23 @@ class Runner(object):
 				debug('Runner: copy torrent')
 				dest_path = filesystem.join(settings.copy_torrent_path, filesystem.basename(self.torrent_path))
 				filesystem.copyfile(self.torrent_path, dest_path)
+
+	def all_torrent_files_exists(self):
+		from base import TorrentPlayer
+		tp = TorrentPlayer()
+		tp.AddTorrent(self.torrent)
+		data = tp.GetLastTorrentData()
+		files = data['files']
+
+		for item in files:
+			path = filesystem.join(self.settings.storage_path, data['name'], item['name'])
+			if not filesystem.exists(path):
+				path = filesystem.join(self.settings.copy_video_path, data['name'], item['name'])
+				if not filesystem.exists(path):
+					return False
+
+		return True
+
 
 	@staticmethod
 	def get_addon_path():
