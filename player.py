@@ -335,6 +335,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		torrent_info = player.GetTorrentInfo()
 		torrent_path = player.path
+		info_hash = player.GetLastTorrentData()['info_hash']
 
 		xbmc.executebuiltin('Container.Refresh')
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
@@ -351,7 +352,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:
 		import afteractions
-		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path)
+		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)
 
 	return play_torrent_variant.resultOK
 
