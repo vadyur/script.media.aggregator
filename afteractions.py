@@ -76,7 +76,7 @@ class Runner(object):
 				try:
 					from bencode import bdecode, bencode
 					decoded = bdecode(resume.read())
-					decoded['save_path'] = dest
+					decoded['save_path'] = dest.encode('utf-8')
 					data = bencode(decoded)
 
 				except BTFailure:
