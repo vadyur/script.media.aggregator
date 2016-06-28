@@ -42,6 +42,65 @@ def get_tmdb_api_key():
 		debug('get_tmdb_api_key: ' + str(e))
 		return 'f7f51775877e0bb6703520952b3c7840'
 
+
+class tmdb_movie_item(object):
+	def __init__(self, json_data):
+		self.json_data_ = json_data
+
+	def poster(self):
+		try:
+			return 'http://image.tmdb.org/t/p/w500' + self.json_data_['poster_path']
+		except BaseException:
+			return ''
+
+	def fanart(self):
+		try:
+			return 'http://image.tmdb.org/t/p/original' + self.json_data_['backdrop_path']
+		except BaseException:
+			return ''
+
+	def get_art(self):
+		art = {}
+
+		path = self.poster()
+
+		art['thumb'] = path
+		art['poster'] = path
+		art['thumbnailImage'] = path
+
+		art['fanart'] = self.fanart()
+
+		return art
+
+	def get_info(self):
+		info = {}
+
+		if 'genres' in self.json_data_:
+			info['genre'] = u', '.join([i['name'] for i in self.json_data_['genres']])
+
+		if 'overview' in self.json_data_:
+			info['plot'] = self.json_data_['overview']
+
+		string_items = ['director', 'mpaa', 'title', 'originaltitle', 'duration', 'studio', 'code', 'aired', 'credits', 'album', 'votes', 'trailer', 'thumb']
+		for item in string_items:
+			if item in self.json_data_:
+				info[item] = self.json_data_[item]
+
+		return info
+
+	def imdb(self):
+		try:
+			return self.json_data_['imdb_id']
+		except BaseException:
+			return None
+
+
+
+		#integer_items = ['year', 'episode', 'season', 'top250', 'tracknumber']
+
+		#float_items = ['rating']
+
+
 class KinopoiskAPI(object):
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
@@ -130,9 +189,26 @@ class MovieAPI(KinopoiskAPI):
 
 	def url_imdb_id(self, idmb_id):
 		return 'http://api.themoviedb.org/3/movie/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
-		
-#	def url_tmdb_images(self, id):
-#		return api_url + '/movie/' + id + '/images' + '?api_key=' + self.tmdb_api_key
+
+	@staticmethod
+	def search(title):
+		url = 'http://api.themoviedb.org/3/search/movie?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		data = json.load(urllib2.urlopen(url))
+
+		result = []
+
+		for r in data['results']:
+			if not r['overview']:
+				continue
+
+			url2 = 'http://api.themoviedb.org/3/movie/' + str(r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+			data2 = json.load(urllib2.urlopen(url2))
+
+			if 'imdb_id' in data2:
+				result.append(tmdb_movie_item(data2))
+
+		return result
+
 
 	def __init__(self, imdb_id = None, kinopoisk = None):
 		KinopoiskAPI.__init__(self, kinopoisk)
@@ -193,3 +269,7 @@ class MovieAPI(KinopoiskAPI):
 	def __getitem__(self, key):
 		return self.tmdb_data[key]
 
+
+if __name__ == '__main__':
+	for res in MovieAPI.search('terminator'):
+		print res.get_info()

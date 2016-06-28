@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import log
 from log import debug
 
@@ -259,7 +261,7 @@ class TestRunner(Runner):
 
 
 def test_resume(tr):
-	dest = '/mnt/videocache/'
+	dest = u'/mnt/videocache/фываолдж'
 	Runner.change_resume_file(tr, dest)
 
 
@@ -271,9 +273,9 @@ def test_get_relative_torrent_files_list(tr):
 
 if __name__ == '__main__':
 	tr = TestRunner()
-	tr.resume_file = r'c:\Bin\43e98a111a31e6ba50ec3b9597d5ccbb8d50eeec.resume'
-	tr.torrent_path = r'c:\Users\vd\AppData\Roaming\Kodi\userdata\addon_data\script.media.aggregator\nnmclub\1009049.torrent'
+	tr.resume_file = r'c:\Bin\626bbfbb61755200069486609d66e53146483ebe.resume'
+	tr.torrent_path = r'c:\Users\vd\AppData\Roaming\Kodi\userdata\addon_data\script.media.aggregator\nnmclub\507983.torrent'
 
-	#test_resume(tr)
+	test_resume(tr)
 
-	test_get_relative_torrent_files_list(tr)
+	#test_get_relative_torrent_files_list(tr)

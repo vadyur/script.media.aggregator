@@ -1,25 +1,25 @@
 ﻿# -*- coding: utf-8 -*-
 
-import log
-from log import debug
 
-
-import sys
-import xbmcplugin, xbmcgui, xbmc, xbmcaddon
-import anidub, hdclub, nnmclub, filesystem
-import urllib, os, requests
-import time
 import operator
+import sys
 
-import tvshowapi
-from settings import *
-from nforeader import NFOReader
-from yatpplayer import *
-from torrent2httpplayer import *
+import xbmc
+import xbmcaddon
+import xbmcgui
+import xbmcplugin
 from torrent2http import Error as TPError
-from kodidb import *
+
+import anidub
+import nnmclub
+import tvshowapi
 from base import STRMWriterBase
 from downloader import TorrentDownloader
+from kodidb import *
+from nforeader import NFOReader
+from settings import *
+from torrent2httpplayer import *
+from yatpplayer import *
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
@@ -484,6 +484,93 @@ def check_sources(settings):
 
 	return True
 
+class dialog_action_case:
+	generate = 0
+	sources = 1
+	settings = 2
+	search = 3
+	exit = 4
+
+
+def dialog_action(action, settings):
+	
+	if action == dialog_action_case.generate:
+		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
+		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
+		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
+		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+
+		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
+			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
+			action = dialog_action_case.settings
+		else:
+			from service import start_generate
+			# if check_sources(settings):
+			start_generate()
+			return True
+
+
+	if action == dialog_action_case.sources:
+		# import rpdb2
+		# rpdb2.start_embedded_debugger('pw')
+	
+		import sources
+	
+		# sources.create(settings)
+		dialog = xbmcgui.Dialog()
+		if sources.create(settings):
+			if dialog.yesno('Media Aggregator', restart_msg):
+				from service import update_library_next_start
+	
+				update_library_next_start()
+				xbmc.executebuiltin('Quit')
+	
+	if action == dialog_action_case.settings:
+		save_nnmclub_login = settings.nnmclub_login
+		save_nnmclub_password = settings.nnmclub_password
+		_addon.openSettings()
+		settings = load_settings()
+	
+		if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
+			passkey = nnmclub.get_passkey(settings=settings)
+			_addon.setSetting('nnmclub_passkey', passkey)
+			settings.nnmclub_passkey = passkey
+
+
+	if action == dialog_action_case.search:
+
+		dlg = xbmcgui.Dialog()
+		s = dlg.input(u'Введите поисковую строку')
+
+		if s:
+			debug(s)
+
+			from movieapi import MovieAPI
+
+			addon_handle = int(sys.argv[1])
+			xbmcplugin.setContent(addon_handle, 'movies')
+
+			for item in MovieAPI.search(s.decode('utf-8')):
+				info = item.get_info()
+				li = xbmcgui.ListItem(info['title'])
+				li.setInfo('video', info)
+				li.setArt(item.get_art())
+
+
+				url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
+							{ 'action': 'add_media',
+							  'title': info['title'].encode('utf-8'),
+							  'imdb': item.imdb() })
+
+				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
+
+			xbmcplugin.endOfDirectory(addon_handle)
+
+	if action > dialog_action_case.settings or action < dialog_action_case.generate:
+		return True
+
+	return False
+
 
 def main():
 	params 		= get_params()
@@ -504,57 +591,37 @@ def main():
 				debug('scan for anidub-add-favorites')
 				anidub.write_favorites(settings.anime_tvshow_path(), settings)
 
+	elif params.get('action') == 'settings':
+		dialog_action(dialog_action_case.settings, settings)
+
+	elif params.get('action') == 'search':
+		dialog_action(dialog_action_case.search, settings)
+
+	elif params.get('action') == 'add_media':
+		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
+		imdb = params.get('imdb')
+		add_media(title, imdb, settings)
+
 	else:
 		while True:
 			dialog = xbmcgui.Dialog()
-			rep = dialog.select(u'Выберите опцию:', [	u'Генерировать .strm и .nfo файлы',
+			action = dialog.select(u'Выберите опцию:', [u'Генерировать .strm и .nfo файлы',
 														u'Создать источники',
 														u'-НАСТРОЙКИ',
+														u'Поиск',
 														u'Выход'])
-			if rep == 0:
-				anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
-				hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
-				nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-				rutor_enable = _addon.getSetting('rutor_enable') == 'true'
-
-				if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
-					xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
-					rep = 2
-				else:
-					from service import start_generate
-					#if check_sources(settings):
-					start_generate()
-					break
-
-			if rep == 1:
-				#import rpdb2
-				#rpdb2.start_embedded_debugger('pw')
-
-				import sources
-				#sources.create(settings)
-				dialog = xbmcgui.Dialog()
-				if sources.create(settings):
-					if dialog.yesno('Media Aggregator', restart_msg):
-						from service import update_library_next_start
-						update_library_next_start()
-						xbmc.executebuiltin('Quit')
-
-			if rep == 2:
-				save_nnmclub_login = settings.nnmclub_login
-				save_nnmclub_password = settings.nnmclub_password
-				_addon.openSettings()
-				settings = load_settings()
-				
-				if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
-					passkey = nnmclub.get_passkey(settings=settings)
-					_addon.setSetting('nnmclub_passkey', passkey)
-					settings.nnmclub_passkey = passkey
-
-				# check_sources(settings)
-
-			if rep > 2 or rep < 0:
+			
+			if dialog_action(action, settings):
 				break
 
+
+def add_media(title, imdb, settings):
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+	nnmclub.search(title, imdb, settings)
+
+	if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+		xbmc.executebuiltin('UpdateLibrary("video")')
 
 if __name__ == '__main__':
 	main()
