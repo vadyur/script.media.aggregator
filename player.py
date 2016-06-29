@@ -20,6 +20,7 @@ from nforeader import NFOReader
 from settings import *
 from torrent2httpplayer import *
 from yatpplayer import *
+from movieapi import MovieAPI
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
@@ -489,11 +490,15 @@ class dialog_action_case:
 	sources = 1
 	settings = 2
 	search = 3
-	exit = 4
+	catalog = 4
+	exit = 5
 
 
 def dialog_action(action, settings):
-	
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+
+
 	if action == dialog_action_case.generate:
 		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
 		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
@@ -544,32 +549,54 @@ def dialog_action(action, settings):
 
 		if s:
 			debug(s)
+			show_list(MovieAPI.search(s.decode('utf-8')))
 
-			from movieapi import MovieAPI
+	if action == dialog_action_case.catalog:
+		addon_handle = int(sys.argv[1])
+		xbmcplugin.setContent(addon_handle, 'movies')
 
-			addon_handle = int(sys.argv[1])
-			xbmcplugin.setContent(addon_handle, 'movies')
+		listing = {
 
-			for item in MovieAPI.search(s.decode('utf-8')):
-				info = item.get_info()
-				li = xbmcgui.ListItem(info['title'])
-				li.setInfo('video', info)
-				li.setArt(item.get_art())
+			'popular': u'Популярные',
+			'top_rated': u'Рейтинговые',
+			'popular_tv': u'Популярные сериалы',
+			'top_rated_tv': u'Рейтинговые сериалы'
+		}
+
+		for l in listing:
+			li = xbmcgui.ListItem(listing[l])
+			li.setProperty("folder", "true")
+			li.setProperty('IsPlayable', 'false')
+
+			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l
+			debug(url)
+			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 
 
-				url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
-							{ 'action': 'add_media',
-							  'title': info['title'].encode('utf-8'),
-							  'imdb': item.imdb() })
-
-				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
-
-			xbmcplugin.endOfDirectory(addon_handle)
+		xbmcplugin.endOfDirectory(addon_handle)
 
 	if action > dialog_action_case.settings or action < dialog_action_case.generate:
 		return True
 
 	return False
+
+
+def show_list(listing):
+	addon_handle = int(sys.argv[1])
+	xbmcplugin.setContent(addon_handle, 'movies')
+	for item in listing:
+		info = item.get_info()
+		li = xbmcgui.ListItem(info['title'])
+		li.setInfo('video', info)
+		li.setArt(item.get_art())
+
+		url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
+			{'action': 'add_media',
+			 'title': info['title'].encode('utf-8'),
+			 'imdb': item.imdb()})
+
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
+	xbmcplugin.endOfDirectory(addon_handle)
 
 
 def main():
@@ -597,6 +624,19 @@ def main():
 	elif params.get('action') == 'search':
 		dialog_action(dialog_action_case.search, settings)
 
+	elif params.get('action') == 'catalog':
+		dialog_action(dialog_action_case.catalog, settings)
+
+	elif params.get('action') == 'show_category':
+		if params.get('category') == 'popular':
+			show_list(MovieAPI.popular())
+		if params.get('category') == 'top_rated':
+			show_list(MovieAPI.top_rated())
+		if params.get('category') == 'popular_tv':
+			show_list(MovieAPI.popular_tv())
+		if params.get('category') == 'top_rated_tv':
+			show_list(MovieAPI.top_rated_tv())
+
 	elif params.get('action') == 'add_media':
 		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
 		imdb = params.get('imdb')
@@ -609,6 +649,7 @@ def main():
 														u'Создать источники',
 														u'-НАСТРОЙКИ',
 														u'Поиск',
+														u'Каталог',
 														u'Выход'])
 			
 			if dialog_action(action, settings):
