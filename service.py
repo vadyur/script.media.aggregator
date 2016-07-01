@@ -270,6 +270,39 @@ def scrape_case():
 			log.print_tb(e)
 
 
+def add_media_process(title, imdb, settings):
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+	nnmclub.search_generate(title, imdb, settings)
+
+	if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+		xbmc.executebuiltin('UpdateLibrary("video")')
+
+def add_media_case():
+	if _addon.getSetting('role') == 'client':
+		return
+
+	path = filesystem.join(_addondir, 'add_media')
+	if filesystem.exists(path):
+		with filesystem.fopen(path, 'r') as f:
+			while True:
+				try:
+					title = f.readline().strip(' \n\t\r').decode('utf-8')
+					imdb = f.readline().strip(' \n\t\r')
+
+					log.debug('add_media_case: ' + imdb)
+					log.debug(title)
+
+					if title and imdb:
+						add_media_process(title, imdb, player.load_settings())
+					else:
+						break
+				except BaseException as e:
+					log.print_tb(e)
+
+		filesystem.remove(path)
+
+
 def main():
 	global _addon
 	_addon = AddonRO()
@@ -288,6 +321,7 @@ def main():
 		try:
 			scrape_case()
 			update_case()
+			add_media_case()
 
 		finally:
 			sleep(1)
@@ -311,6 +345,28 @@ def update_library_next_start():
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass
+
+def add_media(title, imdb):
+	path = filesystem.join(_addondir, 'add_media')
+	log.debug(path)
+
+	#if not filesystem.exists(path):
+	#	with filesystem.fopen(path, 'w'):
+	#		pass
+
+	if filesystem.exists(path):
+		with filesystem.fopen(path, 'r') as f:
+			s = f.read()
+			if imdb.encode('utf-8') in s:
+				return
+
+	with filesystem.fopen(path, 'a+') as f:
+		log.debug('writing...')
+		seq = [title.encode('utf-8') + '\n', imdb.encode('utf-8') + '\n']
+		f.writelines(seq)
+
+	#with filesystem.fopen(path, 'r') as f:
+	#	log.debug(f.read())
 
 
 def save_dbs():

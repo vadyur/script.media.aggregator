@@ -635,7 +635,7 @@ def make_search_url(what, IDs):
 	return url
 
 
-def search(what, imdb, settings):
+def search_generate(what, imdb, settings):
 
 	session = create_session(settings)
 
@@ -684,7 +684,7 @@ def search_results(imdb, session, settings, url):
 	enumerator.process_page(real_url(url))
 	result = []
 	for post in enumerator.items():
-		if int(post['seeds']) < 5:
+		if 'seeds' in post and int(post['seeds']) < 5:
 			continue
 
 		parser = DescriptionParser(post['a'], settings=settings, tracker=True)
