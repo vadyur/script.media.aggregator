@@ -691,18 +691,40 @@ def main():
 				add_media(title, imdb)
 
 	else:
+		menu_items = [u'Генерировать .strm и .nfo файлы',
+		              u'Создать источники',
+		              u'Настройки',
+		              u'Поиск',
+		              u'Каталог'
+		]
+		menu_actions = ['generate',
+		                'sources',
+						'settings',
+						'search',
+						'catalog'
+		]
+
+		if params.get('menu') in menu_actions:
+			dialog_action(menu_actions.index(params.get('menu')), settings)
+		else:
+			indx = 0
+			addon_handle = int(sys.argv[1])
+			for menu in menu_items:
+				li = xbmcgui.ListItem(menu)
+				url = 'plugin://script.media.aggregator/?menu=' + menu_actions[indx]
+				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=indx > dialog_action_case.settings)
+				indx += 1
+
+			xbmcplugin.endOfDirectory(addon_handle)
+
+		'''
 		while True:
 			dialog = xbmcgui.Dialog()
-			action = dialog.select(u'Выберите опцию:', [u'Генерировать .strm и .nfo файлы',
-			                                            u'Создать источники',
-			                                            u'-НАСТРОЙКИ',
-			                                            u'Поиск',
-			                                            u'Каталог',
-			                                            u'Выход'])
+			action = dialog.select(u'Выберите опцию:', menu_items)
 
 			if dialog_action(action, settings):
 				break
-
+		'''
 
 if __name__ == '__main__':
 	main()
