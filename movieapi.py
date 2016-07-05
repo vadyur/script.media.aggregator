@@ -222,7 +222,7 @@ class MovieAPI(KinopoiskAPI):
 		url = 'http://api.themoviedb.org/3/search/movie?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		movies = MovieAPI.tmdb_query(url)
 		url = 'http://api.themoviedb.org/3/search/tv?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
-		tv = MovieAPI.tmdb_query(url)
+		tv = MovieAPI.tmdb_query(url, 'tv')
 		return movies + tv
 
 	@staticmethod

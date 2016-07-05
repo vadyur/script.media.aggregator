@@ -684,7 +684,7 @@ def main():
 				xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
 		elif found == 'tvshow':
 			if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):
-				pass
+				xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % r['file'].encode('utf-8'))
 		else:
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
