@@ -5,7 +5,6 @@ from log import debug
 
 
 import sys, xbmc, re, xbmcgui
-import urllib
 
 import pyxbmct.addonwindow as pyxbmct
 

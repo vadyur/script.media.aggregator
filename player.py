@@ -637,6 +637,10 @@ def main():
 	elif params.get('action') == 'search':
 		dialog_action(dialog_action_case.search, settings)
 
+	elif params.get('action') == 'search_context':
+		s = params.get('s')
+		show_list(MovieAPI.search(s.decode('utf-8')))
+
 	elif params.get('action') == 'catalog':
 		dialog_action(dialog_action_case.catalog, settings)
 

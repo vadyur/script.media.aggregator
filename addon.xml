@@ -21,6 +21,12 @@
 	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
 	</item>
   </extension>
+  <extension point="kodi.context.item" library="context_search.py">
+	<item>
+	  <label>Media Aggregator: поиск</label>
+	  <visible>true</visible>
+	</item>
+  </extension>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
