@@ -293,6 +293,10 @@ class NFOWriter:
 			for fa in self.tvshow_api.Fanart():
 				fanarts.append(fa['path'])
 
+		if 'fanart' in self.parser.Dict():
+			for fa in self.parser.get('fanart', []):
+				fanarts.append(fa)
+
 		if len(fanarts) > 0:
 			fanart = ET.SubElement(root, 'fanart')
 			for fa in fanarts:
