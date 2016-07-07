@@ -689,7 +689,7 @@ def main():
 		elif found == 'tvshow':
 			if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):
 				xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % r['file'].encode('utf-8'))
-		else:
+		elif not params.get('norecursive'):
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
 				add_media(title, imdb)

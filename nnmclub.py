@@ -637,34 +637,38 @@ def make_search_url(what, IDs):
 
 def search_generate(what, imdb, settings):
 
+	count = 0
 	session = create_session(settings)
 
 	if settings.movies_save:
 		url = make_search_url(what, '227,954')
 		result1 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
-			make_search_strms(result1, settings, 'movie')
+			count += make_search_strms(result1, settings, 'movie')
 
 	if settings.animation_save:
 		url = make_search_url(what, '661')
 		result2 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
-			make_search_strms(result2, settings, 'movie')
+			count += make_search_strms(result2, settings, 'movie')
 
 	if settings.animation_tvshows_save:
 		url = make_search_url(what, '232')
 		result3 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			make_search_strms(result3, settings, 'tvshow')
+			count += make_search_strms(result3, settings, 'tvshow')
 
 	if settings.tvshows_save:
 		url = make_search_url(what, '768')
 		result4 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			make_search_strms(result4, settings, 'tvshow')
+			count += make_search_strms(result4, settings, 'tvshow')
+
+	return count
 
 
 def make_search_strms(result, settings, type):
+	count = 0
 	for item in result:
 		link = item['link']
 		parser = item['parser']
@@ -672,9 +676,13 @@ def make_search_strms(result, settings, type):
 			if type == 'movie':
 				import movieapi
 				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser)
+				count += 1
 			if type == 'tvshow':
 				import tvshowapi
 				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser)
+				count += 1
+
+	return count
 
 
 def search_results(imdb, session, settings, url):
