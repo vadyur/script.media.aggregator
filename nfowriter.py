@@ -217,6 +217,13 @@ class NFOWriter:
 			pass
 
 	def write_year(self, root):
+
+		if self.tvshow_api:
+			year = self.tvshow_api.Year()
+			if year:
+				ET.SubElement(root, 'year').text = str(year)
+				return
+
 		self.add_element_copy(root, 'year', self.parser)
 
 	def write_top250(self, root):

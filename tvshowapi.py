@@ -615,6 +615,11 @@ class MyShowsAPI(object):
 					if tag in self.dictMyShows:
 						res[self.dictMyShows[tag]] = ep[tag]
 		return res
+
+	def getYear(self):
+		if self.data():
+			return self.data().get('year')
+
 				
 	def episodes(self, season):
 		ren_items = {'airDate': 'aired',
@@ -670,6 +675,10 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 		if 'plot' in res:
 			res['plot'] = NFOWriter(None).stripHtml(res['plot'])
 
+		return res
+
+	def Year(self):
+		res = MyShowsAPI.getYear(self)
 		return res
 
 '''
