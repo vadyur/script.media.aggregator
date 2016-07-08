@@ -393,8 +393,14 @@ def add_media(title, imdb):
 				dlg = xbmcgui.Dialog()
 
 				count = f.read()
+
+				try:
+					count = int(count)
+				except:
+					count = 0
+
 				if count:
-					dlg.notification(u'Media Aggregator', u'"%s" добавлено в библиотеку, найдено %s источников.' % (title, count))
+					dlg.notification(u'Media Aggregator', u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
 
 					url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
 						{'action': 'add_media',
@@ -405,7 +411,8 @@ def add_media(title, imdb):
 					xbmc.executebuiltin('RunPlugin("%s")' % url)
 				else:
 					dlg.notification(u'Media Aggregator',
-					                 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title)
+					                 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
+					                 time=10000)
 			filesystem.remove(ended_path)
 
 			break
