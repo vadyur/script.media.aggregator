@@ -122,6 +122,12 @@ class tmdb_movie_item(object):
 			return None
 
 
+	def tmdb_id(self):
+		if 'id' in self.json_data_:
+			return self.json_data_['id']
+		else:
+			return None
+
 
 		#integer_items = ['year', 'episode', 'season', 'top250', 'tracknumber']
 
@@ -227,20 +233,24 @@ class MovieAPI(KinopoiskAPI):
 
 	@staticmethod
 	def tmdb_query(url, type='movie'):
-		data = json.load(urllib2.urlopen(url))
 		result = []
-		for r in data['results']:
-			if not r['overview']:
-				continue
+		try:
+			data = json.load(urllib2.urlopen(url))
+		except urllib2.HTTPError:
+			return []
+		if 'results' in data:
+			for r in data['results']:
+				if not r['overview']:
+					continue
 
-			url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
-				r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
-			data2 = json.load(urllib2.urlopen(url2))
+				url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
+					r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
+				data2 = json.load(urllib2.urlopen(url2))
 
-			if 'imdb_id' in data2:
-				result.append(tmdb_movie_item(data2))
-			elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
-				result.append(tmdb_movie_item(data2))
+				if 'imdb_id' in data2:
+					result.append(tmdb_movie_item(data2))
+				elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
+					result.append(tmdb_movie_item(data2))
 		return result
 
 	@staticmethod
@@ -263,6 +273,16 @@ class MovieAPI(KinopoiskAPI):
 		url = 'http://api.themoviedb.org/3/tv/top_rated?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		return MovieAPI.tmdb_query(url, 'tv')
 
+	@staticmethod
+	def show_similar_t(tmdb_id, type):
+		url = 'http://api.themoviedb.org/3/' + type + '/' + str(
+				tmdb_id) + '/similar?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		log.debug(url)
+		return MovieAPI.tmdb_query(url, type)
+
+	@staticmethod
+	def show_similar(tmdb_id):
+		return MovieAPI.show_similar_t(tmdb_id, 'movie') + MovieAPI.show_similar_t(tmdb_id, 'tv')
 
 	def __init__(self, imdb_id = None, kinopoisk = None):
 		KinopoiskAPI.__init__(self, kinopoisk)

@@ -608,6 +608,11 @@ def show_list(listing):
 			 'title': info['title'].encode('utf-8'),
 			 'imdb': item.imdb()})
 
+		li.addContextMenuItems([
+			#(u'Смотрите также', 'ActivateWindow(Video,"plugin://script.media.aggregator/?action=show_similar&tmdb=%s", return)' % str(item.tmdb_id())),
+			(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
+		])
+
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 	xbmcplugin.endOfDirectory(addon_handle)
 
@@ -653,6 +658,11 @@ def main():
 			show_list(MovieAPI.popular_tv())
 		if params.get('category') == 'top_rated_tv':
 			show_list(MovieAPI.top_rated_tv())
+
+	elif params.get('action') == 'show_similar':
+		listing = MovieAPI.show_similar(params.get('tmdb'))
+		log.debug(listing)
+		show_list(listing)
 
 	elif params.get('action') == 'add_media':
 		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
