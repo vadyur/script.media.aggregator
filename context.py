@@ -66,6 +66,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#list.addItem('Item 2\nNew line')
 			#list.addItem('Item 3\nNew line\nAdd line')
 
+		li = xbmcgui.ListItem(u'НАСТРОЙКИ')
+		li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
+		self.list.addItem(li)
+
 		self.setFocus(self.list)
 		self.connect(self.list, self.make_choice)
 
@@ -185,6 +189,12 @@ def main():
 	cursel = window.list.getSelectedItem()
 	debug(cursel.getLabel())
 	link = cursel.getProperty('link')
+	debug(link)
+
+	if link == 'plugin://script.media.aggregator/?action=settings':
+		xbmc.executebuiltin('Addon.OpenSettings(script.media.aggregator)')
+		del window
+		return
 
 	selected_file = None
 	if window.has_select_file:
@@ -192,7 +202,6 @@ def main():
 		selected_file = window.files.getSelectedItem().getProperty('index')
 
 	del window
-
 
 	with filesystem.fopen(path.decode('utf-8'), 'r') as strm:
 		src_link = strm.read()
