@@ -128,7 +128,10 @@ def load_settings():
 	                    torrent_path        =torrent_path)
 
 	settings.addon_data_path		= _addondir
-	settings.run_script				= getSetting( 'run_script') == 'true'
+	if getSetting('data_path'):
+		settings.addon_data_path    = getSetting('data_path')
+
+	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
 	settings.move_video             = getSetting('action_files').decode('utf-8') == u'переместить'

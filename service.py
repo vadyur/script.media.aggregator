@@ -20,8 +20,10 @@ import xml.etree.ElementTree as ET
 
 _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
-_addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+_addondir   =   xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
 
+
+# ------------------------------------------------------------------------------------------------------------------- #
 class AddonRO(object):
 	def __init__(self, xml_filename='settings.xml'):
 		self._addon_xml 	= filesystem.join(_addondir, xml_filename)
@@ -42,7 +44,6 @@ class AddonRO(object):
 			self.root = ET.fromstring(content)
 		self.mtime = filesystem.getmtime(self._addon_xml)
 
-
 	# get setting no caching
 	def getSetting(self, s):
 		if not filesystem.exists(self._addon_xml):
@@ -56,6 +57,8 @@ class AddonRO(object):
 				return item.get('value').encode('utf-8')
 		return u''
 
+
+# ------------------------------------------------------------------------------------------------------------------- #
 class Addon(AddonRO):
 
 	@staticmethod
@@ -91,6 +94,14 @@ class Addon(AddonRO):
 			f.write('</settings>\n')
 
 		self.mtime = filesystem.getmtime(self._addon_xml)
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
+def addon_data_path():
+	if _addon.getSetting('data_path'):
+		return _addon.getSetting('data_path')
+	else:
+		return _addondir
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -147,7 +158,7 @@ def update_service(show_progress=False):
 def chunks(l, n):
 	"""Yield successive n-sized chunks from l."""
 	for i in xrange(0, len(l), n):
-		yield l[i:i+n]
+		yield l[i:i + n]
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -220,8 +231,10 @@ def update_case():
 		delay_startup = 0
 
 	# User action
-	path = filesystem.join(_addondir, 'start_generate')
-	if filesystem.exists(path):
+	path = filesystem.join(addon_data_path(), 'start_generate')
+
+	if filesystem.exists(path) and _addon.getSetting('role').decode('utf-8') != u'клиент':
+
 		log.debug('User action!!!')
 
 		filesystem.remove(path)
@@ -286,7 +299,7 @@ def add_media_process(title, imdb, settings):
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
 
-	path = filesystem.join(_addondir, imdb + '.ended')
+	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
 
@@ -296,7 +309,7 @@ def add_media_case():
 	if _addon.getSetting('role').decode('utf-8') == u'клиент':
 		return
 
-	path = filesystem.join(_addondir, 'add_media')
+	path = filesystem.join(addon_data_path(), 'add_media')
 	if filesystem.exists(path):
 		with filesystem.fopen(path, 'r') as f:
 			while True:
@@ -323,7 +336,7 @@ def main():
 	_addon = AddonRO()
 	player._addon = _addon
 
-	path = filesystem.join(_addondir, 'update_library_next_start')
+	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
 		log.debug('User action!!! update_library_next_start')
 		xbmc.executebuiltin('UpdateLibrary("video")')
@@ -350,7 +363,7 @@ def main():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def start_generate():
-	path = filesystem.join(_addondir, 'start_generate')
+	path = filesystem.join(addon_data_path(), 'start_generate')
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass
@@ -358,7 +371,7 @@ def start_generate():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_library_next_start():
-	path = filesystem.join(_addondir, 'update_library_next_start')
+	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass
@@ -366,12 +379,12 @@ def update_library_next_start():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media(title, imdb):
-	path = filesystem.join(_addondir, 'add_media')
+	path = filesystem.join(addon_data_path(), 'add_media')
 	log.debug(path)
 
-	#if not filesystem.exists(path):
-	#	with filesystem.fopen(path, 'w'):
-	#		pass
+	# if not filesystem.exists(path):
+	# 	with filesystem.fopen(path, 'w'):
+	# 		pass
 
 	if filesystem.exists(path):
 		with filesystem.fopen(path, 'r') as f:
@@ -384,8 +397,7 @@ def add_media(title, imdb):
 		seq = [title.encode('utf-8') + '\n', imdb.encode('utf-8') + '\n']
 		f.writelines(seq)
 
-
-	ended_path = filesystem.join(_addondir, imdb + '.ended')
+	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
 	for cnt in range(300):
 
 		if filesystem.exists(ended_path):
@@ -396,7 +408,7 @@ def add_media(title, imdb):
 
 				try:
 					count = int(count)
-				except:
+				except BaseException:
 					count = 0
 
 				if count:

@@ -17,7 +17,7 @@
 		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" visible="!eq(-3,клиент)"/>
 		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false" visible="!eq(-4,клиент)"/>
 		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8" visible="!eq(-5,клиент)"/>
-
+        <setting label="Общая папка с данными... (по-умолчанию папка плагина)" type="folder" id="data_path" default="" visible="!eq(-6,одиночный)"/>
         <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default=""/>
     </category>
 
