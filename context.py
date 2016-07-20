@@ -66,8 +66,13 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#list.addItem('Item 2\nNew line')
 			#list.addItem('Item 3\nNew line\nAdd line')
 
-		li = xbmcgui.ListItem(u'НАСТРОЙКИ')
+		li = xbmcgui.ListItem(u'НАСТРОЙКИ...')
 		li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
+		self.list.addItem(li)
+
+		# (u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
+		li = xbmcgui.ListItem(u'СМОТРИТЕ ТАКЖЕ...')
+		li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
 		self.list.addItem(li)
 
 		self.setFocus(self.list)
@@ -147,15 +152,19 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.has_choice = True
 		self.close()
 
+
+def debug_info_label(s):
+	debug('%s: ' % s + xbmc.getInfoLabel(s))
+
 def main():
+	debug_info_label('ListItem.FileName')
+	debug_info_label('ListItem.Path')
+	debug_info_label('ListItem.FileExtension')
+	debug_info_label('ListItem.FileNameAndPath')
+	debug_info_label('ListItem.DBID')		# movie id)
+	debug_info_label('ListItem.IMDBNumber')
 
-	debug(xbmc.getInfoLabel('ListItem.FileName'))
-	debug(xbmc.getInfoLabel('ListItem.Path'))
-	debug(xbmc.getInfoLabel('ListItem.FileExtension'))
-	debug(xbmc.getInfoLabel('ListItem.FileNameAndPath'))
-	debug(xbmc.getInfoLabel('ListItem.DBID'))		# movie id)
-
-	debug(xbmc.getInfoLabel('Container.FolderPath'))
+	debug_info_label('Container.FolderPath')
 
 	# import rpdb2
 	# rpdb2.start_embedded_debugger('pw')
@@ -195,6 +204,29 @@ def main():
 		xbmc.executebuiltin('Addon.OpenSettings(script.media.aggregator)')
 		del window
 		return
+
+	if link == 'plugin://script.media.aggregator/?action=show_similar':
+		imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
+		type='movie'
+
+		if not imdb_id and xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
+			from nforeader import NFOReader
+			nfo_path = xbmc.getInfoLabel('ListItem.FileNameAndPath').replace('.strm', '.nfo').decode('utf-8')
+			debug(nfo_path)
+			rd = NFOReader(nfo_path, '')
+			tvs_rd = rd.tvs_reader()
+			imdb_id = tvs_rd.imdb_id()
+			type='tv'
+
+		if imdb_id:
+			from movieapi import MovieAPI
+			res = MovieAPI.tmdb_by_imdb(imdb_id, type)
+			debug(res)
+			if res and len(res) > 0:
+				tmdb_id = res[0].tmdb_id()
+				xbmc.executebuiltin('Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % tmdb_id)
+				del window
+				return
 
 	selected_file = None
 	if window.has_select_file:

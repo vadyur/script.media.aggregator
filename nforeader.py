@@ -42,6 +42,15 @@ class NFOReader(object):
 
 	def is_episode(self):
 		return self.__root.tag == 'episodedetails'
+
+	def imdb_id(self):
+		root = self.__root
+
+		imdb = root.find('id')
+		if imdb is not None and imdb.text.startswith('tt'):
+			return imdb.text
+
+		return None
 		
 	def get_info(self):
 		
@@ -181,9 +190,14 @@ class NFOReader(object):
 
 # tests
 if __name__ == '__main__':
-	reader = NFOReader(u'd:\\-=Vd=-\\Videos\\TVShows\\Однажды в сказке\\Season 1\\03. episode_s01e03.nfo', None)
-	print reader.try_join_tvshow_info()
-	print reader.try_join_tvshow_art()
+	#reader = NFOReader(u'd:\\-=Vd=-\\Videos\\TVShows\\Однажды в сказке\\Season 1\\03. episode_s01e03.nfo', None)
+	#print reader.try_join_tvshow_info()
+	#print reader.try_join_tvshow_art()
+
+	rd = NFOReader(u'C:\\Users\\vd\\Videos\\TVShows\\Гастролёры\\Season 1\\03. episode_s01e03.nfo', '')
+	tvs_rd = rd.tvs_reader()
+	imdb_id = tvs_rd.imdb_id()
+
 
 
 

@@ -220,8 +220,9 @@ class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
-	def url_imdb_id(self, idmb_id):
-		return 'http://api.themoviedb.org/3/movie/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+	@staticmethod
+	def url_imdb_id(idmb_id, type='movie'):
+		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 
 	@staticmethod
 	def search(title):
@@ -238,20 +239,31 @@ class MovieAPI(KinopoiskAPI):
 			data = json.load(urllib2.urlopen(url))
 		except urllib2.HTTPError:
 			return []
-		if 'results' in data:
-			for r in data['results']:
-				if not r['overview']:
-					continue
 
-				url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
-					r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
-				data2 = json.load(urllib2.urlopen(url2))
 
-				if 'imdb_id' in data2:
-					result.append(tmdb_movie_item(data2))
-				elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
-					result.append(tmdb_movie_item(data2))
+		for tag in ['results', 'movie_results', 'tv_results']:
+			if tag in data:
+				for r in data[tag]:
+					if not r['overview']:
+						continue
+
+					url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
+						r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
+					data2 = json.load(urllib2.urlopen(url2))
+
+					if 'imdb_id' in data2:
+						result.append(tmdb_movie_item(data2))
+					elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
+						result.append(tmdb_movie_item(data2))
+
 		return result
+
+	@staticmethod
+	def tmdb_by_imdb(imdb, type):
+		url = 'http://api.themoviedb.org/3/find/' + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url += '&append_to_response=credits,videos,external_ids'
+		debug(url)
+		return MovieAPI.tmdb_query(url, type)
 
 	@staticmethod
 	def popular():
@@ -288,7 +300,7 @@ class MovieAPI(KinopoiskAPI):
 		KinopoiskAPI.__init__(self, kinopoisk)
 
 		if imdb_id:
-			url_ = self.url_imdb_id(imdb_id)
+			url_ = MovieAPI.url_imdb_id(imdb_id)
 			try:
 				self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
 				debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
@@ -348,5 +360,8 @@ if __name__ == '__main__':
 	#for res in MovieAPI.search(u'паук'):
 	#	print res.get_info()
 
-	for res in MovieAPI.popular_tv():
-		print res.get_info()
+	#for res in MovieAPI.popular_tv():
+	#	print res.get_info()
+
+	MovieAPI.tmdb_query(
+		'http://api.themoviedb.org/3/movie/tt4589186?api_key=f7f51775877e0bb6703520952b3c7840&language=ru')
