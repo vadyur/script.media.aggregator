@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
+
 import log
 from log import debug
 
 
-import os, xbmcgui
+import os
 import xml.etree.ElementTree as ET
 import requests, filesystem
 
@@ -26,14 +28,29 @@ class NFOReader(object):
 					pass
 				self.__root = ET.fromstring(content)  #ET.parse(self.__path)
 		except IOError as e:
-			debug("NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror)		)
+			debug("NFOReader: I/O error({0}): {1}".format(e.errno, e.strerror))
 
+	@property
+	def path(self):
+		return self.__path
 		
 	@staticmethod
 	def make_path(base_path, rel_path, filename):
 		# params is utf-8
 		path = filesystem.join(base_path.decode('utf-8'), rel_path.decode('utf-8'), filename.decode('utf-8'))
 		return path
+
+	def is_episode(self):
+		return self.__root.tag == 'episodedetails'
+
+	def imdb_id(self):
+		root = self.__root
+
+		imdb = root.find('id')
+		if imdb is not None and imdb.text.startswith('tt'):
+			return imdb.text
+
+		return None
 		
 	def get_info(self):
 		
@@ -54,11 +71,11 @@ class NFOReader(object):
 		for child in root:
 			try:
 				#debug(child.tag, child.text)
-				if child.tag in string_items:
+				if child.tag in string_items and child.text:
 					info[child.tag] = child.text
-				if child.tag in integer_items:
+				if child.tag in integer_items and child.text:
 					info[child.tag] = int(child.text)
-				if child.tag in float_items:
+				if child.tag in float_items and child.text:
 					info[child.tag] = float(child.text)
 				if 'actor' in child.tag:
 					for item in child:
@@ -122,12 +139,65 @@ class NFOReader(object):
 						
 		debug(art)
 		return art
-				
-	def make_list_item(self, playable_url):
-		list_item = xbmcgui.ListItem(path=playable_url)
-		list_item.setInfo('video', self.get_info())
+
+	def tvs_reader(self):
+		is_episode = self.is_episode()
+
+		if is_episode:
+			path = filesystem.dirname(self.path)
+			path = filesystem.abspath(filesystem.join(path, os.pardir))
+			path = filesystem.join(path, u'tvshow.nfo')
+
+			if filesystem.exists(path):
+				debug(u'tvs_reader: ' + path)
+				return NFOReader(path, self.__temp_path)
+
+		return None
+
+	def try_join_tvshow_info(self):
+		info = self.get_info()
+		tvs_reader = self.tvs_reader()
+		if tvs_reader:
+			tvs_info = tvs_reader.get_info()
+			info = dict(tvs_info, **info)
+
+			debug(info)
+
+		return info
+
+
+	def try_join_tvshow_art(self):
 		art = self.get_art()
-		#list_item.setArt(art)
+		tvs_reader = self.tvs_reader()
+		if tvs_reader:
+			tvs_art = tvs_reader.get_art()
+			art = dict(tvs_art, **art)
+
+			debug(art)
+
+		return art
+
+	def make_list_item(self, playable_url):
+		import xbmcgui
+		list_item = xbmcgui.ListItem(path=playable_url)
+		list_item.setInfo('video', self.try_join_tvshow_info())
+
+		art = self.try_join_tvshow_art()
 		list_item.setThumbnailImage(art.get('poster', ''))
 		
 		return list_item
+
+
+# tests
+if __name__ == '__main__':
+	#reader = NFOReader(u'd:\\-=Vd=-\\Videos\\TVShows\\Однажды в сказке\\Season 1\\03. episode_s01e03.nfo', None)
+	#print reader.try_join_tvshow_info()
+	#print reader.try_join_tvshow_art()
+
+	rd = NFOReader(u'C:\\Users\\vd\\Videos\\TVShows\\Гастролёры\\Season 1\\03. episode_s01e03.nfo', '')
+	tvs_rd = rd.tvs_reader()
+	imdb_id = tvs_rd.imdb_id()
+
+
+
+

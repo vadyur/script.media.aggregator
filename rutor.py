@@ -411,23 +411,21 @@ def download_torrent(url, path, settings):
 		link = None
 
 	if link:
-		#if not link.startswith('http'):
-		#	link = 'http://' + settings.rutor_domain + link
 		r = requests.get(real_url(link, settings))
 
-	debug(r.headers)
+		debug(r.headers)
 
-	if 'Content-Type' in r.headers:
-		if not 'torrent' in r.headers['Content-Type']:
-			return False
+		if 'Content-Type' in r.headers:
+			if not 'torrent' in r.headers['Content-Type']:
+				return False
 
-	try:
-		with filesystem.fopen(path, 'wb') as torr:
-			for chunk in r.iter_content(100000):
-				torr.write(chunk)
-		return True
-	except:
-		pass
+		try:
+			with filesystem.fopen(path, 'wb') as torr:
+				for chunk in r.iter_content(100000):
+					torr.write(chunk)
+			return True
+		except:
+			pass
 
 	return False
 

@@ -180,6 +180,11 @@ def run(settings):
 		write_tvshows(get_rss_url(64, settings.hdclub_passkey), settings.tvshow_path(), settings)
 
 
+def search(what, imdb, settings, type):
+	if settings.movies_save and type == 'movie':
+		pass
+
+
 def download_torrent(url, path, settings):
 	url = url.replace('details.php', 'download.php')
 	if not 'passkey' in url:

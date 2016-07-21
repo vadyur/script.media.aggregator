@@ -217,6 +217,13 @@ class NFOWriter:
 			pass
 
 	def write_year(self, root):
+
+		if self.tvshow_api:
+			year = self.tvshow_api.Year()
+			if year:
+				ET.SubElement(root, 'year').text = str(year)
+				return
+
 		self.add_element_copy(root, 'year', self.parser)
 
 	def write_top250(self, root):
@@ -292,6 +299,10 @@ class NFOWriter:
 		if self.tvshow_api is not None:
 			for fa in self.tvshow_api.Fanart():
 				fanarts.append(fa['path'])
+
+		if 'fanart' in self.parser.Dict():
+			for fa in self.parser.get('fanart', []):
+				fanarts.append(fa)
 
 		if len(fanarts) > 0:
 			fanart = ET.SubElement(root, 'fanart')

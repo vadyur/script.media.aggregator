@@ -256,6 +256,7 @@ class PostsEnumerator(object):
 
 	def __init__(self):
 		self._s = requests.Session()
+		self._items[:] = []
 
 	def process_page(self, url):
 		request = self._s.get(real_url(url))
@@ -269,16 +270,37 @@ class PostsEnumerator(object):
 		return self._items
 
 class TrackerPostsEnumerator(PostsEnumerator):
+	def __init__(self, session):
+		self._s = session
+		self._items[:] = []
+
 	def process_page(self, url):
 		request = self._s.get(real_url(url))
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
-		for a in  self.soup.find_all('a', class_ = 'topictitle'): #self.soup.select('a.topictitle'):
-			td = a.find_parent('td')
-			if td and not td.find('span', class_ = 'tDL'):
-				continue
-			self._items.append(a)
+		tbl = self.soup.find('table', class_='tablesorter')
+		if tbl:
+			tbody = tbl.find('tbody')
+			if tbody:
+				for tr in tbody.find_all('tr'):
+					item = {}
+					cat_a = tr.find('a', class_='gen')
+					if cat_a:
+						item['category'] = cat_a['href']
+					topic_a = tr.find('a', class_='topictitle')
+					if topic_a:
+						item['a'] = topic_a
+					dl_a = tr.find('a', attrs={'rel': "nofollow"})
+					if dl_a:
+						item['dl_link'] = dl_a['href']
+
+					seeds_td = tr.find('td', attrs={'title': "Seeders"})
+					if seeds_td:
+						item['seeds'] = seeds_td.get_text()
+
+					self._items.append(item.copy())
+
 
 def write_movie_rss(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
@@ -604,6 +626,80 @@ def download_torrent(url, path, settings):
 			pass
 
 	return False
+
+
+def make_search_url(what, IDs):
+	url = u'http://nnm-club.me/forum/tracker.php'
+	url += '?f=' + str(IDs)
+	url += '&nm=' + urllib2.quote(what.encode('utf-8'))
+	return url
+
+
+def search_generate(what, imdb, settings):
+
+	count = 0
+	session = create_session(settings)
+
+	if settings.movies_save:
+		url = make_search_url(what, '227,954')
+		result1 = search_results(imdb, session, settings, url)
+		with filesystem.save_make_chdir_context(settings.movies_path()):
+			count += make_search_strms(result1, settings, 'movie')
+
+	if settings.animation_save:
+		url = make_search_url(what, '661')
+		result2 = search_results(imdb, session, settings, url)
+		with filesystem.save_make_chdir_context(settings.animation_path()):
+			count += make_search_strms(result2, settings, 'movie')
+
+	if settings.animation_tvshows_save:
+		url = make_search_url(what, '232')
+		result3 = search_results(imdb, session, settings, url)
+		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
+			count += make_search_strms(result3, settings, 'tvshow')
+
+	if settings.tvshows_save:
+		url = make_search_url(what, '768')
+		result4 = search_results(imdb, session, settings, url)
+		with filesystem.save_make_chdir_context(settings.tvshow_path()):
+			count += make_search_strms(result4, settings, 'tvshow')
+
+	return count
+
+
+def make_search_strms(result, settings, type):
+	count = 0
+	for item in result:
+		link = item['link']
+		parser = item['parser']
+		if link:
+			if type == 'movie':
+				import movieapi
+				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser)
+				count += 1
+			if type == 'tvshow':
+				import tvshowapi
+				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser)
+				count += 1
+
+	return count
+
+
+def search_results(imdb, session, settings, url):
+	debug('search_results: url = ' + url)
+
+	enumerator = TrackerPostsEnumerator(session)
+	enumerator.process_page(real_url(url))
+	result = []
+	for post in enumerator.items():
+		if 'seeds' in post and int(post['seeds']) < 5:
+			continue
+
+		parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+		if parser.parsed() and parser.get_value('imdb_id') == imdb:
+			result.append({'parser': parser, 'link': post['dl_link']})
+
+	return result
 
 
 if __name__ == '__main__':

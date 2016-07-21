@@ -1,5 +1,5 @@
 # coding: utf-8
-import math
+import math, urllib
 
 import log
 
@@ -20,8 +20,10 @@ import xml.etree.ElementTree as ET
 
 _ADDON_NAME =   'script.media.aggregator'
 _addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
-_addondir   = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+_addondir   =   xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
 
+
+# ------------------------------------------------------------------------------------------------------------------- #
 class AddonRO(object):
 	def __init__(self, xml_filename='settings.xml'):
 		self._addon_xml 	= filesystem.join(_addondir, xml_filename)
@@ -42,7 +44,6 @@ class AddonRO(object):
 			self.root = ET.fromstring(content)
 		self.mtime = filesystem.getmtime(self._addon_xml)
 
-
 	# get setting no caching
 	def getSetting(self, s):
 		if not filesystem.exists(self._addon_xml):
@@ -56,6 +57,8 @@ class AddonRO(object):
 				return item.get('value').encode('utf-8')
 		return u''
 
+
+# ------------------------------------------------------------------------------------------------------------------- #
 class Addon(AddonRO):
 
 	@staticmethod
@@ -93,6 +96,15 @@ class Addon(AddonRO):
 		self.mtime = filesystem.getmtime(self._addon_xml)
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
+def addon_data_path():
+	if _addon.getSetting('data_path'):
+		return _addon.getSetting('data_path')
+	else:
+		return _addondir
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
@@ -142,12 +154,14 @@ def update_service(show_progress=False):
 			xbmc.executebuiltin('UpdateLibrary("video")')
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def chunks(l, n):
 	"""Yield successive n-sized chunks from l."""
 	for i in xrange(0, len(l), n):
-		yield l[i:i+n]
+		yield l[i:i + n]
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def scrape_nnm():
 	settings = player.load_settings()
 	data_path = settings.torrents_path()
@@ -185,6 +199,7 @@ def scrape_nnm():
 		process_chunk(chunk, data_path, seeds_peers)
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def process_chunk(chunk, data_path, seeds_peers):
 	import json
 
@@ -200,6 +215,7 @@ def process_chunk(chunk, data_path, seeds_peers):
 			filesystem.remove(filename)
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def update_case():
 	# Init
 	if not hasattr(update_case, 'first_start'):
@@ -215,8 +231,10 @@ def update_case():
 		delay_startup = 0
 
 	# User action
-	path = filesystem.join(_addondir, 'start_generate')
-	if filesystem.exists(path):
+	path = filesystem.join(addon_data_path(), 'start_generate')
+
+	if filesystem.exists(path) and _addon.getSetting('role').decode('utf-8') != u'клиент':
+
 		log.debug('User action!!!')
 
 		filesystem.remove(path)
@@ -250,6 +268,7 @@ def update_case():
 				update_case.first_start = False
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def scrape_case():
 	# Init
 	if not hasattr(scrape_case, 'prev_scrape_time'):
@@ -270,12 +289,54 @@ def scrape_case():
 			log.print_tb(e)
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
+def add_media_process(title, imdb, settings):
+	#import rpdb2
+	#rpdb2.start_embedded_debugger('pw')
+	count = nnmclub.search_generate(title, imdb, settings)
+
+	if count:
+		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+			xbmc.executebuiltin('UpdateLibrary("video")')
+
+	path = filesystem.join(addon_data_path(), imdb + '.ended')
+	with filesystem.fopen(path, 'w') as f:
+		f.write(str(count))
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
+def add_media_case():
+	if _addon.getSetting('role').decode('utf-8') == u'клиент':
+		return
+
+	path = filesystem.join(addon_data_path(), 'add_media')
+	if filesystem.exists(path):
+		with filesystem.fopen(path, 'r') as f:
+			while True:
+				try:
+					title = f.readline().strip(' \n\t\r').decode('utf-8')
+					imdb = f.readline().strip(' \n\t\r')
+
+					log.debug('add_media_case: ' + imdb)
+					log.debug(title)
+
+					if title and imdb:
+						add_media_process(title, imdb, player.load_settings())
+					else:
+						break
+				except BaseException as e:
+					log.print_tb(e)
+
+		filesystem.remove(path)
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
 def main():
 	global _addon
 	_addon = AddonRO()
 	player._addon = _addon
 
-	path = filesystem.join(_addondir, 'update_library_next_start')
+	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
 		log.debug('User action!!! update_library_next_start')
 		xbmc.executebuiltin('UpdateLibrary("video")')
@@ -288,6 +349,7 @@ def main():
 		try:
 			scrape_case()
 			update_case()
+			add_media_case()
 
 		finally:
 			sleep(1)
@@ -299,20 +361,78 @@ def main():
 	log.debug('service exit')
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def start_generate():
-	path = filesystem.join(_addondir, 'start_generate')
+	path = filesystem.join(addon_data_path(), 'start_generate')
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 def update_library_next_start():
-	path = filesystem.join(_addondir, 'update_library_next_start')
+	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if not filesystem.exists(path):
 		with filesystem.fopen(path, 'w'):
 			pass
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
+def add_media(title, imdb):
+	path = filesystem.join(addon_data_path(), 'add_media')
+	log.debug(path)
+
+	# if not filesystem.exists(path):
+	# 	with filesystem.fopen(path, 'w'):
+	# 		pass
+
+	if filesystem.exists(path):
+		with filesystem.fopen(path, 'r') as f:
+			s = f.read()
+			if imdb.encode('utf-8') in s:
+				return
+
+	with filesystem.fopen(path, 'a+') as f:
+		log.debug('writing...')
+		seq = [title.encode('utf-8') + '\n', imdb.encode('utf-8') + '\n']
+		f.writelines(seq)
+
+	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
+	for cnt in range(300):
+
+		if filesystem.exists(ended_path):
+			with filesystem.fopen(ended_path, 'r') as f:
+				dlg = xbmcgui.Dialog()
+
+				count = f.read()
+
+				try:
+					count = int(count)
+				except BaseException:
+					count = 0
+
+				if count:
+					dlg.notification(u'Media Aggregator', u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
+
+					url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
+						{'action': 'add_media',
+						 'title': title.encode('utf-8'),
+						 'imdb': imdb,
+						 'norecursive': True})
+
+					xbmc.executebuiltin('RunPlugin("%s")' % url)
+				else:
+					dlg.notification(u'Media Aggregator',
+					                 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
+					                 time=10000)
+			filesystem.remove(ended_path)
+
+			break
+
+		sleep(1)
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
 def save_dbs():
 	path = filesystem.join(_addondir, 'dbversions')
 
@@ -333,6 +453,7 @@ def save_dbs():
 						pass
 
 
+# ------------------------------------------------------------------------------------------------------------------- #
 if __name__ == '__main__':
 	try:
 		save_dbs()

@@ -460,6 +460,7 @@ class TorrentPlayer(object):
 		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
 		#debug(self.info_hash)
 
+		name = '.'
 		playable_items = []
 		try:
 			if 'files' in info:
@@ -471,21 +472,25 @@ class TorrentPlayer(object):
 					#debug(name)
 					if TorrentPlayer.is_playable(name):
 						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
+					name = TorrentPlayer.Name(info['name'])
 			else:
 				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info['name']), 'size': info['length'] } ]
 		except UnicodeDecodeError:
 			return None
 
-		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items }
+		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items, 'name': name }
 
 	def StartBufferFile(self, fileIndex):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def CheckBufferComplete(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def GetBufferingProgress(self):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
 
 	def GetStreamURL(self, playable_item):
-		raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
+		pass
+
+	def loop(self):
+		pass

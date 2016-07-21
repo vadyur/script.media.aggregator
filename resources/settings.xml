@@ -10,12 +10,14 @@
         <setting label="Сериалы" 		type="bool"   id="tvshows_save" 		default="true"/>
         <setting label="Анимационные сериалы" 	type="bool"   id="animation_tvshows_save" 	default="true"/>
 
-		<setting label="Автоматическая генерация" type="lsep"/>
-		<setting label="При запуске" type="bool" id="service_startup" default="false"/>
-		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" />
-		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false"/>
-		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8"/>
+        <setting label="Роль медиацентра" type="select" id="role" values="одиночный|сервер|клиент" default="одиночный"/>
 
+		<setting label="Автоматическая генерация" type="lsep" visible="!eq(-1,клиент)"/>
+		<setting label="При запуске" type="bool" id="service_startup" default="false" visible="!eq(-2,клиент)"/>
+		<setting label="Отсрочка запуска (минуты)" type="slider" id="delay_startup" default="1" range="0,1,10" option="int" enable="eq(-1,true)" visible="!eq(-3,клиент)"/>
+		<setting label="Периодически" type="bool" id="service_generate_persistent" default="false" visible="!eq(-4,клиент)"/>
+		<setting label="Время обновления (часы)" type="number" id="service_generate_persistent_every" enable="eq(-1,true)" default="8" visible="!eq(-5,клиент)"/>
+        <setting label="Общая папка с данными... (по-умолчанию папка плагина)" type="folder" id="data_path" default="" visible="!eq(-6,одиночный)"/>
         <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default=""/>
     </category>
 
@@ -42,7 +44,7 @@
     </category>
 
     <category label="P2P Сеть">
-		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http" default="torrent2http" />
+		<setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http|Ace Stream" default="torrent2http" />
 		<setting label="Путь для сохранения видео файлов"	type="folder" id="storage_path"	default="" visible="eq(-1,torrent2http)" />
         <setting id="upload_limit"      type="number"   label="Ограничить скорость раздачи МБит/сек (0 - неограничено)" default="0"       visible="eq(-2,torrent2http)"/>
         <setting id="download_limit"    type="number"   label="Ограничить скорость закачки МБит/сек (0 - неограничено)" default="0"       visible="eq(-3,torrent2http)"/>
@@ -51,6 +53,7 @@
         <setting id="listen_port"       type="number"   label="Порт для входящих соединений" default="6881"    visible="eq(-6,torrent2http)"/>
         <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
         <setting id="pre_buffer_bytes"  type="slider"   label="Загружаемый объем файла до начала просмотра, Мб" default="25"      visible="eq(-8,torrent2http)"  range="5,5,50" option="int"/>
+        <setting id="add_tracker"       type="text"     label="Дополнительный трекер" default="" visible="eq(-9,torrent2http)"/>
 		<setting id="start_play_max_time" type="number"   label="Таймаут начала воспроизведения (секунды)" default="60"/>
 		<setting id="search_seed_max_time" type="number"  label="Таймаут поиска сидов (секунды)" default="15"/>
 	</category>

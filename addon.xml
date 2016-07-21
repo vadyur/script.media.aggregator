@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.media.aggregator" version="0.11.12" name="Media Aggregator" provider-name="-=Vd=-">
+<addon id="script.media.aggregator" version="0.15.0~rc2" name="Media Aggregator" provider-name="-=Vd=-">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
 	<import addon="plugin.video.yatp" optional="true"/>
 	<import addon="script.module.torrent2http" optional="false"/>
+    <import addon="script.module.torrent.ts" optional="true"/>
 	<import addon="script.module.beautifulsoup4" version="4.3.0"/>
 	<import addon="script.module.requests" optional="false"/>
 	<import addon="script.module.feedparser" optional="false"/>
@@ -18,6 +19,12 @@
 	<item>
 	  <label>Media Aggregator: выбор</label>
 	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
+	</item>
+  </extension>
+  <extension point="kodi.context.item" library="context_search.py">
+	<item>
+	  <label>Media Aggregator: поиск</label>
+	  <visible>true</visible>
 	</item>
   </extension>
   <extension point="xbmc.addon.metadata">

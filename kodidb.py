@@ -21,7 +21,7 @@ class AdvancedSettingsReader(object):
 		try:
 			with filesystem.fopen(path, 'r') as f:
 				content = f.read()
-				log.debug(content)
+				#log.debug(content)
 				root = ET.fromstring(content)
 		except IOError as e:
 			self.LOG("I/O error({0}): {1}".format(e.errno, e.strerror))

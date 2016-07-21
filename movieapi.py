@@ -42,6 +42,98 @@ def get_tmdb_api_key():
 		debug('get_tmdb_api_key: ' + str(e))
 		return 'f7f51775877e0bb6703520952b3c7840'
 
+
+class tmdb_movie_item(object):
+	def __init__(self, json_data):
+		self.json_data_ = json_data
+
+	def poster(self):
+		try:
+			return 'http://image.tmdb.org/t/p/w500' + self.json_data_['poster_path']
+		except BaseException:
+			return ''
+
+	def fanart(self):
+		try:
+			return 'http://image.tmdb.org/t/p/original' + self.json_data_['backdrop_path']
+		except BaseException:
+			return ''
+
+	def get_art(self):
+		art = {}
+
+		path = self.poster()
+
+		art['thumb'] = path
+		art['poster'] = path
+		art['thumbnailImage'] = path
+
+		art['fanart'] = self.fanart()
+
+		return art
+
+	def get_info(self):
+		info = {}
+
+		if 'genres' in self.json_data_:
+			info['genre'] = u', '.join([i['name'] for i in self.json_data_['genres']])
+
+		analogy = {
+			'aired': 'release_date',
+			'plot': 'overview',
+			'title': 'name',
+			'originaltitle': 'originalname',
+		}
+
+		for tag in analogy:
+			if analogy[tag] in self.json_data_:
+				info[tag] = self.json_data_[analogy[tag]]
+
+		if 'aired' in info:
+			aired = info['aired']
+			m = re.search('(\d\d\d\d)', aired)
+			if m:
+				info['year'] = int(m.group(1))
+
+		try:
+			vid_item = self.json_data_['videos']['results'][0]
+			if vid_item['site'] == 'YouTube':
+				info['trailer'] = 'plugin://plugin.video.youtube/?action=play_video&videoid=' + vid_item['key']
+		except BaseException:
+			pass
+
+		string_items = ['director', 'mpaa', 'title', 'originaltitle', 'duration', 'studio', 'code', 'album', 'votes', 'thumb']
+		for item in string_items:
+			if item in self.json_data_:
+				info[item] = self.json_data_[item]
+
+		#  'credits',
+
+		return info
+
+	def imdb(self):
+		try:
+			if 'imdb_id' in self.json_data_:
+				return self.json_data_['imdb_id']
+			elif 'external_ids' in self.json_data_ and 'imdb_id' in self.json_data_['external_ids']:
+				return self.json_data_['external_ids']['imdb_id']
+
+		except BaseException:
+			return None
+
+
+	def tmdb_id(self):
+		if 'id' in self.json_data_:
+			return self.json_data_['id']
+		else:
+			return None
+
+
+		#integer_items = ['year', 'episode', 'season', 'top250', 'tracknumber']
+
+		#float_items = ['rating']
+
+
 class KinopoiskAPI(object):
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
@@ -128,17 +220,87 @@ class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
-	def url_imdb_id(self, idmb_id):
-		return 'http://api.themoviedb.org/3/movie/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
-		
-#	def url_tmdb_images(self, id):
-#		return api_url + '/movie/' + id + '/images' + '?api_key=' + self.tmdb_api_key
+	@staticmethod
+	def url_imdb_id(idmb_id, type='movie'):
+		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+
+	@staticmethod
+	def search(title):
+		url = 'http://api.themoviedb.org/3/search/movie?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		movies = MovieAPI.tmdb_query(url)
+		url = 'http://api.themoviedb.org/3/search/tv?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		tv = MovieAPI.tmdb_query(url, 'tv')
+		return movies + tv
+
+	@staticmethod
+	def tmdb_query(url, type='movie'):
+		result = []
+		try:
+			data = json.load(urllib2.urlopen(url))
+		except urllib2.HTTPError:
+			return []
+
+
+		for tag in ['results', 'movie_results', 'tv_results']:
+			if tag in data:
+				for r in data[tag]:
+					if not r['overview']:
+						continue
+
+					url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
+						r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
+					data2 = json.load(urllib2.urlopen(url2))
+
+					if 'imdb_id' in data2:
+						result.append(tmdb_movie_item(data2))
+					elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
+						result.append(tmdb_movie_item(data2))
+
+		return result
+
+	@staticmethod
+	def tmdb_by_imdb(imdb, type):
+		url = 'http://api.themoviedb.org/3/find/' + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url += '&append_to_response=credits,videos,external_ids'
+		debug(url)
+		return MovieAPI.tmdb_query(url, type)
+
+	@staticmethod
+	def popular():
+		url = 'http://api.themoviedb.org/3/movie/popular?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		return MovieAPI.tmdb_query(url)
+
+	@staticmethod
+	def popular_tv():
+		url = 'http://api.themoviedb.org/3/tv/popular?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		return MovieAPI.tmdb_query(url, 'tv')
+
+	@staticmethod
+	def top_rated():
+		url = 'http://api.themoviedb.org/3/movie/top_rated?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		return MovieAPI.tmdb_query(url)
+
+	@staticmethod
+	def top_rated_tv():
+		url = 'http://api.themoviedb.org/3/tv/top_rated?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		return MovieAPI.tmdb_query(url, 'tv')
+
+	@staticmethod
+	def show_similar_t(tmdb_id, type):
+		url = 'http://api.themoviedb.org/3/' + type + '/' + str(
+				tmdb_id) + '/similar?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		log.debug(url)
+		return MovieAPI.tmdb_query(url, type)
+
+	@staticmethod
+	def show_similar(tmdb_id):
+		return MovieAPI.show_similar_t(tmdb_id, 'movie') + MovieAPI.show_similar_t(tmdb_id, 'tv')
 
 	def __init__(self, imdb_id = None, kinopoisk = None):
 		KinopoiskAPI.__init__(self, kinopoisk)
 
 		if imdb_id:
-			url_ = self.url_imdb_id(imdb_id)
+			url_ = MovieAPI.url_imdb_id(imdb_id)
 			try:
 				self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
 				debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
@@ -193,3 +355,13 @@ class MovieAPI(KinopoiskAPI):
 	def __getitem__(self, key):
 		return self.tmdb_data[key]
 
+
+if __name__ == '__main__':
+	#for res in MovieAPI.search(u'паук'):
+	#	print res.get_info()
+
+	#for res in MovieAPI.popular_tv():
+	#	print res.get_info()
+
+	MovieAPI.tmdb_query(
+		'http://api.themoviedb.org/3/movie/tt4589186?api_key=f7f51775877e0bb6703520952b3c7840&language=ru')
