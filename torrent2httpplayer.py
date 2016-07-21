@@ -249,15 +249,6 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			
 		return None
 
-
-	def CheckBufferComplete(self):
-		return True
-
-
-	def GetBufferingProgress(self):
-		return 100
-
-
 	def GetStreamURL(self, playable_item):
 		if self.download_path is None:
 			f_status = self.engine.file_status(self.file_id)
