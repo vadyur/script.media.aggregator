@@ -181,9 +181,10 @@ def run(settings):
 		write_tvshows(get_rss_url(64, settings.hdclub_passkey), settings.tvshow_path(), settings)
 
 
-def make_search_url(what, IDs):
+def make_search_url(what, IDs, settings):
 	url = u'http://hdclub.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
 	url += '?c=' + str(IDs)
+	url += '&passkey=' + settings.hdclub_passkey
 	url += '&search=' + urllib2.quote(what.encode('utf-8'))
 	return url
 
@@ -195,25 +196,25 @@ def search_generate(what, imdb, settings):
 	session = requests.session()
 
 	if settings.movies_save:
-		url = make_search_url(what, 71)
+		url = make_search_url(what, 71, settings)
 		result1 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie')
 
 	if settings.animation_save:
-		url = make_search_url(what, 70)
+		url = make_search_url(what, 70, settings)
 		result2 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
 			count += make_search_strms(result2, settings, 'movie')
 
 	if settings.documentary_save:
-		url = make_search_url(what, 78)
+		url = make_search_url(what, 78, settings)
 		result3 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.documentary_path()):
 			count += make_search_strms(result3, settings, 'movie')
 
 	if settings.tvshows_save:
-		url = make_search_url(what, 64)
+		url = make_search_url(what, 64, settings)
 		result4 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow')
@@ -272,6 +273,9 @@ class TrackerPostsEnumerator(object):
 					item = {}
 					TDs = tr.find_all('td', recursive=False)
 					item['a'] = TDs[2].find('a')['href']
+					item['title'] = TDs[2].find('a').get_text().strip(' \n\r\t')
+					item['dl_link'] = item['a'].replace('details.php', 'download.php')
+					item['seeds'] = TDs[4].get_text().strip(' \n\r\t')
 					self._items.append(item.copy())
 				except BaseException as e:
 					log.print_tb(e)
@@ -286,7 +290,19 @@ def search_results(imdb, session, settings, url):
 		if 'seeds' in post and int(post['seeds']) < 5:
 			continue
 
-		parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+		# full_title, content, link, settings
+
+		page = requests.get('http://hdclub.org/' + post['a'])
+
+		soup = BeautifulSoup(page.text)
+
+		content = ''
+		tbl = soup.find('table', class_='heading_b')
+
+		for td in tbl.find_all('td', class_='heading_r'):
+			content += td.prettify()
+
+		parser = DescriptionParser(post['title'], content, post['a'], settings=settings)
 		if parser.parsed() and parser.get_value('imdb_id') == imdb:
 			result.append({'parser': parser, 'link': post['dl_link']})
 
