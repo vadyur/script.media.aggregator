@@ -630,6 +630,9 @@ def show_list(listing):
 
 
 def main():
+	from service import create_mark_file
+	create_mark_file()
+
 	params = get_params()
 	debug(params)
 	settings = load_settings()
