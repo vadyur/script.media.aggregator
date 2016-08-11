@@ -293,7 +293,15 @@ def scrape_case():
 def add_media_process(title, imdb, settings):
 	#import rpdb2
 	#rpdb2.start_embedded_debugger('pw')
-	count = nnmclub.search_generate(title, imdb, settings)
+	count = 0
+
+	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+
+	if hdclub_enable:
+		count += hdclub.search_generate(title, imdb, settings)
+	if nnmclub_enable:
+		count += nnmclub.search_generate(title, imdb, settings)
 
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
