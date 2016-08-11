@@ -54,7 +54,7 @@ class DescriptionParser(DescriptionParserBase):
 				
 				#debug(text.encode('utf-8'))
 				if tag == u'':
-					tag = self.get_tag(text)
+					tag = self.get_tag(text.strip(' \t\n\r'))
 				else:
 					self._dict[tag] = text.strip(' \t\n\r')
 					tag = u''
@@ -181,11 +181,12 @@ def run(settings):
 		write_tvshows(get_rss_url(64, settings.hdclub_passkey), settings.tvshow_path(), settings)
 
 
-def make_search_url(what, IDs, settings):
+def make_search_url(what, IDs, imdb, settings):
 	url = u'http://hdclub.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
 	url += '?c=' + str(IDs)
 	url += '&passkey=' + settings.hdclub_passkey
 	url += '&search=' + urllib2.quote(what.encode('utf-8'))
+	url += '&dsearch=' + imdb
 	return url
 
 
@@ -196,26 +197,26 @@ def search_generate(what, imdb, settings):
 	session = requests.session()
 
 	if settings.movies_save:
-		url = make_search_url(what, 71, settings)
-		result1 = search_results(imdb, session, settings, url)
+		url = make_search_url(what, 71, imdb, settings)
+		result1 = search_results(imdb, session, settings, url, 71)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie')
 
 	if settings.animation_save:
-		url = make_search_url(what, 70, settings)
-		result2 = search_results(imdb, session, settings, url)
+		url = make_search_url(what, 70, imdb, settings)
+		result2 = search_results(imdb, session, settings, url, 70)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
 			count += make_search_strms(result2, settings, 'movie')
 
 	if settings.documentary_save:
-		url = make_search_url(what, 78, settings)
-		result3 = search_results(imdb, session, settings, url)
+		url = make_search_url(what, 78, imdb, settings)
+		result3 = search_results(imdb, session, settings, url, 78)
 		with filesystem.save_make_chdir_context(settings.documentary_path()):
 			count += make_search_strms(result3, settings, 'movie')
 
 	if settings.tvshows_save:
-		url = make_search_url(what, 64, settings)
-		result4 = search_results(imdb, session, settings, url)
+		url = make_search_url(what, 64, imdb, settings)
+		result4 = search_results(imdb, session, settings, url, 64)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow')
 
@@ -276,11 +277,12 @@ class TrackerPostsEnumerator(object):
 					item['title'] = TDs[2].find('a').get_text().strip(' \n\r\t')
 					item['dl_link'] = item['a'].replace('details.php', 'download.php')
 					item['seeds'] = TDs[4].get_text().strip(' \n\r\t')
+					item['cat'] = TDs[0].find('a')['href'].split('cat=')[-1]
 					self._items.append(item.copy())
 				except BaseException as e:
 					log.print_tb(e)
 
-def search_results(imdb, session, settings, url):
+def search_results(imdb, session, settings, url, cat):
 	debug('search_results: url = ' + url)
 
 	enumerator = TrackerPostsEnumerator(session)
@@ -288,6 +290,9 @@ def search_results(imdb, session, settings, url):
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:
+			continue
+
+		if str(post.get('cat', '')) != str(cat):
 			continue
 
 		# full_title, content, link, settings
@@ -302,8 +307,12 @@ def search_results(imdb, session, settings, url):
 		for td in tbl.find_all('td', class_='heading_r'):
 			content += td.prettify()
 
+		with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
+			html.write(content.encode('utf-8'))
+
 		parser = DescriptionParser(post['title'], content, post['a'], settings=settings)
-		if parser.parsed() and parser.get_value('imdb_id') == imdb:
+		debug(u'%s %s %s' % (post['title'], str(parser.parsed()), parser.get_value('imdb_id')))
+		if parser.parsed(): # and parser.get_value('imdb_id') == imdb:
 			result.append({'parser': parser, 'link': post['dl_link']})
 
 	return result
