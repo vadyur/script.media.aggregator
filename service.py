@@ -462,8 +462,20 @@ def save_dbs():
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
+def create_mark_file():
+	import urllib2, shutil
+	path = filesystem.join(_addondir, 'version_015')
+	if not filesystem.exists(path):
+		url = 'https://github.com/vadyur/script.media.aggregator/releases/download/ver_0.15.1/version_015'
+		response = urllib2.urlopen(url)
+		with filesystem.fopen(path, 'w') as f:
+			shutil.copyfileobj(response, f)
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
 if __name__ == '__main__':
 	try:
+		create_mark_file()
 		save_dbs()
 	except BaseException as e:
 		log.print_tb(e)
