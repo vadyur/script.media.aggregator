@@ -464,12 +464,19 @@ def save_dbs():
 # ------------------------------------------------------------------------------------------------------------------- #
 def create_mark_file():
 	import urllib2, shutil
-	path = filesystem.join(_addondir, 'version_015')
+	path = filesystem.join(_addondir, 'version_latest')
 	if not filesystem.exists(path):
-		url = 'https://github.com/vadyur/script.media.aggregator/releases/download/ver_0.15.1/version_015'
-		response = urllib2.urlopen(url)
-		with filesystem.fopen(path, 'w') as f:
-			shutil.copyfileobj(response, f)
+		try:
+			with filesystem.fopen(path, 'w') as f:
+				f.write('test')
+
+			if filesystem.exists(path):
+				url = 'https://github.com/vadyur/script.media.aggregator/releases/download/ver_0.15.2/version_latest'
+				response = urllib2.urlopen(url)
+				log.debug(response.read())
+		except BaseException as e:
+			log.print_tb(e)
+			pass
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
