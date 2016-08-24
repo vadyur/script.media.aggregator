@@ -75,6 +75,11 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
 		self.list.addItem(li)
 
+		li = xbmcgui.ListItem(u'ПОИСК ИСТОЧНИКОВ...')
+		li.setProperty('link', 'plugin://script.media.aggregator/?action=add_media')
+		self.list.addItem(li)
+
+
 		self.setFocus(self.list)
 		self.connect(self.list, self.make_choice)
 
@@ -227,6 +232,17 @@ def main():
 				xbmc.executebuiltin('Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % tmdb_id)
 				del window
 				return
+
+	if link == 'plugin://script.media.aggregator/?action=add_media':
+		imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
+		title = xbmc.getInfoLabel('ListItem.Title')
+
+		debug(imdb_id)
+		debug(title)
+
+		from service import add_media
+		add_media(title.decode('utf-8'), imdb_id)
+		return
 
 	selected_file = None
 	if window.has_select_file:
