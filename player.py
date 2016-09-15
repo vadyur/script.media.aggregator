@@ -691,19 +691,24 @@ def main():
 
 		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
 		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-		for r in result['result']['movies']:
-			if r['imdbnumber'] == imdb:
-				found = 'movie'
-				break
+		try:
+			for r in result['result']['movies']:
+				if r['imdbnumber'] == imdb:
+					found = 'movie'
+					break
+		except KeyError:
+			log('KeyError: Movies not found')
 
 		if not found:
 			req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
 			result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-
-			for r in result['result']['tvshows']:
-				if r['imdbnumber'] == imdb:
-					found = 'tvshow'
-					break
+			try:
+				for r in result['result']['tvshows']:
+					if r['imdbnumber'] == imdb:
+						found = 'tvshow'
+						break
+			except KeyError:
+				log('KeyError: TVShows not found')
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
