@@ -35,7 +35,8 @@ class Runner(object):
 
 		if settings.remove_files:
 			debug('Runner: remove_files')
-			filesystem.remove(self.videofile)
+			if filesystem.exists(self.videofile):
+				filesystem.remove(self.videofile)
 
 		if float(self.downloaded) > 99 and self.all_torrent_files_exists():
 
@@ -58,7 +59,7 @@ class Runner(object):
 			if not filesystem.exists(filesystem.dirname(dest_path)):
 				filesystem.makedirs(filesystem.dirname(dest_path))
 
-			src_path = filesystem.join(self.settings.storage_path, file)
+			src_path = filesystem.join(self.storage_path, file)
 			if not filesystem.exists(src_path):
 				continue
 
@@ -96,7 +97,7 @@ class Runner(object):
 		files = data['files']
 
 		for item in files:
-			path = filesystem.join(self.settings.storage_path, data['name'], item['name'])
+			path = filesystem.join(self.storage_path, data['name'], item['name'])
 			if not filesystem.exists(path):
 				path = filesystem.join(self.settings.copy_video_path, data['name'], item['name'])
 				if not filesystem.exists(path):
@@ -134,8 +135,17 @@ class Runner(object):
 		return self.torrent_path
 
 	@property
+	def storage_path(self):
+		result = self.settings.storage_path
+		if result == '':
+			import xbmc
+			result = xbmc.translatePath('special://temp').decode('utf-8')
+		return result
+
+
+	@property
 	def videofile(self):
-		return filesystem.join(self.settings.storage_path, self.relativevideofile)
+		return filesystem.join(self.storage_path, self.relativevideofile)
 
 	@property
 	def videotype(self):
