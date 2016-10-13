@@ -697,7 +697,7 @@ def main():
 					found = 'movie'
 					break
 		except KeyError:
-			log('KeyError: Movies not found')
+			debug('KeyError: Movies not found')
 
 		if not found:
 			req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
@@ -708,7 +708,7 @@ def main():
 						found = 'tvshow'
 						break
 			except KeyError:
-				log('KeyError: TVShows not found')
+				debug('KeyError: TVShows not found')
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
