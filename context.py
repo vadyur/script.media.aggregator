@@ -58,6 +58,12 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				debug(str(e))
 				pass
 
+			try:
+				s+= '\t\t\t\tRank: ' + str(item['rank'])
+			except BaseException as e:
+				debug(str(e))
+				pass
+
 			if s != '':
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)

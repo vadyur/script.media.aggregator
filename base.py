@@ -37,9 +37,26 @@ def clean_html(page):
 
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
 
+
 def striphtml(data):
 	p = re.compile(r'<.*?>')
 	return p.sub('', data)
+
+
+def detect_mpg(str_detect):
+	str_detect = str_detect.lower()
+	return 'divx' in str_detect or 'xvid' in str_detect or 'mpeg2' in str_detect or 'mpeg-2' in str_detect
+
+
+def detect_h264(str_detect):
+	str_detect = str_detect.lower()
+	return 'avc' in str_detect or 'h264' in str_detect or 'h.264' in str_detect
+
+
+def detect_h265(str_detect):
+	str_detect = str_detect.lower()
+	return 'hevc' in str_detect or 'h265' in str_detect or 'h.265' in str_detect
+
 
 def get_rank(full_title, parser, settings):
 
@@ -131,6 +148,41 @@ def get_rank(full_title, parser, settings):
 				conditions += 1
 				debug('bitrate: not parsed')
 		else:
+			rank += 2
+			conditions += 1
+
+	detect_codec = None
+
+	if detect_h264(full_title):
+		detect_codec = CodecType.MPGHD
+	elif detect_h265(full_title):
+		detect_codec = CodecType.MPGUHD
+	elif detect_mpg(full_title):
+		detect_codec = CodecType.MPGSD
+
+	if detect_codec is None:
+		for part in video.split(', '):
+			if detect_h264(part):
+				detect_codec = CodecType.MPGHD
+			elif detect_h265(part):
+				detect_codec = CodecType.MPGUHD
+			elif detect_mpg(part):
+				detect_codec = CodecType.MPGSD
+
+	if detect_codec:
+		if settings.preffered_codec == CodecType.MPGSD:
+			if settings.preffered_codec != detect_codec:
+				rank += 10
+				conditions += 1
+		elif settings.preffered_codec == CodecType.MPGHD:
+			if detect_codec == CodecType.MPGUHD:
+				rank += 10
+				conditions += 1
+			if detect_codec == CodecType.MPGSD:
+				rank += 2
+				conditions += 1
+	elif settings.preffered_codec == CodecType.MPGUHD:
+		if settings.preffered_codec != detect_codec:
 			rank += 2
 			conditions += 1
 
@@ -494,3 +546,4 @@ class TorrentPlayer(object):
 
 	def loop(self):
 		pass
+

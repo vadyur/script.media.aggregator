@@ -36,6 +36,9 @@ debug(_addondir.encode('utf-8'))
 
 
 def get_params():
+	if len(sys.argv) < 3:
+		return None
+
 	param = dict()
 
 	paramstring = sys.argv[2]
@@ -90,6 +93,7 @@ def load_settings():
 
 	preffered_bitrate = int(getSetting('preffered_bitrate'))
 	preffered_type = getSetting('preffered_type')
+	preffered_codec = getSetting('preffered_codec')
 
 	torrent_player = getSetting('torrent_player')
 	storage_path = getSetting('storage_path')
@@ -117,6 +121,7 @@ def load_settings():
 	                    rutor_filter        =rutor_filter,
 	                    preffered_bitrate 	=preffered_bitrate,
 	                    preffered_type 		=preffered_type,
+	                    preffered_codec     =preffered_codec,
 	                    torrent_player 		=torrent_player,
 	                    storage_path		=storage_path,
 	                    movies_save 		=movies_save,
