@@ -4,6 +4,11 @@ import os, filesystem
 class QulityType:
 	Q720p = '720p'
 	Q1080 = '1080'
+
+class CodecType:
+	MPGSD = 'MPEG2/MPEG4 ASP'
+	MPGHD = 'H264/AVC'
+	MPGUHD = 'H265/HEVC'
 	
 class TorrentPlayer:
 	YATP 		= 'YATP'
@@ -18,25 +23,25 @@ class Settings:
 	
 	base_url 			= 'http://hdclub.org/rss.php'
 	
-	def __init__(self, base_path, 
-		movies_path			= u'Movies',
-		animation_path		= u'Animation',
-		documentary_path	= u'Documentary',
-		anime_path			= u'Anime',
-		hdclub_passkey 		= '', 
-		anidub_login = '', anidub_password = '', 
-		nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
-		rutor_domain = 'rutor.info',
-		rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
-		preffered_bitrate = 10000, preffered_type = QulityType.Q1080,
-		torrent_player = TorrentPlayer.YATP, storage_path = '',
-		movies_save			= True,
-		animation_save		= True,
-		documentary_save	= True,
-		anime_save			= True,
-		tvshows_save		= True,
-		animation_tvshows_save = True,
-		torrent_path        = ''):
+	def __init__(self, base_path,
+	             movies_path			= u'Movies',
+	             animation_path		= u'Animation',
+	             documentary_path	= u'Documentary',
+	             anime_path			= u'Anime',
+	             hdclub_passkey 		= '',
+	             anidub_login = '', anidub_password = '',
+	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
+	             rutor_domain = 'rutor.info',
+	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
+	             preffered_bitrate = 10000, preffered_type = QulityType.Q1080, preffered_codec = CodecType.MPGHD,
+	             torrent_player = TorrentPlayer.YATP, storage_path = '',
+	             movies_save			= True,
+	             animation_save		= True,
+	             documentary_save	= True,
+	             anime_save			= True,
+	             tvshows_save		= True,
+	             animation_tvshows_save = True,
+	             torrent_path        = ''):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -64,6 +69,7 @@ class Settings:
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type
+		self.preffered_codec        = preffered_codec if preffered_codec else CodecType.MPGHD
 		
 		self.torrent_player 		= torrent_player
 		self.storage_path			= storage_path

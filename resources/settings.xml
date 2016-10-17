@@ -41,6 +41,7 @@
     <category label="Предпочтения">
 		<setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>
 		<setting label="Качество" id="preffered_type" type="select" values="720p|1080" default="1080" />
+        <setting label="Кодек" id="preffered_codec" type="select" values="MPEG2/MPEG4 ASP|H264/AVC|H265/HEVC" default="H264/AVC"/>
     </category>
 
     <category label="P2P Сеть">
