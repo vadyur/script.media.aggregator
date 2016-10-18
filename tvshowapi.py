@@ -503,6 +503,18 @@ class TheTVDBAPI(object):
 
 		return None
 
+	def get_premiered(self):
+		if self.tvdb_ru is None:
+			return None
+
+		Series = self.tvdb_ru.find('Series')
+		if Series is not None:
+			premiered = Series.find('FirstAired')
+			if premiered is not None:
+				return premiered.text
+
+		return None
+
 
 class MyShowsAPI(object):
 	myshows = None
@@ -514,7 +526,8 @@ class MyShowsAPI(object):
 		'shortName': 'short',
 		'image': 'thumb',
 		'seasonNumber': 'season',
-		'episodeNumber': 'episode'
+		'episodeNumber': 'episode',
+		'started': 'premiered'
 	}
 
 	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
@@ -619,8 +632,19 @@ class MyShowsAPI(object):
 	def getYear(self):
 		if self.data():
 			return self.data().get('year')
+		else:
+			return None
 
-				
+	def get_premiered(self):
+		if self.data():
+			s = self.data().get('started')
+			if s:
+				import datetime
+				d = datetime.datetime.strptime(s, '%b/%d/%Y')
+				if d:
+					return d.strftime('%Y-%m-%d')
+		return None
+
 	def episodes(self, season):
 		ren_items = {'airDate': 'aired',
 					 'shortName': 'short',
@@ -679,6 +703,14 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 
 	def Year(self):
 		res = MyShowsAPI.getYear(self)
+		return res
+
+	def Premiered(self):
+		res = MyShowsAPI.get_premiered(self)
+		if res:
+			return res
+		res = TheTVDBAPI.get_premiered(self)
+
 		return res
 
 '''

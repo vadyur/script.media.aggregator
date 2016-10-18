@@ -354,6 +354,13 @@ class NFOWriter:
 	def write_studio(self, root):
 		self.add_element_split(root, 'studio', self.parser)
 
+	def write_premiered(self, root):
+		if self.tvshow_api:
+			val = self.tvshow_api.Premiered()
+			if val:
+				self.add_element_value(root, 'premiered', val)
+
+
 	def write_movie(self, filename):
 		root = ET.Element('movie')
 		self.write_title(root)
@@ -412,6 +419,7 @@ class NFOWriter:
 		self.write_country(root)
 		self.write_credits(root)
 		self.write_director(root)
+		self.write_premiered(root)
 		self.write_studio(root)
 		self.write_actor(root)
 		fn = make_fullpath('tvshow', '.nfo')
