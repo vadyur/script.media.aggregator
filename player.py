@@ -642,7 +642,7 @@ def main():
 	debug(params)
 	settings = load_settings()
 
-	xbmc.log(settings.base_path())
+	debug(settings.base_path())
 	if 'torrent' in params:
 		# import rpdb2
 		# rpdb2.start_embedded_debugger('pw')
