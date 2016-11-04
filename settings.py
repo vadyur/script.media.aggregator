@@ -13,6 +13,8 @@ class CodecType:
 class TorrentPlayer:
 	YATP 		= 'YATP'
 	TORR2HTTP	= 'torrent2http'
+	ACE			= 'Ace Stream'
+	TORR2HTTP_R = 'torrent2http remote'
 
 class FakeProgressDlg(object):
 	def update(self, *args):
@@ -34,7 +36,7 @@ class Settings:
 	             rutor_domain = 'rutor.info',
 	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
 	             preffered_bitrate = 10000, preffered_type = QulityType.Q1080, preffered_codec = CodecType.MPGHD,
-	             torrent_player = TorrentPlayer.YATP, storage_path = '',
+	             torrent_player = TorrentPlayer.TORR2HTTP, storage_path = '',
 	             movies_save			= True,
 	             animation_save		= True,
 	             documentary_save	= True,

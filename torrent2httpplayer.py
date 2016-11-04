@@ -37,7 +37,9 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			pass
 		return value
 		
-	def __init__(self, settings):
+	def __init__(self, settings, remote=False):
+		self.remote = remote
+
 		self.engine = None
 		self.file_id = None
 		self.settings = settings
@@ -96,11 +98,17 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		use_random_port = self.debug_assignment( True if getSetting('use_random_port') == 'true' else False, 'use_random_port')
 		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 6881, "listen_port")
 		
-		
-		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
-							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
-							keep_incomplete=False, keep_complete=True, keep_files=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
-							log_files_progress=True, trackers=add_trackers)
+		args = {'uri': uri, 'download_path': download_path, 'user_agent': user_agent, 'encryption': encryption,
+							'upload_kbps': upload_limit, 'download_kbps': download_limit, 'connections_limit': connections_limit,
+							'keep_incomplete': False, 'keep_complete': True, 'keep_files': True, 'dht_routers': dht_routers, 'use_random_port': use_random_port, 'listen_port': listen_port,
+							'log_files_progress': True, 'trackers': add_trackers, 'startup_timeout': 1000 }
+
+		if self.remote:
+			from remoteengine import ClientEngine
+			self.debug('remoteengine imported')
+			self.engine = ClientEngine(**args)
+		else:
+			self.engine = Engine(**args)
 
 		try:
 			self.engine.resume_file = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
