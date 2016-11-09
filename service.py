@@ -166,6 +166,9 @@ def scrape_nnm():
 	settings = player.load_settings()
 	data_path = settings.torrents_path()
 
+	if not filesystem.exists(filesystem.join(data_path, 'nnmclub')):
+		return
+
 	hashes = []
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
 		if torr.endswith('.torrent'):
