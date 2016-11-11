@@ -98,11 +98,15 @@ class Runner(object):
 
 		for item in files:
 			path = filesystem.join(self.storage_path, data['name'], item['name'])
+			debug(u'all_torrent_files_exists: ' + path)
 			if not filesystem.exists(path):
 				path = filesystem.join(self.settings.copy_video_path, data['name'], item['name'])
+				debug(u'all_torrent_files_exists: ' + path)
 				if not filesystem.exists(path):
+					debug(u'all_torrent_files_exists: not found')
 					return False
 
+		debug(u'all_torrent_files_exists: Ok')
 		return True
 
 

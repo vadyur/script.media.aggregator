@@ -103,6 +103,13 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 							'keep_incomplete': False, 'keep_complete': True, 'keep_files': True, 'dht_routers': dht_routers, 'use_random_port': use_random_port, 'listen_port': listen_port,
 							'log_files_progress': True, 'trackers': add_trackers, 'startup_timeout': 1000 }
 
+		try:
+			args['resume_file'] = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
+		except BaseException as e:
+			log.print_tb(e)
+			args['resume_file'] = filesystem.join(download_path, self.info_hash + '.resume')
+		self.debug('resume file is: ' + args['resume_file'])
+
 		if self.remote:
 			from remoteengine import ClientEngine
 			self.debug('remoteengine imported')
@@ -110,12 +117,6 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		else:
 			self.engine = Engine(**args)
 
-		try:
-			self.engine.resume_file = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
-		except BaseException as e:
-			log.print_tb(e)
-			self.engine.resume_file = filesystem.join(download_path, self.info_hash + '.resume')
-		self.debug('resume file is: ' + self.engine.resume_file)
 
 		#self.engine.start()
 		
