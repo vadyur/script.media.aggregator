@@ -415,6 +415,10 @@ class TheTVDBAPI(object):
 	def __init__(self, imdbId):
 		self.tvdb_banners = None
 		self.tvdb_ru = None
+
+		if imdbId is None:
+			return
+
 		try:
 			response1 = urllib2.urlopen(self.__base_url + 'GetSeriesByRemoteID.php?imdbid=%s&language=%s' % (imdbId, self.__lang) )
 			try:
