@@ -1,7 +1,7 @@
 ﻿# -*- coding: utf-8 -*-
 
 import log
-from log import debug
+from log import debug, print_tb
 
 
 import json, re, base
@@ -140,10 +140,20 @@ class KinopoiskAPI(object):
 		self.soup = None
 		self.actors = []
 
+	def _http_get(self, url):
+		try:
+			r = requests.get(url, timeout=10)
+		except requests.exceptions.ConnectionError as e:
+			r = requests.Response()
+			r.status_code = requests.codes.service_unavailable
+
+			debug(str(e))
+		return r
+
 	def getTitle(self):
 		title = None
 		if self.kinopoisk_url and self.soup is None:
-			r = requests.get(self.kinopoisk_url)
+			r = self._http_get(self.kinopoisk_url)
 			if r.status_code == requests.codes.ok:
 				self.soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 
@@ -160,7 +170,7 @@ class KinopoiskAPI(object):
 
 		if self.kinopoisk_url:
 			cast_url = self.kinopoisk_url + 'cast/'
-			r = requests.get(cast_url)
+			r = self._http_get(cast_url)
 			if r.status_code == requests.codes.ok:
 				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 				for a in soup.select('a[name="actor"]'):
@@ -205,7 +215,7 @@ class KinopoiskAPI(object):
 	def Trailer(self):
 		if self.kinopoisk_url:
 			trailer_page = self.kinopoisk_url + 'video/type/1/'
-			r = requests.get(trailer_page)
+			r = self._http_get(trailer_page)
 			if r.status_code == requests.codes.ok:
 				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 				for div in soup.select('tr td div div.flag2'):
