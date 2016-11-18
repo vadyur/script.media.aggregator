@@ -158,10 +158,12 @@ class NFOWriter:
 		kp_id = self.parser.get_value('kp_id')
 		if kp_id != '':
 			index = 0
+			actors = []
 			if self.movie_api is not None:
 				actors = self.movie_api.Actors()
-			else:
-				actors = MovieAPI(kinopoisk=kp_id)
+			elif self.tvshow_api is not None:
+				actors = self.tvshow_api.Actors()
+
 			for actorInfo in actors:
 				if actorInfo['ru_name'] in self.parser.get_value('actor'):
 					actor = ET.SubElement(root, 'actor')
