@@ -135,19 +135,31 @@ class tmdb_movie_item(object):
 
 
 class KinopoiskAPI(object):
+	# Common session for KP requests
+	session = None
+
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self.actors = []
 
 	def _http_get(self, url):
+		if self.session is None:
+			self.session = requests.session()
+
 		try:
-			r = requests.get(url, timeout=10)
-		except requests.exceptions.ConnectionError as e:
+			headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+			r = self.session.get(url, headers=headers, timeout=2.0)
+		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
 			r.status_code = requests.codes.service_unavailable
 
-			debug(str(e))
+			debug(str(ce))
+		except requests.exceptions.Timeout as te:
+			r = requests.Response()
+			r.status_code = requests.codes.request_timeout
+
+			debug(str(te))
 		return r
 
 	def getTitle(self):

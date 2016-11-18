@@ -643,8 +643,12 @@ class MyShowsAPI(object):
 		if self.data():
 			s = self.data().get('started')
 			if s:
-				import datetime
-				d = datetime.datetime.strptime(s, '%b/%d/%Y')
+				import datetime, time
+				debug(s)
+				try:
+					d = datetime.datetime.strptime(s, '%b/%d/%Y')
+				except TypeError:
+					d = datetime.datetime(*(time.strptime(s, '%b/%d/%Y')[0:6]))
 				if d:
 					return d.strftime('%Y-%m-%d')
 		return None
@@ -675,11 +679,11 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 
 
 	def Title(self):
-		title = KinopoiskAPI.getTitle(self)
+		title = TheTVDBAPI.getTitle(self)
 		if title is not None:
 			return title
 
-		title = TheTVDBAPI.getTitle(self)
+		title = KinopoiskAPI.getTitle(self)
 		if title is not None:
 			return title
 
