@@ -141,7 +141,7 @@ class KinopoiskAPI(object):
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
-		self.actors = []
+		self.actors = None
 
 	def _http_get(self, url):
 		if self.session is None:
@@ -177,8 +177,10 @@ class KinopoiskAPI(object):
 		return title
 
 	def Actors(self):
-		if len(self.actors) > 0:
+		if self.actors is not None:
 			return self.actors
+
+		self.actors = []
 
 		if self.kinopoisk_url:
 			cast_url = self.kinopoisk_url + 'cast/'
