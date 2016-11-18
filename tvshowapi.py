@@ -679,11 +679,11 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 
 
 	def Title(self):
-		title = TheTVDBAPI.getTitle(self)
+		title = KinopoiskAPI.getTitle(self)
 		if title is not None:
 			return title
 
-		title = KinopoiskAPI.getTitle(self)
+		title = TheTVDBAPI.getTitle(self)
 		if title is not None:
 			return title
 
