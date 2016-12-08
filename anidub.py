@@ -154,8 +154,11 @@ class DescriptionParser(DescriptionParserBase):
 				fanart.append(a['href'].strip())
 			except:
 				pass
+
 		if len(fanart) != 0:
 			self._dict['fanart'] = fanart
+		else:
+			pass
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
@@ -270,14 +273,17 @@ def download_torrent(url, path, settings):
 	page = s.get(url)
 	#debug(page.text.encode('utf-8'))
 	soup = BeautifulSoup(page.text, 'html.parser')
-	a = soup.select('#tv720 div.torrent_h a')
-	if len(a) > 0:
-		href = 'http://tr.anidub.com' + a[0]['href']
+	a = soup.select_one('#tv720 div.torrent_h a')
+
+	if a is None:
+		a = soup.select_one('div.torrent_h > a')
+
+	if a is not None:
+		href = 'http://tr.anidub.com' + a['href']
 		debug(s.headers)
 		r = s.get(href, headers={'Referer': url})
 		debug(r.headers)
 		
-		# 'Content-Type': 'application/x-bittorrent'
 		if 'Content-Type' in r.headers:
 			if not 'torrent' in r.headers['Content-Type']:
 				return False
@@ -289,6 +295,7 @@ def download_torrent(url, path, settings):
 			return True
 		except: 
 			pass
+
 	return False
 
 def write_favorites(path, settings):
