@@ -273,10 +273,17 @@ def download_torrent(url, path, settings):
 	page = s.get(url)
 	#debug(page.text.encode('utf-8'))
 	soup = BeautifulSoup(page.text, 'html.parser')
-	a = soup.select_one('#tv720 div.torrent_h a')
 
-	if a is None:
-		a = soup.select_one('div.torrent_h > a')
+	try:
+	    a = soup.select_one('#tv720 div.torrent_h a')
+	except TypeError:
+		a = None
+
+	try:
+		if a is None:
+			a = soup.select_one('div.torrent_h > a')
+	except TypeError:
+		a = None
 
 	if a is not None:
 		href = 'http://tr.anidub.com' + a['href']
