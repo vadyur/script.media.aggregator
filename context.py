@@ -210,7 +210,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			data = player.GetLastTorrentData()
 			if data:
 				for f in data['files']:
-					li = xbmcgui.ListItem(f['name'])
+					try:
+						li = xbmcgui.ListItem(str(f['size'] / 1024 / 1024) + u' МБ | ' + f['name'])
+					except:
+						li = xbmcgui.ListItem(f['name'])
 					li.setProperty('index', str(f['index']))
 					self.files.addItem(li)
 
