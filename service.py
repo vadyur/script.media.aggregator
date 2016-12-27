@@ -425,6 +425,8 @@ def add_media(title, imdb):
 				if count:
 					dlg.notification(u'Media Aggregator', u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
 
+					xbmc.executebuiltin('Container.Refresh')
+
 					url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
 						{'action': 'add_media',
 						 'title': title.encode('utf-8'),
