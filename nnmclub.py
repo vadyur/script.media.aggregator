@@ -31,7 +31,7 @@ MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
 _NEXT_PAGE_SUFFIX = '&start='
 
 def real_url(url):
-	return url.replace('nnm-club.me', 'nnmclub.to')
+	return url.replace('nnm-club.me', 'nnmclub.to').replace('nnm-club.ws', 'nnmclub.to')
 
 
 def origin_url(url):
