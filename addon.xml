@@ -21,6 +21,12 @@
 	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
 	</item>
   </extension>
+  <extension point="kodi.context.item" library="context_tvshow.py">
+	<item>
+	  <label>Media Aggregator: поиск источников</label>
+	  <visible>StringCompare(ListItem.dbtype,tvshow)</visible>
+	</item>
+  </extension>
   <extension point="kodi.context.item" library="context_search.py">
 	<item>
 	  <label>Media Aggregator: поиск</label>

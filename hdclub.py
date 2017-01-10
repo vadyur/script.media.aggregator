@@ -185,7 +185,8 @@ def make_search_url(what, IDs, imdb, settings):
 	url = u'http://hdclub.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
 	url += '?c=' + str(IDs)
 	url += '&passkey=' + settings.hdclub_passkey
-	url += '&search=' + urllib2.quote(what.encode('utf-8'))
+	if imdb is None:
+		url += '&search=' + urllib2.quote(what.encode('cp1251'))
 	url += '&dsearch=' + imdb
 	return url
 
@@ -299,7 +300,7 @@ def search_results(imdb, session, settings, url, cat):
 
 		page = requests.get('http://hdclub.org/' + post['a'])
 
-		soup = BeautifulSoup(page.text)
+		soup = BeautifulSoup(page.text, "html.parser")
 
 		content = ''
 		tbl = soup.find('table', class_='heading_b')
@@ -307,8 +308,8 @@ def search_results(imdb, session, settings, url, cat):
 		for td in tbl.find_all('td', class_='heading_r'):
 			content += td.prettify()
 
-		with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
-			html.write(content.encode('utf-8'))
+		#with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
+		#	html.write(content.encode('utf-8'))
 
 		parser = DescriptionParser(post['title'], content, post['a'], settings=settings)
 		debug(u'%s %s %s' % (post['title'], str(parser.parsed()), parser.get_value('imdb_id')))
