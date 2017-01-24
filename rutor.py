@@ -53,8 +53,12 @@ class DescriptionParser(DescriptionParserBase):
 			u'Год выхода:': u'year',
 			u'Жанр:': u'genre',
 			u'Режиссер:': u'director',
+			u'Режиссёр:': u'director',
 			u'В ролях:': u'actor',
 			u'О фильме:': u'plot',
+			u'Описание:': u'plot',
+			u'Описание фильма:': u'plot',
+			u'Сюжет фильма:': u'plot',
 			u'Продолжительность:': u'runtime',
 			u'Качество:': u'format',
 			#u'Производство:': u'country_studio',
@@ -147,8 +151,10 @@ class DescriptionParser(DescriptionParserBase):
 				text = b.get_text()
 				tag = self.get_tag(text)
 				if tag == 'plot':
-					self._dict[tag] = base.striphtml(unicode(b.next_sibling.next_sibling).strip())
-					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
+					plot = base.striphtml(unicode(b.next_sibling.next_sibling).strip())
+					if plot:
+						self._dict[tag] = plot
+						debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
 				elif tag == 'genre':
 					genres = []
 					elements = b.findNextSiblings('a')
@@ -163,13 +169,27 @@ class DescriptionParser(DescriptionParserBase):
 					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
 			except:
 				pass
-		if 'genre' in self._dict:
-			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
 
-
+		tags = []
 		for tag in [u'title', u'year', u'genre', u'director', u'actor', u'plot']:
 			if tag not in self._dict:
-				return False
+				tags.append(tag)
+
+		if tags:
+			details = self.soup.select_one('#details').get_text()
+			lines = details.split('\n')
+			for l in lines:
+				if ':' in l:
+					key, desc = l.split(':', 1)
+					key = key.strip(' \r\n\t')
+					desc = desc.strip(' \r\n\t')
+
+					tag = self.get_tag(key+':')
+					if tag and desc and tag not in self._dict:
+						self._dict[tag] = desc
+
+		if 'genre' in self._dict:
+			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
 		
 		count_id = 0
 		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):
@@ -303,7 +323,7 @@ def is_tvshow(title):
 	return False
 
 def get_source_url(link):
-	m = re.match(r'.+=(\d+)$', link)
+	m = re.match(r'.+[=/](\d+)$', link)
 	if m is None:
 		return None
 	return 'http://rutor.info/torrent/%s/' % m.group(1)
@@ -338,7 +358,7 @@ def write_tvshows(rss_url, path, settings):
 
 def write_movies_rss(rss_url, path, settings):
 
-	debug('------------------------- Rutor Club: %s -------------------------' % rss_url)
+	debug('------------------------- Rutor: %s -------------------------' % rss_url)
 
 	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(real_url(rss_url, settings))
@@ -430,8 +450,123 @@ def download_torrent(url, path, settings):
 	return False
 
 
+def make_search_strms(result, settings, type):
+	count = 0
+	for item in result:
+		link = item['link']
+		parser = item['parser']
+		if link:
+			if type == 'movie':
+				import movieapi
+				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser)
+				count += 1
+			if type == 'tvshow':
+				import tvshowapi
+				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser)
+				count += 1
+
+	return count
+
+class PostsEnumerator(object):
+	# ==============================================================================================
+	_items = []
+
+	def __init__(self, settings):
+		self._s = requests.Session()
+		self.settings = settings
+		self._items[:] = []
+
+	def process_page(self, url):
+		request = self._s.get(real_url(url, self.settings))
+		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
+		debug(url)
+
+		indx = self.soup.find('div', attrs={'id': 'index'})
+		if indx:
+			bgnd = indx.find('tr', class_='backgr')
+			if bgnd:
+				for row in bgnd.next_siblings:
+					td2 = row.contents[1]
+					td5 = row.contents[-1]
+
+					item = {}
+					topic_a = td2.find_all('a')
+					if topic_a:
+						topic_a = topic_a[-1]
+						item['a'] = topic_a
+
+					dl_a = td2.find('a', class_='downgif')
+					if dl_a:
+						item['dl_link'] = dl_a['href']
+
+					span_green = td5.find('span', class_='green')
+					if span_green:
+						item['seeds'] = span_green.get_text().strip()
+
+					self._items.append(item.copy())
+
+
+	def items(self):
+		return self._items
+
+
+def search_results(imdb, settings, url):
+	result = []
+
+	enumerator = PostsEnumerator(settings)
+	enumerator.process_page(real_url(url, settings))
+
+	for post in enumerator.items():
+		if 'seeds' in post and int(post['seeds']) < 5:
+			continue
+
+		title = post['a'].get_text()
+		dl_link = str('http://rutor.info' + post['dl_link'])
+		link = get_source_url(dl_link)
+
+		if is_tvshow(title):
+			parser = DescriptionParserRSSTVShows(title, link, settings)	#parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+		else:
+			parser = DescriptionParserRSS(title, link, settings)
+		if parser.parsed() and parser.get_value('imdb_id') == imdb:
+			result.append({'parser': parser, 'link': dl_link})
+
+	return result
+
+
+def search_generate(what, imdb, settings):
+	count = 0
+
+	if settings.movies_save:
+		url = 'http://rutor.info/search/0/1/010/2/' + imdb
+		result1 = search_results(imdb, settings, url)
+		with filesystem.save_make_chdir_context(settings.movies_path()):
+			count += make_search_strms(result1, settings, 'movie')
+
+	if settings.animation_save:
+		url = 'http://rutor.info/search/0/7/010/2/' + imdb
+		result2 = search_results(imdb, settings, url)
+		with filesystem.save_make_chdir_context(settings.animation_path()):
+			count += make_search_strms(result2, settings, 'movie')
+
+	if settings.animation_tvshows_save:
+		url = 'http://rutor.info/search/0/7/010/2/' + imdb
+		result3 = search_results(imdb, settings, url)
+		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
+			count += make_search_strms(result3, settings, 'tvshow')
+
+	if settings.tvshows_save:
+		url = 'http://rutor.info/search/0/4/010/2/' + imdb
+		result4 = search_results(imdb, settings, url)
+		with filesystem.save_make_chdir_context(settings.tvshow_path()):
+			count += make_search_strms(result4, settings, 'tvshow')
+
+	return count
+
 if __name__ == '__main__':
 	settings = Settings('../../..')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
 	settings.rutor_domain = 'rutor.is'
-	run(settings)
+	#run(settings)
+
+	search_generate(None, 'tt2948356', settings)

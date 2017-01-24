@@ -12,7 +12,7 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import anidub, hdclub, nnmclub
+import anidub, hdclub, nnmclub, rutor
 import filesystem
 import player
 
@@ -300,11 +300,14 @@ def add_media_process(title, imdb, settings):
 
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 
 	if hdclub_enable:
 		count += hdclub.search_generate(title, imdb, settings)
 	if nnmclub_enable:
 		count += nnmclub.search_generate(title, imdb, settings)
+	if rutor_enable:
+		count += rutor.search_generate(title, imdb, settings)
 
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
