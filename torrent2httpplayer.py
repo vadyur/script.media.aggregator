@@ -37,9 +37,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			pass
 		return value
 		
-	def __init__(self, settings, remote=False):
-		self.remote = remote
-
+	def __init__(self, settings):
 		self.engine = None
 		self.file_id = None
 		self.settings = settings
@@ -110,13 +108,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			args['resume_file'] = filesystem.join(download_path, self.info_hash + '.resume')
 		self.debug('resume file is: ' + args['resume_file'])
 
-		if self.remote:
-			from remoteengine import ClientEngine
-			self.debug('remoteengine imported')
-			self.engine = ClientEngine(**args)
-		else:
-			self.engine = Engine(**args)
-
+		self.engine = Engine(**args)
 
 		#self.engine.start()
 		

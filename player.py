@@ -181,8 +181,6 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
 			player = Torrent2HTTPPlayer(settings)
-		elif settings.torrent_player == 'torrent2http remote':
-			player = Torrent2HTTPPlayer(settings, remote=True)
 		elif settings.torrent_player == 'Ace Stream':
 			import aceplayer
 			player = aceplayer.AcePlayer(settings)
