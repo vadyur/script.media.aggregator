@@ -213,7 +213,7 @@ class DescriptionParser(DescriptionParserBase):
 					if '/torrent/' in a['href']:
 						parts = a['href'].split('/')
 						href = parts[0] + '/' + parts[1] + '/' + parts[2]
-						html = urllib2.urlopen(real_url(href, settings))
+						html = urllib2.urlopen(real_url(href, self.settings))
 						soup = BeautifulSoup(clean_html(html.read()), 'html.parser')
 
 						for a in soup.select('a[href*="www.imdb.com/title/"]'):
