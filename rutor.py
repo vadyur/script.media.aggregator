@@ -176,17 +176,20 @@ class DescriptionParser(DescriptionParserBase):
 				tags.append(tag)
 
 		if tags:
-			details = self.soup.select_one('#details').get_text()
-			lines = details.split('\n')
-			for l in lines:
-				if ':' in l:
-					key, desc = l.split(':', 1)
-					key = key.strip(u' \r\n\t✦═')
-					desc = desc.strip(u' \r\n\t')
+			try:
+				details = self.soup.select_one('#details').get_text()
+				lines = details.split('\n')
+				for l in lines:
+					if ':' in l:
+						key, desc = l.split(':', 1)
+						key = key.strip(u' \r\n\t✦═')
+						desc = desc.strip(u' \r\n\t')
 
-					tag = self.get_tag(key+':')
-					if tag and desc and tag not in self._dict:
-						self._dict[tag] = desc
+						tag = self.get_tag(key+':')
+						if tag and desc and tag not in self._dict:
+							self._dict[tag] = desc
+			except TypeError:
+				pass
 
 		if 'genre' in self._dict:
 			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
