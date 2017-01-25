@@ -483,7 +483,12 @@ class PostsEnumerator(object):
 		self._items[:] = []
 
 	def process_page(self, url):
-		request = self._s.get(real_url(url, self.settings))
+
+		try:
+			request = self._s.get(real_url(url, self.settings))
+		except requests.exceptions.ConnectionError:
+			return
+
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -520,7 +525,7 @@ def search_results(imdb, settings, url):
 	result = []
 
 	enumerator = PostsEnumerator(settings)
-	enumerator.process_page(real_url(url, settings))
+	enumerator.process_page(url)
 
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:
@@ -572,7 +577,7 @@ def search_generate(what, imdb, settings):
 if __name__ == '__main__':
 	settings = Settings('../../..')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
-	settings.rutor_domain = 'rutor.is'
+	settings.rutor_domain = 'rutor.info'
 	#run(settings)
 
 	search_generate(None, 'tt2948356', settings)
