@@ -181,8 +181,8 @@ class DescriptionParser(DescriptionParserBase):
 			for l in lines:
 				if ':' in l:
 					key, desc = l.split(':', 1)
-					key = key.strip(' \r\n\t')
-					desc = desc.strip(' \r\n\t')
+					key = key.strip(u' \r\n\t✦═')
+					desc = desc.strip(u' \r\n\t')
 
 					tag = self.get_tag(key+':')
 					if tag and desc and tag not in self._dict:
@@ -190,6 +190,9 @@ class DescriptionParser(DescriptionParserBase):
 
 		if 'genre' in self._dict:
 			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
+
+		if 'video' in self._dict:
+			self._dict['video'] = self._dict['video'].replace('|', ',')
 		
 		count_id = 0
 		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):
