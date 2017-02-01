@@ -61,7 +61,7 @@
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
-    <description lang="ru">Media Aggregator загружает данные раздач (hdclub.org, tr.anidub.com, nnm-club.me) и создаёт .strm и .nfo файлы</description>
+    <description lang="ru">Media Aggregator загружает данные раздач (hdclub.org, tr.anidub.com, nnm-club.me, rutor.info) и создаёт локальную онлайн библиотеку</description>
     <forum>http://xbmc.ru/forum/showthread.php?t=10592</forum>
   </extension>
   <extension point="xbmc.service" library="service.py"/>
