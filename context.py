@@ -12,6 +12,7 @@ import filesystem
 from base import STRMWriterBase, seeds_peers
 
 class MyWindow(pyxbmct.AddonDialogWindow):
+
 	def __init__(self, title, settings, links = []):
 		# Вызываем конструктор базового класса.
 		super(MyWindow, self).__init__(title)
@@ -21,6 +22,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.settings = settings
 
 		self.files = None
+		self.left_menu = None
 		self.list = pyxbmct.List('font14', _itemHeight=100)
 		self.placeControl(self.list, 0, 0)
 
@@ -58,12 +60,6 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				debug(str(e))
 				pass
 
-			try:
-				s+= '\t\t\t\tRank: ' + str(item['rank'])
-			except BaseException as e:
-				debug(str(e))
-				pass
-
 			if s != '':
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)
@@ -89,13 +85,65 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.setFocus(self.list)
 		self.connect(self.list, self.make_choice)
 
-		self.connect(pyxbmct.ACTION_MOVE_RIGHT, self.show_files)
-		self.connect(pyxbmct.ACTION_MOVE_LEFT, self.show_list)
+		self.connect(pyxbmct.ACTION_MOVE_RIGHT, self.go_right)
+		self.connect(pyxbmct.ACTION_MOVE_LEFT, self.go_left)
 
 		# Связываем клавиатурное действие с методом.
 		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
 		self.has_choice = False
 		self.has_select_file = False
+
+	def go_left(self):
+		if self.files:
+			self.show_list()
+		else:
+			self.show_menu()
+
+	def go_right(self):
+		if self.left_menu:
+			self.show_list()
+		else:
+			self.show_files()
+
+	def show_menu(self):
+		if self.left_menu:
+			return
+
+		self.left_menu = pyxbmct.List('font14')
+		self.placeControl(self.left_menu, 0, 0)
+
+		link = self.cursel_link()
+
+		self.list.setVisible(False)
+
+		path = self.download_torrent(link)
+
+		# +++
+
+		if self.settings.copy_torrent_path:
+			li = xbmcgui.ListItem(u'Копировать торрент')
+			li.setProperty('link', link)
+			li.setProperty('path', path)
+			li.setProperty('action', 'copy_torrent')
+			self.left_menu.addItem(li)
+
+		# +++
+
+		self.setFocus(self.left_menu)
+		self.connect(self.left_menu, self.select_menu_item)
+
+	def select_menu_item(self):
+		cursel = self.left_menu.getSelectedItem()
+		action = cursel.getProperty('action')
+		if action == 'copy_torrent':
+			self.copy_torrent(cursel.getProperty('path'))
+		self.show_list()
+
+	def copy_torrent(self, torrent_path):
+		settings = self.settings
+		if settings.copy_torrent_path and filesystem.exists(settings.copy_torrent_path):
+			dest_path = filesystem.join(self.settings.copy_torrent_path, filesystem.basename(torrent_path))
+			filesystem.copyfile(torrent_path, dest_path)
 
 	def show_list(self):
 		self.list.setVisible(True)
@@ -106,13 +154,12 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			del self.files
 			self.files = None
 
-	def show_files(self):
-		if self.files:
-			return
+		if self.left_menu:
+			self.left_menu.setVisible(False)
+			del self.left_menu
+			self.left_menu = None
 
-		self.files = pyxbmct.List('font14')
-		self.placeControl(self.files, 0, 0)
-
+	def cursel_link(self):
 		cursel = self.list.getSelectedItem()
 		debug(cursel.getLabel())
 		link = cursel.getProperty('link')
@@ -125,8 +172,9 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		if match:
 			link = match.group(1)
 
-		self.list.setVisible(False)
+		return link
 
+	def download_torrent(self, link):
 		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 		from downloader import TorrentDownloader
 		import player
@@ -139,6 +187,22 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			path = torr_downloader.get_filename()
 
 		debug(path)
+
+		return path
+
+	def show_files(self):
+		if self.files:
+			return
+
+		self.files = pyxbmct.List('font14')
+		self.placeControl(self.files, 0, 0)
+
+		link = self.cursel_link()
+
+		self.list.setVisible(False)
+
+		path = self.download_torrent(link)
+
 		if filesystem.exists(path):
 			import base
 			player = base.TorrentPlayer()
@@ -146,7 +210,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			data = player.GetLastTorrentData()
 			if data:
 				for f in data['files']:
-					li = xbmcgui.ListItem(f['name'])
+					try:
+						li = xbmcgui.ListItem(str(f['size'] / 1024 / 1024) + u' МБ | ' + f['name'])
+					except:
+						li = xbmcgui.ListItem(f['name'])
 					li.setProperty('index', str(f['index']))
 					self.files.addItem(li)
 

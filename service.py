@@ -12,7 +12,7 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import anidub, hdclub, nnmclub
+import anidub, hdclub, nnmclub, rutor
 import filesystem
 import player
 
@@ -166,6 +166,9 @@ def scrape_nnm():
 	settings = player.load_settings()
 	data_path = settings.torrents_path()
 
+	if not filesystem.exists(filesystem.join(data_path, 'nnmclub')):
+		return
+
 	hashes = []
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
 		if torr.endswith('.torrent'):
@@ -297,11 +300,14 @@ def add_media_process(title, imdb, settings):
 
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 
 	if hdclub_enable:
 		count += hdclub.search_generate(title, imdb, settings)
 	if nnmclub_enable:
 		count += nnmclub.search_generate(title, imdb, settings)
+	if rutor_enable:
+		count += rutor.search_generate(title, imdb, settings)
 
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
@@ -421,6 +427,8 @@ def add_media(title, imdb):
 
 				if count:
 					dlg.notification(u'Media Aggregator', u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
+
+					xbmc.executebuiltin('Container.Refresh')
 
 					url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
 						{'action': 'add_media',

@@ -96,18 +96,19 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		use_random_port = self.debug_assignment( True if getSetting('use_random_port') == 'true' else False, 'use_random_port')
 		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 6881, "listen_port")
 		
-		
-		self.engine = Engine(uri=uri, download_path=download_path, user_agent=user_agent, encryption=encryption, \
-							upload_kbps=upload_limit, download_kbps=download_limit, connections_limit=connections_limit, \
-							keep_incomplete=False, keep_complete=True, keep_files=True, dht_routers=dht_routers, use_random_port=use_random_port, listen_port=listen_port,\
-							log_files_progress=True, trackers=add_trackers)
+		args = {'uri': uri, 'download_path': download_path, 'user_agent': user_agent, 'encryption': encryption,
+							'upload_kbps': upload_limit, 'download_kbps': download_limit, 'connections_limit': connections_limit,
+							'keep_incomplete': False, 'keep_complete': True, 'keep_files': True, 'dht_routers': dht_routers, 'use_random_port': use_random_port, 'listen_port': listen_port,
+							'log_files_progress': True, 'trackers': add_trackers, 'startup_timeout': 1000 }
 
 		try:
-			self.engine.resume_file = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
+			args['resume_file'] = filesystem.join(self.settings.torrents_path(), self.info_hash + '.resume')
 		except BaseException as e:
 			log.print_tb(e)
-			self.engine.resume_file = filesystem.join(download_path, self.info_hash + '.resume')
-		self.debug('resume file is: ' + self.engine.resume_file)
+			args['resume_file'] = filesystem.join(download_path, self.info_hash + '.resume')
+		self.debug('resume file is: ' + args['resume_file'])
+
+		self.engine = Engine(**args)
 
 		#self.engine.start()
 		

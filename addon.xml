@@ -1,25 +1,50 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.media.aggregator" version="0.16.11" name="[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]" provider-name="-=Vd=-">
+<addon id="script.media.aggregator" version="0.17.0" name="[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]" provider-name="-=Vd=-">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
-	<import addon="plugin.video.yatp" optional="true"/>
-	<import addon="script.module.torrent2http" optional="false"/>
+    <import addon="plugin.video.yatp" optional="true"/>
+    <import addon="script.module.torrent2http" optional="false"/>
     <import addon="script.module.torrent.ts" optional="true"/>
-	<import addon="script.module.beautifulsoup4" version="4.3.0"/>
-	<import addon="script.module.requests" optional="false"/>
-	<import addon="script.module.feedparser" optional="false"/>
-	<import addon="script.module.myconnpy" optional="false"/>
+    <import addon="script.module.beautifulsoup4" version="4.3.0"/>
+    <import addon="script.module.requests" optional="false"/>
+    <import addon="script.module.feedparser" optional="false"/>
+    <import addon="script.module.myconnpy" optional="false"/>
     <import addon="script.module.pyxbmct" version="1.1.4"/>
-    <import addon="script.module.chardet" />
+    <import addon="script.module.chardet"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
-	<provides>video</provides>
+    <provides>video</provides>
+  </extension>
+  <extension point="kodi.context.item">
+    <menu id="kodi.core.main">
+      <menu>
+        <label>[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]</label>
+        <item library="context.py">
+          <label>Выбор источников</label>
+          <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
+        </item>
+        <item library="context_tvshow.py">
+          <label>Поиск источников</label>
+          <visible>StringCompare(ListItem.dbtype,tvshow)</visible>
+        </item>
+        <item library="context_search.py">
+          <label>Поиск</label>
+          <visible>true</visible>
+        </item>
+      </menu>
+    </menu>
   </extension>
   <extension point="kodi.context.item" library="context.py">
-	<item>
-	  <label>Media Aggregator: выбор</label>
-	  <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
-	</item>
+    <item>
+      <label>Media Aggregator: выбор</label>
+      <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm) + String.StartsWith(System.BuildVersion, 15)</visible>
+    </item>
+  </extension>
+  <extension point="kodi.context.item" library="context_tvshow.py">
+    <item>
+      <label>Media Aggregator: поиск источников</label>
+      <visible>StringCompare(ListItem.dbtype,tvshow) + String.StartsWith(System.BuildVersion, 15)</visible>
+    </item>
   </extension>
   <extension point="kodi.context.item" library="context_tvshow.py">
 	<item>
@@ -28,16 +53,16 @@
 	</item>
   </extension>
   <extension point="kodi.context.item" library="context_search.py">
-	<item>
-	  <label>Media Aggregator: поиск</label>
-	  <visible>true</visible>
-	</item>
+    <item>
+      <label>Media Aggregator: поиск</label>
+      <visible>String.StartsWith(System.BuildVersion, 15)</visible>
+    </item>
   </extension>
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
-	<description lang="ru">Media Aggregator загружает данные раздач (hdclub.org, tr.anidub.com, nnm-club.me) и создаёт .strm и .nfo файлы</description>
-	<forum>http://xbmc.ru/forum/showthread.php?t=10592</forum>
+    <description lang="ru">Media Aggregator загружает данные раздач (hdclub.org, tr.anidub.com, nnm-club.me) и создаёт .strm и .nfo файлы</description>
+    <forum>http://xbmc.ru/forum/showthread.php?t=10592</forum>
   </extension>
   <extension point="xbmc.service" library="service.py"/>
   <extension point="xbmc.python.module"/>

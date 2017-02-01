@@ -1,4 +1,4 @@
-import log
+﻿import log
 
 import xbmc, filesystem, xbmcvfs, os, time
 import xml.etree.ElementTree as ET
@@ -53,7 +53,8 @@ DB_VERSIONS = {
 	'13': '78',
 	'14': '90',
 	'15': '93',
-	'16': '99'
+	'16': '99',
+	'17': '107'
 }
 
 BASE_PATH = 'special://database'		
@@ -86,23 +87,23 @@ class VideoDatabase(object):
 			
 			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos'
 			self.DB_NAME += self.get_db_version(self.DB_NAME)
-			xbmc.log('kodidb: DB name is ' + self.DB_NAME )
+			log.debug('kodidb: DB name is ' + self.DB_NAME )
 
 			self.DB_USER = reader['user']
 			self.DB_PASS = reader['pass']
 			self.DB_ADDRESS = reader['host']
 			self.DB_PORT=reader['port']
-		  
+
 			if reader['type'] == 'mysql' and \
 							self.DB_ADDRESS is not None and \
 							self.DB_USER is not None and \
 							self.DB_PASS is not None and \
 							self.DB_NAME is not None:
 
-				xbmc.log('kodidb: Service: Loading MySQL as DB engine')
+				log.debug('kodidb: Service: Loading MySQL as DB engine')
 				self.DB = 'mysql'
 			else:
-				xbmc.log('kodidb: Service: MySQL not enabled or not setup correctly')
+				log.debug('kodidb: Service: MySQL not enabled or not setup correctly')
 				raise ValueError('MySQL not enabled or not setup correctly')
 		except:
 			self.DB = 'sqlite'

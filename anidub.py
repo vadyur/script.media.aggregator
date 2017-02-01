@@ -158,7 +158,7 @@ class DescriptionParser(DescriptionParserBase):
 		if len(fanart) != 0:
 			self._dict['fanart'] = fanart
 		else:
-			pass
+			return False
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:

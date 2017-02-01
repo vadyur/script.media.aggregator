@@ -65,11 +65,13 @@
         <setting label="Login" type="text"   id="anidub_login" enable="eq(-2,true)" default=""/>
         <setting label="Password" type="text"   id="anidub_password" enable="eq(-3,true)" option="hidden"  default=""/>
     </category>
+	
     <category label="HDClub">
 		<setting label="Использовать" type="bool" id="hdclub_enable" default="false"/>
 		<setting label="Получить Passkey можно перейдя на 'http://hdclub.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
         <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
     </category>
+	
     <category label="nnm-club">
 		<setting label="Использовать" type="bool" id="nnmclub_enable" default="false"/>
 		<setting label="Учётные данные сайта nnm-club.me (необходима регистрация на сайте)" type="lsep"/>
@@ -77,11 +79,10 @@
         <setting label="Password" type="text"   id="nnmclub_password" enable="eq(-3,true)" option="hidden"  default=""/>
     </category>
 
-    <!--
     <category label="Rutor">
         <setting label="Использовать" type="bool" id="rutor_enable" default="false"/>
         <setting label="Домен" type="text" id="rutor_domain" default="rutor.info"/>
         <setting label="Фильтр" type="text" id="rutor_filter" default="CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP"/>
     </category>
-    -->
+
 </settings>

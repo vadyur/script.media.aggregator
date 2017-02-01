@@ -239,14 +239,12 @@ class NFOWriter:
 
 	def write_plot(self, root):
 		plot = self.stripHtml(self.parser.get_value('plot'))
-		'''
-		if plot == '' and self.tvshow_api is not None:
-			try:
-				plot = self.stripHtml(self.tvshow_api.data()['description'])
-			except:
-				pass
-		'''
-		self.add_element_value(root, 'plot', plot)
+
+		if not plot and self.movie_api:
+			plot = self.movie_api.Plot()
+
+		if plot:
+			self.add_element_value(root, 'plot', plot)
 
 	def write_tagline(self, root):
 		pass

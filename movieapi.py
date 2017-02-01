@@ -162,19 +162,33 @@ class KinopoiskAPI(object):
 			debug(str(te))
 		return r
 
-	def getTitle(self):
-		title = None
+	def makeSoup(self):
 		if self.kinopoisk_url and self.soup is None:
 			r = self._http_get(self.kinopoisk_url)
 			if r.status_code == requests.codes.ok:
 				self.soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 
+	def getTitle(self):
+		title = None
+
+		self.makeSoup()
 		if self.soup:
 			h = self.soup.find('h1', class_ = 'moviename-big')
 			if h:
 				title = h.contents[0].strip()
 
 		return title
+
+	def getPlot(self):
+		plot = None
+
+		self.makeSoup()
+		if self.soup:
+			div = self.soup.find('div', attrs={"itemprop": "description"})
+			if div:
+				plot = div.get_text()
+
+		return plot
 
 	def Actors(self):
 		if self.actors is not None:
@@ -361,6 +375,9 @@ class MovieAPI(KinopoiskAPI):
 			pass
 			
 		return u''
+
+	def Plot(self):
+		return KinopoiskAPI.getPlot(self)
 		
 	def Tags(self):
 		tags = []
