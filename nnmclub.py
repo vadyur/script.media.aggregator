@@ -187,6 +187,13 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 
+		if 'thumbnail' not in self._dict:
+			imgs = self.soup.select('span.postbody > img')
+			try:
+				self._dict['thumbnail'] = imgs[0]['src'].split('?link=')[1]
+			except BaseException as e:
+				pass
+
 		self.parse_country_studio()
 
 		if self.settings:
@@ -530,6 +537,7 @@ def create_session(settings):
 
 	soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 
+	code = ''
 	for inp in soup.select('input[name="code"]'):
 		code = inp['value']
 	# debug(code)
