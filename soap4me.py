@@ -24,7 +24,7 @@ class DescriptionParser(DescriptionParserBase):
 		self.make_movie_api(self.imdb_id, self.kp_id)
 		self.tvshow_api = TVShowAPI(info['originaltitle'], api_info['title_ru'], self.imdb_id, self.kp_id)
 
-		api_title = tvshow_api.Title()
+		api_title = self.tvshow_api.Title()
 		self.tvshow_path = make_fullpath(api_title if api_title is not None else api_info['title_ru'], '')
 
 
