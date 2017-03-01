@@ -5,7 +5,7 @@ from log import debug, print_tb
 
 
 import feedparser, filesystem
-import xml.etree.cElementTree as ET
+#import xml.etree.cElementTree as ET
 from bs4 import BeautifulSoup
 import urllib2
 import json, os
@@ -92,6 +92,14 @@ class DescriptionParser(DescriptionParserBase):
 		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'))
 				
 		return True
+
+def make_full_url(link):
+	import urlparse
+	res = urlparse.urlparse(link)
+	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', 'hdclub.org', res.path, res.params, res.query, res.fragment)
+	res = urlparse.urlunparse(res)
+
+	return res
 		
 def write_movie(item, settings):
 	full_title = item.title
@@ -298,7 +306,7 @@ def search_results(imdb, session, settings, url, cat):
 
 		# full_title, content, link, settings
 
-		page = requests.get('http://hdclub.org/' + post['a'])
+		page = requests.get(make_full_url(post['a']))
 
 		soup = BeautifulSoup(page.text, "html.parser")
 
@@ -311,10 +319,10 @@ def search_results(imdb, session, settings, url, cat):
 		#with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
 		#	html.write(content.encode('utf-8'))
 
-		parser = DescriptionParser(post['title'], content, post['a'], settings=settings)
+		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings)
 		debug(u'%s %s %s' % (post['title'], str(parser.parsed()), parser.get_value('imdb_id')))
 		if parser.parsed(): # and parser.get_value('imdb_id') == imdb:
-			result.append({'parser': parser, 'link': post['dl_link']})
+			result.append({'parser': parser, 'link': make_full_url(post['dl_link'])})
 
 	return result
 
