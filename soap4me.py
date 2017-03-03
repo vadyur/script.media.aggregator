@@ -4,11 +4,13 @@ from bs4 import BeautifulSoup
 
 import json, urllib2
 
-from base import DescriptionParserBase, Informer
+from base import DescriptionParserBase, Informer, make_fullpath
+from tvshowapi import TVShowAPI
 
 class soap4me_data:
 	api_token = None
 	api_data = None
+	curr_sess = None
 
 
 class DescriptionParser(DescriptionParserBase):
@@ -18,22 +20,69 @@ class DescriptionParser(DescriptionParserBase):
 
 		api_info = (item for item in soap4me_data.api_data if item['title'] == info['originaltitle'] ).next()
 
+		self.episodes_data = get_api_request('https://api.soap4.me/v2/episodes/' + str(api_info['sid']) + '/')
+
 		self.imdb_id = api_info['imdb_id']
 		self.kp_id = api_info['kinopoisk_id']
 
-		self.make_movie_api(self.imdb_id, self.kp_id)
-		self.tvshow_api = TVShowAPI(info['originaltitle'], api_info['title_ru'], self.imdb_id, self.kp_id)
+		from movieapi import KinopoiskAPI
+
+		kp_url = KinopoiskAPI.make_url_by_id(self.kp_id)
+
+		self.make_movie_api(self.imdb_id, kp_url)
+		self.tvshow_api = TVShowAPI(info['originaltitle'], api_info['title_ru'], self.imdb_id, kp_url)
 
 		api_title = self.tvshow_api.Title()
 		self.tvshow_path = make_fullpath(api_title if api_title is not None else api_info['title_ru'], '')
 
+		self.settings = settings
+		self.OK = self.parse(api_info)
+
+	def get_full_tvshow_path(self, settings):
+		animation = False
+		path = settings.animation_tvshow_path() if animation else settings.tvshow_path()
+
+		return filesystem.join(path, self.tvshow_path)
+
+	def get_api_dict(self):
+		return {
+			u'title_ru': u'title',
+			u'title': u'originaltitle',
+			u'year': u'year',
+			u'imdb_rating': u'rating',
+			u'episode_runtime': u'runtime',
+		}
+
+	def get_tag(self, x):
+		return {
+			u'': u'genre',
+			u'': u'director',
+			u'': u'actor',
+			u'': u'plot',
+			u'': u'format',
+			u'': u'country_studio',
+			u'': u'video',
+			u'': u'translate',
+		}.get(x.strip(), u'')
+
+	def parse(self, api_info):
+		api_dict = self.get_api_dict()
+		for key, value in api_dict.iteritems():
+			self._dict[value] = api_info[key]
+
+		return True
 
 def get_session(settings):
+	if soap4me_data.curr_sess:
+		return soap4me_data.curr_sess
+
 	s = requests.Session()
 
 	login = s.post("https://soap4.me/login/", data = {"login": settings.soap4me_login, "password": settings.soap4me_password})
 
 	debug('Login status: %d' % login.status_code)
+
+	soap4me_data.curr_sess = s
 
 	return s
 
@@ -94,53 +143,118 @@ def getInfoFromTitle(fulltitle):
 		'quality': quality
 	}
 
+class EpParser(DescriptionParser):
+	def __init__(self, parser, info, torr_path, episode):
+		self._dict = dict(parser.Dict())
+		self.parts = []
 
-def write_episode(fulltitle, description, link, settings):
-	return
+		self.parts.append('AVC/H.264')
+
+		if 'sd' in info['quality'].lower():
+			self.parts.append('720x540')
+		elif 'hd' in info['quality'].lower():
+			self.parts.append('1280x720')
+		elif 'fullhd' in info['quality'].lower():
+			self.parts.append('1920x1080')
+
+		from base import TorrentPlayer
+		player = TorrentPlayer()
+		player.AddTorrent(torr_path)
+		data = player.GetLastTorrentData()
+		if data:
+			add_dict = self.get_add_data(data)
+			if episode:
+				pass
+
+	def get_add_data(self, data):
+		for f in data['files']:
+			return f
+
+
+def write_episode(info, parser, fulltitle, description, link, settings):
+
+	path = parser.get_full_tvshow_path(settings)
+	season_path = 'Season ' + str(info['season'])
+
+	with filesystem.save_make_chdir_context(filesystem.join(path, season_path)):
+		from nfowriter import NFOWriter
+		filename = '%02d. episode_s%02de%02d' % (info['episode'], info['season'], info['episode'])		
+
+		episode = parser.tvshow_api.Episode(info['season'], info['episode'])
+		if not episode:
+			episode = {
+				'title': info['episode_name'],
+				'seasonNumber': info['season'],
+				'episodeNumber': info['episode'],
+				'image': '',
+				'airDate': ''
+						}
+
+		NFOWriter(parser, tvshow_api=parser.tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
+		from strmwriter import STRMWriter
+	
+		import re
+		link = re.sub(r'/dl/[\d\w]+/', '/dl/', link)
+
+		from downloader import TorrentDownloader
+		dl = TorrentDownloader(link, settings.torrents_path(), settings)
+		dl.download()
+
+		path = filesystem.join(settings.torrents_path(), dl.get_subdir_name(),
+							   dl.get_post_index() + '.torrent')
+
+		STRMWriter(link).write(filename, settings=settings, parser=EpParser(parser, info, path, episode))
+
+
 	#tvshowapi.write_tvshow(fulltitle, link, settings, parser)
 
 
 def write_twshow(info, settings):
 	parser = DescriptionParser(info, settings)
 
+	with filesystem.save_make_chdir_context(parser.get_full_tvshow_path(settings)):
+		from nfowriter import NFOWriter
+		NFOWriter(parser, tvshow_api=parser.tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
+
 	return parser
 
 
-def write_tvshows(rss_url, path, settings):
+def write_tvshows(rss_url, settings):
 	debug('------------------------- soap4me: %s -------------------------' % rss_url)
 
 	shows = {}
 
-	with filesystem.save_make_chdir_context(path):
-		d = feedparser.parse(rss_url)
+	d = feedparser.parse(rss_url)
 
-		cnt = 0
-		settings.progress_dialog.update(0, 'soap4me', path)
+	cnt = 0
+	settings.progress_dialog.update(0, 'soap4me', '')
 
-		for item in d.entries:
-			try:
-				debug(item.title.encode('utf-8'))
-			except:
-				continue
+	for item in d.entries:
+		try:
+			debug(item.title.encode('utf-8'))
+		except:
+			continue
 
-			info = getInfoFromTitle(item.title)
+		info = getInfoFromTitle(item.title)
 
-			parser = None
-			title = info['originaltitle']
-			if not title in shows:
-				parser = write_twshow(info, settings)
-				shows[title] =  parser
-			else:
-				parser = shows[title]
+		parser = None
+		title = info['originaltitle']
+		if not title in shows:
+			parser = write_twshow(info, settings)
+			shows[title] =  parser
+		else:
+			parser = shows[title]
 
-			write_episode(
-				fulltitle=item.title,
-				description=item.description,
-				link=item.link,
-				settings=settings)
+		write_episode(
+			info=info,
+			parser=parser,
+			fulltitle=item.title,
+			description=item.description,
+			link=item.link,
+			settings=settings)
 
-			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'soap4me', path)
+		cnt += 1
+		settings.progress_dialog.update(cnt * 100 / len(d.entries), 'soap4me', '')
 
 
 def get_api_token(settings):
@@ -167,4 +281,23 @@ def run(settings):
 	soap4me_data.api_data = get_api_request('https://api.soap4.me/v2/soap/')
 
 	if settings.tvshows_save:
-		write_tvshows(get_rss_url(session), settings.tvshow_path(), settings)
+		write_tvshows(get_rss_url(session), settings)
+
+
+def search_generate(title, imdb, settings):
+	return 0
+
+
+def download_torrent(url, path, settings):
+	import re
+	url = urllib2.unquote(url)
+	debug('download_torrent:' + url)
+
+	session = get_session(settings)
+	r = session.get(url)
+	with filesystem.fopen(path, 'wb') as torr:
+		for chunk in r.iter_content(100000):
+			torr.write(chunk)
+	
+
+	

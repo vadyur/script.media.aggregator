@@ -38,6 +38,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[HDclub] '
 				elif 'rutor' in link:
 					s += '[rutor] '
+				elif 'soap4' in link:
+					s += '[soap4me] '
 			except:
 				pass
 			try:

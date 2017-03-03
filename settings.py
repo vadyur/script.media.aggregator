@@ -33,6 +33,7 @@ class Settings:
 	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 	             rutor_domain = 'rutor.info',
 	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
+	             soap4me_login = '', soap4me_password = '',
 	             preffered_bitrate = 10000, preffered_type = QulityType.Q1080, preffered_codec = CodecType.MPGHD,
 	             torrent_player = TorrentPlayer.YATP, storage_path = '',
 	             movies_save			= True,
@@ -66,6 +67,9 @@ class Settings:
 
 		self.rutor_domain           = rutor_domain
 		self.rutor_filter           = rutor_filter
+
+		self.soap4me_login			= soap4me_login
+		self.soap4me_password		= soap4me_password
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type

@@ -138,6 +138,10 @@ class KinopoiskAPI(object):
 	# Common session for KP requests
 	session = None
 
+	@staticmethod
+	def make_url_by_id(kp_id):
+		return 'http://www.kinopoisk.ru/film/' + str(kp_id) + '/'
+
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None

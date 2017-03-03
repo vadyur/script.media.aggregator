@@ -12,7 +12,7 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import anidub, hdclub, nnmclub, rutor
+import anidub, hdclub, nnmclub, rutor, soap4me
 import filesystem
 import player
 
@@ -111,6 +111,8 @@ def update_service(show_progress=False):
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
+	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
+
 	settings			= player.load_settings()
 
 	if show_progress:
@@ -145,11 +147,15 @@ def update_service(show_progress=False):
 		import rutor
 		rutor.run(settings)
 
+	if soap4me_enable:
+		import soap4me
+		soap4me.run(settings)
+
 	if show_progress:
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable:
+	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
 
@@ -301,6 +307,7 @@ def add_media_process(title, imdb, settings):
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
+	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
 
 	if hdclub_enable:
 		count += hdclub.search_generate(title, imdb, settings)
@@ -308,6 +315,8 @@ def add_media_process(title, imdb, settings):
 		count += nnmclub.search_generate(title, imdb, settings)
 	if rutor_enable:
 		count += rutor.search_generate(title, imdb, settings)
+	if soap4me_enable:
+		count += soap4me.search_generate(title, imdb, settings)
 
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):

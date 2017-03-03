@@ -91,6 +91,9 @@ def load_settings():
 	rutor_domain = getSetting('rutor_domain')
 	rutor_filter = getSetting('rutor_filter')
 
+	soap4me_login = getSetting('soap4me_login')
+	soap4me_password = getSetting('soap4me_password')
+
 	preffered_bitrate = int(getSetting('preffered_bitrate'))
 	preffered_type = getSetting('preffered_type')
 	preffered_codec = getSetting('preffered_codec')
@@ -119,6 +122,8 @@ def load_settings():
 	                    nnmclub_password 	=nnmclub_password,
 	                    rutor_domain        =rutor_domain,
 	                    rutor_filter        =rutor_filter,
+	                    soap4me_login		=soap4me_login,
+	                    soap4me_password	=soap4me_password,
 	                    preffered_bitrate 	=preffered_bitrate,
 	                    preffered_type 		=preffered_type,
 	                    preffered_codec     =preffered_codec,
@@ -432,6 +437,7 @@ def play_torrent(settings, params):
 	hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+	soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -447,6 +453,8 @@ def play_torrent(settings, params):
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
 		if not rutor_enable and 'rutor.info' in v['link']:
+			links_with_ranks.remove(v)
+		if not soap4me_enable and 'soap4.me' in v['link']:
 			links_with_ranks.remove(v)
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
@@ -537,8 +545,9 @@ def dialog_action(action, settings):
 		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
 
-		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
+		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable):
 			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:
