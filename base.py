@@ -477,12 +477,14 @@ class TorrentPlayer(object):
 		except UnicodeDecodeError:
 			import chardet
 			enc = chardet.detect(name)
-			debug('UnicodeDecodeError detected', log.lineno())
+			#debug('UnicodeDecodeError detected', log.lineno())
 			# debug(enc['confidence'])
 			# debug(enc['encoding'])
 			if enc['confidence'] > 0.7:
-				name = name.decode(enc['encoding'])
-				debug(name)
+				try:
+					name = name.decode(enc['encoding'])
+				except UnicodeDecodeError:
+					pass
 				return name
 			else:
 				log.print_tb()
