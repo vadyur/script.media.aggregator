@@ -162,11 +162,43 @@ class KinopoiskAPI(object):
 			debug(str(te))
 		return r
 
+	def get_google_cache(self, url):
+		import urllib
+		search_url = "http://www.google.com/search?q=" + urllib.quote_plus(url)
+		r = self._http_get(search_url)
+
+		try:
+			soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
+			a = soup.find('a', class_='fl')
+			if a:
+				cache_url = a['href']
+				#print cache_url
+				r = self._http_get(cache_url)
+			
+				indx = r.text.find('<html')
+				text = base.clean_html(r.text[indx:])
+
+				'''
+				with open('c:\\Temp\\ttt.html', 'w') as f:
+					f.write(text.encode('cp1251'))
+				'''
+
+				soup = BeautifulSoup(text, 'html.parser')
+				return soup
+		except BaseException as e:
+			debug(str(e))
+	
+		return None
+
 	def makeSoup(self):
 		if self.kinopoisk_url and self.soup is None:
 			r = self._http_get(self.kinopoisk_url)
 			if r.status_code == requests.codes.ok:
-				self.soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
+				text = base.clean_html(r.text)
+				if 'captcha' in text:
+					self.soup = self.get_google_cache(self.kinopoisk_url)
+				else:
+					self.soup = BeautifulSoup(text, 'html.parser')
 
 	def getTitle(self):
 		title = None
@@ -190,6 +222,19 @@ class KinopoiskAPI(object):
 
 		return plot
 
+	def base_actors_list(self):
+		actors = []
+
+		self.makeSoup()
+		if self.soup:
+			for actor in self.soup.select('#actorList > ul:nth-child(2) > li:nth-child(1) > a'):
+				actors.append(actor.get_text())
+
+		if actors:
+			return ', '.join(actors)
+		else:
+			return None
+
 	def Actors(self):
 		if self.actors is not None:
 			return self.actors
@@ -200,7 +245,15 @@ class KinopoiskAPI(object):
 			cast_url = self.kinopoisk_url + 'cast/'
 			r = self._http_get(cast_url)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
+				text = base.clean_html(r.text)
+				if 'captcha' in text:
+					soup = self.get_google_cache(cast_url)
+				else:
+					soup = BeautifulSoup(text, 'html.parser')
+				
+				if not soup:
+					return []
+
 				for a in soup.select('a[name="actor"]'):
 					for sibling in a.next_siblings:
 						if not hasattr(sibling, 'tag'):
@@ -245,7 +298,15 @@ class KinopoiskAPI(object):
 			trailer_page = self.kinopoisk_url + 'video/type/1/'
 			r = self._http_get(trailer_page)
 			if r.status_code == requests.codes.ok:
-				soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
+				text = base.clean_html(r.text)
+				if 'captcha' in text:
+					soup = self.get_google_cache(trailer_page)
+				else:
+					soup = BeautifulSoup(text, 'html.parser')
+				
+				if not soup:
+					return None
+
 				for div in soup.select('tr td div div.flag2'):
 					trailer = self.__trailer(div)
 					if trailer:
