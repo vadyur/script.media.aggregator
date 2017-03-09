@@ -18,30 +18,42 @@ class DescriptionParser(DescriptionParserBase):
 		Informer.__init__(self)
 		self._dict.clear()
 
-		api_info = (item for item in soap4me_data.api_data if item['title'] == info['originaltitle'] ).next()
-
-		self.episodes_data = get_api_request('https://api.soap4.me/v2/episodes/' + str(api_info['sid']) + '/')
-
-		self.imdb_id = api_info['imdb_id']
-		self.kp_id = api_info['kinopoisk_id']
+		self.api_info = (item for item in soap4me_data.api_data if item['title'] == info['originaltitle'] ).next()
+		self.episodes_data = get_api_request('https://api.soap4.me/v2/episodes/' + str(self.api_info['sid']) + '/')
 
 		from movieapi import KinopoiskAPI
-
 		kp_url = KinopoiskAPI.make_url_by_id(self.kp_id)
 
 		self.make_movie_api(self.imdb_id, kp_url)
-		self.tvshow_api = TVShowAPI(info['originaltitle'], api_info['title_ru'], self.imdb_id, kp_url)
-
-		api_title = self.tvshow_api.Title()
-		self.tvshow_path = make_fullpath(api_title if api_title is not None else api_info['title_ru'], '')
+		self.tvshow_api = TVShowAPI(info['originaltitle'], self.api_info['title_ru'], self.imdb_id, kp_url)
 
 		self.settings = settings
-		self.OK = self.parse(api_info)
+		self.OK = self.parse(self.api_info)
 
-	def get_full_tvshow_path(self, settings):
-		animation = False
-		path = settings.animation_tvshow_path() if animation else settings.tvshow_path()
+	@property
+	def is_animation(self):
+		return 'animation' in self.movie_api().imdbGenres().lower()
 
+	@property
+	def tvshow_path(self):
+		api_title = self.tvshow_api.Title()
+		return make_fullpath(api_title if api_title is not None else self.api_info['title_ru'], '')
+
+	@property 
+	def imdb_id(self):
+		return self.api_info['imdb_id']
+
+	@property
+	def kp_id(self):
+		return self.api_info['kinopoisk_id']
+
+	@property
+	def episode_runtime(self):
+		return self.api_info[u'episode_runtime']
+
+	@property
+	def full_tvshow_path(self):
+		path = self.settings.animation_tvshow_path() if self.is_animation else self.settings.tvshow_path()
 		return filesystem.join(path, self.tvshow_path)
 
 	def get_api_dict(self):
@@ -69,6 +81,11 @@ class DescriptionParser(DescriptionParserBase):
 		api_dict = self.get_api_dict()
 		for key, value in api_dict.iteritems():
 			self._dict[value] = api_info[key]
+
+		self._dict['imdb_id'] = self.imdb_id
+		self._dict['kp_id'] = self.kp_id
+
+		self._dict['actor'] = self.movie_api().base_actors_list()
 
 		return True
 
@@ -146,16 +163,16 @@ def getInfoFromTitle(fulltitle):
 class EpParser(DescriptionParser):
 	def __init__(self, parser, info, torr_path, episode):
 		self._dict = dict(parser.Dict())
-		self.parts = []
+		parts = []
 
-		self.parts.append('AVC/H.264')
+		parts.append('AVC/H.264')
 
-		if 'sd' in info['quality'].lower():
-			self.parts.append('720x540')
-		elif 'hd' in info['quality'].lower():
-			self.parts.append('1280x720')
-		elif 'fullhd' in info['quality'].lower():
-			self.parts.append('1920x1080')
+		if info['quality'].lower() == 'sd':
+			parts.append('720x540')
+		elif info['quality'].lower() == 'hd':
+			parts.append('1280x720')
+		elif info['quality'].lower() == 'fullhd':
+			parts.append('1920x1080')
 
 		from base import TorrentPlayer
 		player = TorrentPlayer()
@@ -164,7 +181,12 @@ class EpParser(DescriptionParser):
 		if data:
 			add_dict = self.get_add_data(data)
 			if episode:
-				pass
+				seconds = int(parser.episode_runtime) * 60
+				bitrate = add_dict['size'] * 8 / seconds
+				parts.append(str(bitrate / 1000) + ' kbs')
+
+		if parts:
+			self._dict['video'] = ', '.join(parts)
 
 	def get_add_data(self, data):
 		for f in data['files']:
@@ -173,7 +195,7 @@ class EpParser(DescriptionParser):
 
 def write_episode(info, parser, fulltitle, description, link, settings):
 
-	path = parser.get_full_tvshow_path(settings)
+	path = parser.full_tvshow_path
 	season_path = 'Season ' + str(info['season'])
 
 	with filesystem.save_make_chdir_context(filesystem.join(path, season_path)):
@@ -212,7 +234,7 @@ def write_episode(info, parser, fulltitle, description, link, settings):
 def write_twshow(info, settings):
 	parser = DescriptionParser(info, settings)
 
-	with filesystem.save_make_chdir_context(parser.get_full_tvshow_path(settings)):
+	with filesystem.save_make_chdir_context(parser.full_tvshow_path):
 		from nfowriter import NFOWriter
 		NFOWriter(parser, tvshow_api=parser.tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
 

@@ -231,9 +231,13 @@ class KinopoiskAPI(object):
 
 		self.makeSoup()
 		if self.soup:
-			for actor in self.soup.select('#actorList > ul:nth-child(2) > li:nth-child(1) > a'):
-				actors.append(actor.get_text())
+			for li in self.soup.find_all('li', attrs={'itemprop': 'actors'}):
+				a = li.find('a')
+				if a:
+					actors.append(a.get_text())
 
+		if '...' in actors:
+			actors.remove('...')
 		if actors:
 			return ', '.join(actors)
 		else:
@@ -420,6 +424,9 @@ class MovieAPI(KinopoiskAPI):
 
 	def imdbRating(self):
 		return self.omdbapi['imdbRating']
+
+	def imdbGenres(self):
+		return self.omdbapi['Genre']
 		
 	def Runtime(self):
 		return self.omdbapi['Runtime'].encode('utf-8').replace(' min', '')
