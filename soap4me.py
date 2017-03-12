@@ -7,6 +7,7 @@ import json, urllib2
 from base import DescriptionParserBase, Informer, make_fullpath
 from tvshowapi import TVShowAPI
 
+
 class soap4me_data:
 	api_token = None
 	api_data = None
@@ -305,13 +306,44 @@ def run(settings):
 	if settings.tvshows_save:
 		write_tvshows(get_rss_url(session), settings)
 
+def page_for_season(show_title, ss, settings):
+	url = 'https://soap4.me/soap/' + show_title.replace(' ', '_') + '/' + ss + '/'
+	s = get_session(settings)
+
+	r = s.get(url)
+	return BeautifulSoup(r.text)
 
 def search_generate(title, imdb, settings):
+	soap4me_data.api_data = get_api_request('https://api.soap4.me/v2/soap/')
+
+	tvshow = (item for item in soap4me_data.api_data if item['imdb_id'] == imdb).next()
+	if tvshow:
+		print tvshow
+		info = {'originaltitle': tvshow['title']}
+		parser = write_twshow(info, settings)
+
+		seasons = {}
+
+		for episode in parser.episodes_data['episodes']:
+			info['season'] = int(episode['season'])
+			info['episode'] = int(episode['episode'])
+			info['episode_name'] = episode['title_ru']
+
+			ss = str(info['season'])
+			if ss not in seasons:
+				seasons[ss] = page_for_season(tvshow['title'], ss, settings)
+
+			li_s = seasons[ss].find_all('li', class_='ep', attrs={'data:episode': info['episode']})
+			for li in li_s:
+				link = 'https://soap4.me' + li.find('a')['href']
+				info['quality'] = li.find('div', class_='quality').get_text().strip('\t\n ')
+				info['ozvuchka'] = li.find('div', class_='translate').get_text().strip('\t\n ')
+				write_episode(info, parser, '', '', link, settings)
+
 	return 0
 
 
 def download_torrent(url, path, settings):
-	import re
 	url = urllib2.unquote(url)
 	debug('download_torrent:' + url)
 
