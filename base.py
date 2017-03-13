@@ -44,18 +44,27 @@ def striphtml(data):
 
 
 def detect_mpg(str_detect):
-	str_detect = str_detect.lower()
-	return 'divx' in str_detect or 'xvid' in str_detect or 'mpeg2' in str_detect or 'mpeg-2' in str_detect
+	try:
+		str_detect = str_detect.lower()
+		return 'divx' in str_detect or 'xvid' in str_detect or 'mpeg2' in str_detect or 'mpeg-2' in str_detect
+	except:
+		return False
 
 
 def detect_h264(str_detect):
-	str_detect = str_detect.lower()
-	return 'avc' in str_detect or 'h264' in str_detect or 'h.264' in str_detect
+	try:
+		str_detect = str_detect.lower()
+		return 'avc' in str_detect or 'h264' in str_detect or 'h.264' in str_detect
+	except:
+		return False
 
 
 def detect_h265(str_detect):
-	str_detect = str_detect.lower()
-	return 'hevc' in str_detect or 'h265' in str_detect or 'h.265' in str_detect
+	try:
+		str_detect = str_detect.lower()
+		return 'hevc' in str_detect or 'h265' in str_detect or 'h.265' in str_detect
+	except:
+		return False
 
 
 def get_rank(full_title, parser, settings):
@@ -81,7 +90,7 @@ def get_rank(full_title, parser, settings):
 			rank += 1 + 1.0 / seeds
 		conditions += 1
 	else:
-		rank += 1.5
+		rank += 1.1
 		conditions += 1
 
 		#parser = dict(parser, **info)
@@ -97,10 +106,7 @@ def get_rank(full_title, parser, settings):
 	if '2160p' in full_title:
 		res_v = 2160
 
-	if abs(preffered_resolution_v - res_v) > 0:
-		rank += 2
-		conditions += 1
-
+	'''
 	size = parser.get('size', '')
 	if size != '':
 		if int(size) > preffered_size:
@@ -108,9 +114,16 @@ def get_rank(full_title, parser, settings):
 		else:
 			rank += preffered_size / int(size)
 		conditions += 1
+	'''
 
 	video = parser.get('video', '')
-	for part in video.split(', '):
+	parts = video.split(', ')
+
+	if len(parts) == 0:
+		rank += 2
+		conditions += 1
+
+	for part in parts:
 		multiplier = 0
 		if 'kbps' in part \
 			or 'kbs' in part \
@@ -147,9 +160,20 @@ def get_rank(full_title, parser, settings):
 				rank += 10
 				conditions += 1
 				debug('bitrate: not parsed')
-		else:
-			rank += 2
-			conditions += 1
+
+		if '1920x' in part or 'x1080' in part:
+			res_v = 1080
+		if '1280x' in part or 'x720' in part:
+			res_v = 720
+		if '720x' in part or 'x540' in part:
+			res_v = 540
+
+	if abs(preffered_resolution_v - res_v) > 360:
+		rank += 5
+		conditions += 1
+	elif abs(preffered_resolution_v - res_v) > 0:
+		rank += 2
+		conditions += 1
 
 	detect_codec = None
 
@@ -298,7 +322,7 @@ class STRMWriterBase(object):
 							if 'rank' in saved_dict:
 								curr_rank = float(saved_dict['rank'])
 							else:
-								curr_rank = get_rank(saved_dict['full_title'], saved_dict, settings)
+								curr_rank = get_rank(saved_dict.get('full_title', ''), saved_dict, settings)
 						except:
 							curr_rank = 1
 
