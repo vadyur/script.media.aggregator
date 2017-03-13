@@ -133,10 +133,18 @@ class tmdb_movie_item(object):
 
 		#float_items = ['rating']
 
+class Object(object):
+    pass
 
 class KinopoiskAPI(object):
 	# Common session for KP requests
 	session = None
+
+	kp_requests = []
+
+	@staticmethod
+	def make_url_by_id(kp_id):
+		return 'http://www.kinopoisk.ru/film/' + str(kp_id) + '/'
 
 	def __init__(self, kinopoisk_url = None):
 		self.kinopoisk_url = kinopoisk_url
@@ -144,6 +152,10 @@ class KinopoiskAPI(object):
 		self.actors = None
 
 	def _http_get(self, url):
+		for resp in KinopoiskAPI.kp_requests:
+			if resp['url'] == url:
+				return resp['response']
+
 		if self.session is None:
 			self.session = requests.session()
 
@@ -160,31 +172,44 @@ class KinopoiskAPI(object):
 			r.status_code = requests.codes.request_timeout
 
 			debug(str(te))
+
+		if 'captcha' in r.text:
+			r = self.get_google_cache(self.kinopoisk_url)
+
+		KinopoiskAPI.kp_requests.append({'url': url, 'response': r})
+
 		return r
 
 	def get_google_cache(self, url):
 		import urllib
 		search_url = "http://www.google.com/search?q=" + urllib.quote_plus(url)
-		r = self._http_get(search_url)
+		headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+
+		r = self.session.get(search_url, headers=headers, timeout=2.0)
 
 		try:
 			soup = BeautifulSoup(base.clean_html(r.text), 'html.parser')
 			a = soup.find('a', class_='fl')
 			if a:
 				cache_url = a['href']
+
+				import urlparse
+				res = urlparse.urlparse(cache_url)
+				res = urlparse.ParseResult(res.scheme if res.scheme else 'https', 
+											res.netloc if res.netloc else 'webcache.googleusercontent.com', 
+											res.path, res.params, res.query, res.fragment)
+				cache_url = urlparse.urlunparse(res)
+
 				#print cache_url
-				r = self._http_get(cache_url)
+				r = self.session.get(cache_url, headers=headers, timeout=2.0)
 			
 				indx = r.text.find('<html')
-				text = base.clean_html(r.text[indx:])
+				
+				resp = Object()
+				resp.status_code = r.status_code
+				resp.text = r.text[indx:]
 
-				'''
-				with open('c:\\Temp\\ttt.html', 'w') as f:
-					f.write(text.encode('cp1251'))
-				'''
-
-				soup = BeautifulSoup(text, 'html.parser')
-				return soup
+				return resp
 		except BaseException as e:
 			debug(str(e))
 	
@@ -195,10 +220,7 @@ class KinopoiskAPI(object):
 			r = self._http_get(self.kinopoisk_url)
 			if r.status_code == requests.codes.ok:
 				text = base.clean_html(r.text)
-				if 'captcha' in text:
-					self.soup = self.get_google_cache(self.kinopoisk_url)
-				else:
-					self.soup = BeautifulSoup(text, 'html.parser')
+				self.soup = BeautifulSoup(text, 'html.parser')
 
 	def getTitle(self):
 		title = None
@@ -233,7 +255,7 @@ class KinopoiskAPI(object):
 		if actors:
 			return ', '.join(actors)
 		else:
-			return None
+			return ''
 
 	def Actors(self):
 		if self.actors is not None:
@@ -246,10 +268,7 @@ class KinopoiskAPI(object):
 			r = self._http_get(cast_url)
 			if r.status_code == requests.codes.ok:
 				text = base.clean_html(r.text)
-				if 'captcha' in text:
-					soup = self.get_google_cache(cast_url)
-				else:
-					soup = BeautifulSoup(text, 'html.parser')
+				soup = BeautifulSoup(text, 'html.parser')
 				
 				if not soup:
 					return []
@@ -299,10 +318,7 @@ class KinopoiskAPI(object):
 			r = self._http_get(trailer_page)
 			if r.status_code == requests.codes.ok:
 				text = base.clean_html(r.text)
-				if 'captcha' in text:
-					soup = self.get_google_cache(trailer_page)
-				else:
-					soup = BeautifulSoup(text, 'html.parser')
+				soup = BeautifulSoup(text, 'html.parser')
 				
 				if not soup:
 					return None
