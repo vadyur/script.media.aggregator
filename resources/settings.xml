@@ -86,5 +86,7 @@
       <setting label="Учётные данные сайта soap4.me (необходима регистрация на сайте)" type="lsep"/>
       <setting label="Login" type="text"   id="soap4me_login" enable="eq(-2,true)" default=""/>
       <setting label="Password" type="text"   id="soap4me_password" enable="eq(-3,true)" option="hidden"  default=""/>
+	  <setting label="" type="lsep"/>
+	  <setting label="RSS" type="select" id="soap4me_rss" enable="eq(-5,true)" values="Все сериалы|Дополнительный #1|Дополнительный #2|Дополнительный #3|Дополнительный #4|Дополнительный #5" default="Все сериалы"/>
     </category>
 </settings>

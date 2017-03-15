@@ -1,4 +1,15 @@
 # coding: utf-8
+
+_DEBUG=False
+
+try:
+	if _DEBUG:
+		import ptvsd
+		ptvsd.enable_attach(secret=None)
+except:
+	pass
+
+
 import math, urllib
 
 import log

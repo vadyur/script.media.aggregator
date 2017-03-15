@@ -1,5 +1,15 @@
 # -*- coding: utf-8 -*-
 
+_DEBUG=False
+
+try:
+	if _DEBUG:
+		import ptvsd
+		ptvsd.enable_attach(secret=None, address = ('0.0.0.0', 6666))
+		ptvsd.wait_for_attach()
+except:
+	pass
+
 
 import operator
 import sys
@@ -93,6 +103,7 @@ def load_settings():
 
 	soap4me_login = getSetting('soap4me_login')
 	soap4me_password = getSetting('soap4me_password')
+	soap4me_rss = getSetting('soap4me_rss')
 
 	preffered_bitrate = int(getSetting('preffered_bitrate'))
 	preffered_type = getSetting('preffered_type')
@@ -124,6 +135,7 @@ def load_settings():
 	                    rutor_filter        =rutor_filter,
 	                    soap4me_login		=soap4me_login,
 	                    soap4me_password	=soap4me_password,
+						soap4me_rss			=soap4me_rss,
 	                    preffered_bitrate 	=preffered_bitrate,
 	                    preffered_type 		=preffered_type,
 	                    preffered_codec     =preffered_codec,

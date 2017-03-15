@@ -19,7 +19,12 @@ class DescriptionParser(DescriptionParserBase):
 		Informer.__init__(self)
 		self._dict.clear()
 
-		self.api_info = (item for item in soap4me_data.api_data if item['title'] == info['originaltitle'] ).next()
+		self.api_info = None
+		for item in soap4me_data.api_data:
+			if item['title'] == info['originaltitle']:
+				self.api_info = item
+				break
+
 		self.episodes_data = get_api_request('https://api.soap4.me/v2/episodes/' + str(self.api_info['sid']) + '/')
 
 		from movieapi import KinopoiskAPI
@@ -104,7 +109,7 @@ def get_session(settings):
 
 	return s
 
-def get_rss_url(session):
+def get_rss_url(session, settings):
 	dashboard = session.get('https://soap4.me/dashboard/')
 
 	#print (dashboard.text)
@@ -115,9 +120,17 @@ def get_rss_url(session):
 	if div_rss:
 		ul_list = div_rss.find('ul', class_='list')
 		if ul_list:
-			a = ul_list.find('a')
-			if a:
-				return a['href']
+			aaa = ul_list.find_all('a')
+			if len(aaa):
+				try:
+					ind = 0
+					if '#' in settings.soap4me_rss:
+						ind = int(settings.soap4me_rss.split('#')[1])
+					a = aaa[ind]
+					return a['href']
+				except BaseException as e:
+					debug(e)
+					return aaa[0]['href']
 
 	return None
 
@@ -134,6 +147,10 @@ def getInfoFromTitle(fulltitle):
 
 	try:
 		originaltitle = parts[0].strip()
+		if originaltitle.startswith('['):
+			originaltitle = originaltitle.split(']')[-1]
+			originaltitle = originaltitle.strip()
+
 		season_episode = parts[1].strip()
 
 		import re
@@ -304,7 +321,7 @@ def run(settings):
 	soap4me_data.api_data = get_api_request('https://api.soap4.me/v2/soap/')
 
 	if settings.tvshows_save:
-		write_tvshows(get_rss_url(session), settings)
+		write_tvshows(get_rss_url(session, settings), settings)
 
 def page_for_season(show_title, ss, settings):
 	url = 'https://soap4.me/soap/' + show_title.replace(' ', '_') + '/' + ss + '/'
