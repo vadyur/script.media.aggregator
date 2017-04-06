@@ -683,11 +683,11 @@ def make_search_strms(result, settings, type):
 		if link:
 			if type == 'movie':
 				import movieapi
-				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser)
+				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser)
+				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 
 	return count

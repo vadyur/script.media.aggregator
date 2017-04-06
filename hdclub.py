@@ -17,9 +17,11 @@ from strmwriter import *
 
 class DescriptionParser(DescriptionParserBase):
 
-	def __init__(self, full_title, content, link, settings):
+	def __init__(self, full_title, content, link, settings, imdb=None):
 		self._link = link
 		DescriptionParserBase.__init__(self, full_title, content, settings)
+		if imdb:
+			self._dict['imdb_id'] = imdb
 
 	def link(self):
 		return self._link
@@ -240,11 +242,11 @@ def make_search_strms(result, settings, type):
 		if link:
 			if type == 'movie':
 				import movieapi
-				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser)
+				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser)
+				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 
 	return count
@@ -316,10 +318,20 @@ def search_results(imdb, session, settings, url, cat):
 		for td in tbl.find_all('td', class_='heading_r'):
 			content += td.prettify()
 
+		# <img src="imdb/imdb_tt3748528.gif" alt="IMDB" title="IMDB" border="0" /></a> <a href="http://www.kinopoisk.ru/level/1/film/840152/" rel="nofollow"><img src="http://rating.kinopoisk.ru/840152.gif" alt="Кинопоиск" title="Кинопоиск" border="0" /></a> <a href="http://www.hdclub.ua/movies/catalog/rogue-one:-a-star-wars-story/2891" title="http://www.hdclub.ua/movies/catalog/rogue-one:-a-star-wars-story/2891"><img class="linked-image" src="http://www.hdclub.ua/button/movie/2891.png" border="0" alt="http://www.hdclub.ua/button/movie/2891.png" title="http://www.hdclub.ua/button/movie/2891.png" /></a><br />
+		img = soup.find('img', attrs = {'title': "IMDB"})
+		if img:
+			content += img.parent.prettify()
+
+		img = soup.find('img', attrs = {'title': u"Кинопоиск"})
+		if img:
+			content += img.parent.prettify()
+
 		#with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
 		#	html.write(content.encode('utf-8'))
 
-		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings)
+		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings, imdb=imdb)
+		
 		debug(u'%s %s %s' % (post['title'], str(parser.parsed()), parser.get_value('imdb_id')))
 		if parser.parsed(): # and parser.get_value('imdb_id') == imdb:
 			result.append({'parser': parser, 'link': make_full_url(post['dl_link'])})

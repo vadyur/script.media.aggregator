@@ -306,7 +306,7 @@ def season_from_title(fulltitle):
 	return None
 
 
-def write_tvshow(fulltitle, link, settings, parser):
+def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 	from nfowriter import NFOWriter
 	from strmwriter import STRMWriter
 	import requests
@@ -329,7 +329,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 
 		imdb_id = parser.get('imdb_id', None)
 		kp_id = parser.get('kp_id', None)
-		tvshow_api = TVShowAPI(originaltitle, title, imdb_id, kp_id)
+		tvshow_api = TVShowAPI.get_by(originaltitle, title, imdb_id, kp_id)
 
 		api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
@@ -380,7 +380,7 @@ def write_tvshow(fulltitle, link, settings, parser):
 							debug([filename])
 
 						STRMWriter(parser.link()).write(filename, index=f['index'], settings=settings, parser=parser)
-						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename)
+						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename, skip_nfo_exists=skip_nfo_exists)
 
 					# end for
 
@@ -671,6 +671,19 @@ class MyShowsAPI(object):
 		return sorted(episodes__, key=lambda k: k['episode'])
 
 class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
+	imdb_api	= {}
+
+	@staticmethod
+	def get_by(self, title, ruTitle, imdbId=None, kinopoiskId=None):
+		if imdbId and imdbId in TVShowAPI.imdb_api:
+			return TVShowAPI.imdb_api[imdbId]
+
+		api = TVShowAPI(title, ruTitle, imdbId, kinopoiskId)
+		if imdbId:
+			TVShowAPI.imdb_api[imdbId] = api
+
+		return api
+
 
 	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
 		TheTVDBAPI.__init__(self, imdbId)

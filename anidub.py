@@ -217,7 +217,7 @@ def write_tvshow_item(item, path, settings):
 		debug(tvshow_path.encode('utf-8'))
 
 		with filesystem.save_make_chdir_context(tvshow_path):
-			tvshow_api = TVShowAPI(originaltitle, title)
+			tvshow_api = TVShowAPI.get_by(originaltitle, title)
 			write_tvshow_nfo(parser, tvshow_api)
 
 		season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
