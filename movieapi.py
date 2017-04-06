@@ -4,11 +4,11 @@ import log
 from log import debug, print_tb
 
 
-import json, re, base
+import json, re, base, filesystem
 import urllib2, requests
 from bs4 import BeautifulSoup
 
-def write_movie(fulltitle, link, settings, parser):
+def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
@@ -20,7 +20,7 @@ def write_movie(fulltitle, link, settings, parser):
 										parser=parser,
 										settings=settings)
 		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename)
+		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename,skip_nfo_exists=skip_nfo_exists)
 
 		from downloader import TorrentDownloader
 		TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
@@ -335,6 +335,9 @@ class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
+	imdb_api	= {}
+	#kp_api		= []
+
 	@staticmethod
 	def url_imdb_id(idmb_id, type='movie'):
 		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
@@ -410,6 +413,17 @@ class MovieAPI(KinopoiskAPI):
 	@staticmethod
 	def show_similar(tmdb_id):
 		return MovieAPI.show_similar_t(tmdb_id, 'movie') + MovieAPI.show_similar_t(tmdb_id, 'tv')
+
+	@staticmethod
+	def get_by(imdb_id = None, kinopoisk = None):
+		if imdb_id and imdb_id in MovieAPI.imdb_api:
+			return MovieAPI.imdb_api[imdb_id]
+
+		api = MovieAPI(imdb_id, kinopoisk)
+		if imdb_id:
+			MovieAPI.imdb_api[imdb_id] = api
+
+		return api
 
 	def __init__(self, imdb_id = None, kinopoisk = None):
 		KinopoiskAPI.__init__(self, kinopoisk)

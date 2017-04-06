@@ -362,7 +362,7 @@ class Informer(object):
 		self.__movie_api = None
 
 	def make_movie_api(self, imdb_id, kp_id):
-		self.__movie_api = MovieAPI(imdb_id, kp_id)
+		self.__movie_api = MovieAPI.get_by(imdb_id, kp_id)
 
 	def movie_api(self):
 		return self.__movie_api
