@@ -1,0 +1,10 @@
+*_test.py export-ignore  
+*.pyo export-ignore
+.idea/ export-ignore
+*.sln export-ignore 
+*.pyproj export-ignore 
+*.suo export-ignore 
+*.zip export-ignore
+*.exe export-ignore
+.gitattributes export-ignore  
+.gitignore export-ignore

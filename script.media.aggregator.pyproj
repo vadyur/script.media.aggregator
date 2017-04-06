@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{a1163bd6-35d4-47e7-908b-be0a65c3f951}</ProjectGuid>
+    <ProjectHome />
+    <StartupFile>hdclub_test.py</StartupFile>
+    <SearchPath />
+    <WorkingDirectory>c:\cygwin64\home\vd\script.media.aggregator\</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
+    <InterpreterVersion>2.7</InterpreterVersion>
+    <IsWindowsApplication>False</IsWindowsApplication>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Environment>PYTHONIOENCODING=utf-8
+VSDEV</Environment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
+  <PropertyGroup>
+    <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
+    <PtvsTargetsFile>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets</PtvsTargetsFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="changelog.txt" />
+    <Content Include="fanart.jpg" />
+    <Content Include="hdclub.tt0800369.html" />
+    <Content Include="icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="aceplayer.py" />
+    <Compile Include="afteractions.py" />
+    <Compile Include="anidub.py" />
+    <Compile Include="anidub_test.py" />
+    <Compile Include="base.py" />
+    <Compile Include="bencode.py" />
+    <Compile Include="brkpnt.py" />
+    <Compile Include="context.py" />
+    <Compile Include="context_search.py" />
+    <Compile Include="countries.py" />
+    <Compile Include="downloader.py" />
+    <Compile Include="downloader_test.py" />
+    <Compile Include="filesystem.py" />
+    <Compile Include="hdclub.py" />
+    <Compile Include="hdclub_test.py" />
+    <Compile Include="jsonrpc_test.py" />
+    <Compile Include="kodidb.py" />
+    <Compile Include="log.py" />
+    <Compile Include="movieapi.py" />
+    <Compile Include="nforeader.py" />
+    <Compile Include="nfowriter.py" />
+    <Compile Include="nnmclub.py" />
+    <Compile Include="nnmclub_test.py" />
+    <Compile Include="player.py" />
+    <Compile Include="player_test.py" />
+    <Compile Include="rutor.py" />
+    <Compile Include="scraper.py" />
+    <Compile Include="scraper_test.py" />
+    <Compile Include="service.py" />
+    <Compile Include="settings.py" />
+    <Compile Include="soap4me.py" />
+    <Compile Include="soap4me_test.py" />
+    <Compile Include="sources.py" />
+    <Compile Include="sources_test.py" />
+    <Compile Include="strmwriter.py" />
+    <Compile Include="torrent2httpplayer.py" />
+    <Compile Include="tvshowapi.py" />
+    <Compile Include="yatpplayer.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
+    <InterpreterReference Include="{e0654f5c-ea84-46ac-b942-3fa8ec22adc8}\2.7" />
+  </ItemGroup>
+  <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />
+</Project>

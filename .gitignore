@@ -4,3 +4,5 @@ standalone.py
 /test_login.py
 *test.py
 .idea/
+.vs/
+rpdb2.py
