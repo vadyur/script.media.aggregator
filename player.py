@@ -625,10 +625,13 @@ def show_list(listing):
 			 'title': info['title'].encode('utf-8'),
 			 'imdb': item.imdb()})
 
-		li.addContextMenuItems([
-			#(u'Смотрите также', 'ActivateWindow(Video,"plugin://script.media.aggregator/?action=show_similar&tmdb=%s", return)' % str(item.tmdb_id())),
-			(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
-		])
+		items = [(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),]
+		pathUnited = 'special://home/addons/plugin.video.united.search'
+		pathUnited = xbmc.translatePath(pathUnited)
+		if filesystem.exists(pathUnited.decode('utf-8')):
+			items.append((u'United search', 'Container.Update("plugin://plugin.video.united.search/?action=search&keyword=%s")' % urllib.quote(info['title'].encode('utf-8'))))
+
+		li.addContextMenuItems(items)
 
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 	xbmcplugin.endOfDirectory(addon_handle)
