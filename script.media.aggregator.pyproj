@@ -29,6 +29,7 @@ VSDEV</Environment>
     <Content Include="fanart.jpg" />
     <Content Include="hdclub.tt0800369.html" />
     <Content Include="icon.png" />
+    <Content Include="resources\settings.xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="aceplayer.py" />
@@ -73,6 +74,9 @@ VSDEV</Environment>
   <ItemGroup>
     <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
     <InterpreterReference Include="{e0654f5c-ea84-46ac-b942-3fa8ec22adc8}\2.7" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="resources\" />
   </ItemGroup>
   <Import Project="$(PtvsTargetsFile)" Condition="Exists($(PtvsTargetsFile))" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" Condition="!Exists($(PtvsTargetsFile))" />

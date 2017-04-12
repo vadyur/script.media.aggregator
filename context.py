@@ -83,6 +83,13 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		li.setProperty('link', 'plugin://script.media.aggregator/?action=add_media')
 		self.list.addItem(li)
 
+		pathUnited = 'special://home/addons/plugin.video.united.search'
+		pathUnited = xbmc.translatePath(pathUnited)
+		if filesystem.exists(pathUnited.decode('utf-8')):
+			li = xbmcgui.ListItem(u'UNITED SEARCH...')
+			li.setProperty('link', 'plugin://script.media.aggregator/?action=united_search')
+			self.list.addItem(li)
+		
 
 		self.setFocus(self.list)
 		self.connect(self.list, self.make_choice)
@@ -318,6 +325,14 @@ def main():
 		from service import add_media
 		add_media(title.decode('utf-8'), imdb_id)
 		return
+
+	if link == 'plugin://script.media.aggregator/?action=united_search':
+		import urllib
+		title = xbmc.getInfoLabel('ListItem.Title')
+		
+		if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
+			title = xbmc.getInfoLabel('ListItem.TVShowTitle')
+		xbmc.executebuiltin('Container.Update("plugin://plugin.video.united.search/?action=search&keyword=%s")' % urllib.quote(title))
 
 	selected_file = None
 	if window.has_select_file:
