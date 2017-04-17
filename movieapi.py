@@ -161,7 +161,7 @@ class KinopoiskAPI(object):
 
 		try:
 			headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
-			r = self.session.get(url, headers=headers, timeout=2.0)
+			r = self.session.get(url, headers=headers, timeout=5.0)
 		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
 			r.status_code = requests.codes.service_unavailable
@@ -232,6 +232,24 @@ class KinopoiskAPI(object):
 				title = h.contents[0].strip()
 
 		return title
+
+	def getOriginalTitle(self):
+		title = None
+
+		self.makeSoup()
+		if self.soup:
+			span = self.soup.find('span', attrs = {'itemprop': 'alternativeHeadline'})
+			if span:
+				title = span.get_text().strip('\t\r\n ')
+		return title
+
+	def getYear(self):
+		self.makeSoup()
+		if self.soup:
+			for a in self.soup.find_all('a'):
+				if '/lists/m_act%5Byear%5D/' in a['href']:
+					return a.get_text()
+		return None
 
 	def getPlot(self):
 		plot = None
@@ -432,6 +450,17 @@ class MovieAPI(KinopoiskAPI):
 	def __init__(self, imdb_id = None, kinopoisk = None):
 		KinopoiskAPI.__init__(self, kinopoisk)
 
+		if not imdb_id and kinopoisk is not None:
+			try:
+				orig = KinopoiskAPI.getOriginalTitle(self)
+				year = KinopoiskAPI.getYear(self)
+				if orig and year:
+					omdb_url = 'http://www.omdbapi.com/?t=%s&y=%s' % (urllib2.quote(orig.encode('utf-8')), year)
+					omdbapi	= json.load(urllib2.urlopen( omdb_url ))
+					imdb_id = omdbapi['imdbID']
+			except BaseException:
+				pass
+
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
 			try:
@@ -502,5 +531,8 @@ if __name__ == '__main__':
 	#for res in MovieAPI.popular_tv():
 	#	print res.get_info()
 
-	MovieAPI.tmdb_query(
-		'http://api.themoviedb.org/3/movie/tt4589186?api_key=f7f51775877e0bb6703520952b3c7840&language=ru')
+	#MovieAPI.tmdb_query(
+	#	'http://api.themoviedb.org/3/movie/tt4589186?api_key=f7f51775877e0bb6703520952b3c7840&language=ru')
+
+	#api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/894027/')
+	api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/257774/')
