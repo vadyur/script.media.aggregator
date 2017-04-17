@@ -454,8 +454,23 @@ class MovieAPI(KinopoiskAPI):
 					omdb_url = 'http://www.omdbapi.com/?t=%s&y=%s' % (urllib2.quote(orig.encode('utf-8')), year)
 					omdbapi	= json.load(urllib2.urlopen( omdb_url ))
 					imdb_id = omdbapi['imdbID']
-			except BaseException:
-				pass
+
+				if not imdb_id:
+					if not orig:
+						orig = KinopoiskAPI.getTitle(self)
+
+					for res in MovieAPI.search(orig):
+						r = res.json_data_
+						#print res.get_info()
+						if year and year not in r['release_date']:
+							continue
+						if orig and orig == r['title']:
+							imdb_id = r['imdb_id']
+							break
+
+			except BaseException as e:
+				from log import print_tb
+				print_tb(e)
 
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
@@ -518,7 +533,7 @@ class MovieAPI(KinopoiskAPI):
 
 
 if __name__ == '__main__':
-	#for res in MovieAPI.search(u'паук'):
+	#for res in MovieAPI.search(u'Обитаемый остров'):
 	#	print res.get_info()
 
 	#for res in MovieAPI.popular_tv():
