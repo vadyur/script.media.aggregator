@@ -362,7 +362,19 @@ class Informer(object):
 		self.__movie_api = None
 
 	def make_movie_api(self, imdb_id, kp_id):
-		self.__movie_api = MovieAPI.get_by(imdb_id, kp_id)
+		orig=None
+		year=None
+		#imdbRaiting=None
+
+		if not imdb_id:
+			if u'originaltitle' in self.Dict():
+				orig = self.Dict()['originaltitle']
+			if u'year' in self.Dict():
+				year = self.Dict()['year']
+
+		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id, kp_id, orig, year)
+		if imdb_id:
+			self.Dict()['imdb_id'] = imdb_id
 
 	def movie_api(self):
 		return self.__movie_api
@@ -386,7 +398,7 @@ class Informer(object):
 		if self.__movie_api:
 			title 			= self.__movie_api['title']
 			originaltitle	= self.__movie_api['original_title']
-			year			= self.__movie_api['release_date'].split('-')[0]
+			year			= self.__movie_api.Year()
 
 			return self.filename_with(title, originaltitle, year)
 

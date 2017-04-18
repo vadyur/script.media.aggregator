@@ -357,7 +357,7 @@ class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
-	imdb_api	= {}
+	APIs	= {}
 	#kp_api		= []
 
 	@staticmethod
@@ -437,44 +437,69 @@ class MovieAPI(KinopoiskAPI):
 		return MovieAPI.show_similar_t(tmdb_id, 'movie') + MovieAPI.show_similar_t(tmdb_id, 'tv')
 
 	@staticmethod
-	def get_by(imdb_id = None, kinopoisk = None):
-		if imdb_id and imdb_id in MovieAPI.imdb_api:
-			return MovieAPI.imdb_api[imdb_id]
+	def imdb_by_omdb_request(orig, year, title=None):
+		try:
+			if orig and year:
+				omdb_url = 'http://www.omdbapi.com/?t=%s&y=%s' % (urllib2.quote(orig.encode('utf-8')), year)
+				omdbapi	= json.load(urllib2.urlopen( omdb_url ))
+				return omdbapi['imdbID']
+		except BaseException as e:
+			from log import print_tb
+			print_tb(e)
+		
+		return None
 
-		api = MovieAPI(imdb_id, kinopoisk)
-		if imdb_id:
-			MovieAPI.imdb_api[imdb_id] = api
+	@staticmethod
+	def imdb_by_tmdb_search(orig, year):
+		try:
+			for res in MovieAPI.search(orig):
+				r = res.json_data_
+				#print res.get_info()
+				if year and year not in r['release_date']:
+					continue
+				if orig and ( orig == r['title'] or orig == r['original_title']):
+					return r['imdb_id']
+		except BaseException as e:
+			from log import print_tb
+			print_tb(e)
 
-		return api
+		return None
 
-	def __init__(self, imdb_id = None, kinopoisk = None):
-		KinopoiskAPI.__init__(self, kinopoisk)
-
-		if not imdb_id and kinopoisk is not None:
+	@staticmethod
+	def get_by(imdb_id = None, kinopoisk_url = None, orig=None, year=None, imdbRaiting=None):
+		if not imdb_id:
 			try:
-				orig = KinopoiskAPI.getOriginalTitle(self)
-				year = KinopoiskAPI.getYear(self)
-				if orig and year:
-					omdb_url = 'http://www.omdbapi.com/?t=%s&y=%s' % (urllib2.quote(orig.encode('utf-8')), year)
-					omdbapi	= json.load(urllib2.urlopen( omdb_url ))
-					imdb_id = omdbapi['imdbID']
-
-				if not imdb_id:
+				imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
+				if not imdb_id and kinopoisk_url is not None:
+					kp = KinopoiskAPI(kinopoisk_url)
+					orig = kp.getOriginalTitle()
 					if not orig:
-						orig = KinopoiskAPI.getTitle(self)
+						orig = kp.getTitle()
+					year = kp.getYear()
+					imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
 
-					for res in MovieAPI.search(orig):
-						r = res.json_data_
-						#print res.get_info()
-						if year and year not in r['release_date']:
-							continue
-						if orig and orig == r['title']:
-							imdb_id = r['imdb_id']
-							break
+					if not imdb_id:
+						imdb_id = MovieAPI.imdb_by_tmdb_search(orig, year)
 
 			except BaseException as e:
 				from log import print_tb
 				print_tb(e)
+
+		if imdb_id and imdb_id in MovieAPI.APIs:
+			return MovieAPI.APIs[imdb_id], imdb_id
+		elif kinopoisk_url and kinopoisk_url in MovieAPI.APIs:
+			return MovieAPI.APIs[kinopoisk_url], imdb_id
+
+		api = MovieAPI(imdb_id, kinopoisk_url)
+		if imdb_id:
+			MovieAPI.APIs[imdb_id] = api
+		elif kinopoisk_url:
+			MovieAPI.APIs[kinopoisk_url] = api
+
+		return api, imdb_id
+
+	def __init__(self, imdb_id = None, kinopoisk = None):
+		KinopoiskAPI.__init__(self, kinopoisk)
 
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
@@ -497,6 +522,9 @@ class MovieAPI(KinopoiskAPI):
 
 	def imdbGenres(self):
 		return self.omdbapi['Genre']
+
+	def Year(self):
+		return self.omdbapi['Year']
 		
 	def Runtime(self):
 		return self.omdbapi['Runtime'].encode('utf-8').replace(' min', '')
