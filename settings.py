@@ -18,6 +18,8 @@ class FakeProgressDlg(object):
 	def update(self, *args):
 		pass
 
+_addon_name = '[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]'
+
 class Settings:
 	# feed=dl&
 	
@@ -102,6 +104,10 @@ class Settings:
 			result += "%s: %s" % (key, value)
 		return result
 	
+	@property
+	def addon_name(self):
+		return _addon_name
+
 	def base_path(self):
 		return self.__base_path
 

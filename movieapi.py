@@ -25,6 +25,8 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		from downloader import TorrentDownloader
 		TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
+		return filesystem.relpath( filesystem.join(filesystem.getcwd(), filename), start=settings.base_path())
+
 def get_tmdb_api_key():
 	try:
 		import xbmc, filesystem

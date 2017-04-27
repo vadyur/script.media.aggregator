@@ -272,7 +272,7 @@ def main():
 
 	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
-	window = MyWindow('Media Aggregator', settings=settings, links=links)
+	window = MyWindow(settings.addon_name, settings=settings, links=links)
 	window.doModal()
 
 	debug(window.has_choice)

@@ -204,49 +204,56 @@ def make_search_url(what, IDs, imdb, settings):
 def search_generate(what, imdb, settings):
 
 	count = 0
-
 	session = requests.session()
+
+	class PathOut:
+		path = None
+
+	po = PathOut()
 
 	if settings.movies_save:
 		url = make_search_url(what, 71, imdb, settings)
 		result1 = search_results(imdb, session, settings, url, 71)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie')
+			count += make_search_strms(result1, settings, 'movie', po)
 
 	if settings.animation_save:
 		url = make_search_url(what, 70, imdb, settings)
 		result2 = search_results(imdb, session, settings, url, 70)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie')
+			count += make_search_strms(result2, settings, 'movie', po)
 
 	if settings.documentary_save:
 		url = make_search_url(what, 78, imdb, settings)
 		result3 = search_results(imdb, session, settings, url, 78)
 		with filesystem.save_make_chdir_context(settings.documentary_path()):
-			count += make_search_strms(result3, settings, 'movie')
+			count += make_search_strms(result3, settings, 'movie', po)
 
 	if settings.tvshows_save:
 		url = make_search_url(what, 64, imdb, settings)
 		result4 = search_results(imdb, session, settings, url, 64)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow')
+			count += make_search_strms(result4, settings, 'tvshow', po)
 
-	return count
+	return count, po.path
 
 
-def make_search_strms(result, settings, type):
+def make_search_strms(result, settings, type, po):
 	count = 0
 	for item in result:
 		link = item['link']
 		parser = item['parser']
 		if link:
+			settings.progress_dialog.update(count * 100 / len(result))
+
 			if type == 'movie':
 				import movieapi
-				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path += '.strm'
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 
 	return count

@@ -384,6 +384,7 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 
 					# end for
 
+				return filesystem.relpath( filesystem.getcwd(), start=settings.base_path())
 
 def test(link):
 	import requests

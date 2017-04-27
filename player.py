@@ -2,6 +2,7 @@
 
 _DEBUG=False
 
+"""
 try:
 	if _DEBUG:
 		import ptvsd
@@ -9,7 +10,7 @@ try:
 		ptvsd.wait_for_attach()
 except:
 	pass
-
+"""
 
 import operator
 import sys
@@ -432,7 +433,7 @@ def openInTorrenter(nfoReader):
 
 def play_torrent(settings, params):
 	info_dialog = xbmcgui.DialogProgress()
-	info_dialog.create('Media Aggregator')
+	info_dialog.create(settings.addon_name)
 
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	base_path = settings.base_path().encode('utf-8')
@@ -487,7 +488,7 @@ def play_torrent(settings, params):
 		for tryCount, variant in enumerate(links_with_ranks, 1):
 
 			if tryCount > 1:
-				info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
+				info_dialog.update(0, settings.addon_name, 'Попытка #%d' % tryCount)
 			debug(variant)
 
 			torrent_source = variant['link']
@@ -527,9 +528,9 @@ def check_sources(settings):
 	import sources
 	if sources.need_create(settings):
 		dialog = xbmcgui.Dialog()
-		if dialog.yesno('Media Aggregator', u'Источники категорий не созданы. Создать?'):
+		if dialog.yesno(settings.addon_name, u'Источники категорий не созданы. Создать?'):
 			if sources.create(settings):
-				if dialog.yesno('Media Aggregator', restart_msg):
+				if dialog.yesno(settings.addon_name, restart_msg):
 					xbmc.executebuiltin('Quit')
 			return True
 		else:
@@ -577,7 +578,7 @@ def dialog_action(action, settings):
 		# sources.create(settings)
 		dialog = xbmcgui.Dialog()
 		if sources.create(settings):
-			if dialog.yesno('Media Aggregator', restart_msg):
+			if dialog.yesno(settings.addon_name, restart_msg):
 				from service import update_library_next_start
 
 				update_library_next_start()
@@ -656,7 +657,6 @@ def show_list(listing):
 
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 	xbmcplugin.endOfDirectory(addon_handle)
-
 
 def main():
 	from service import create_mark_file
