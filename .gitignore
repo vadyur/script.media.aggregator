@@ -5,4 +5,5 @@ standalone.py
 *test.py
 .idea/
 .vs/
+ptvsd/
 rpdb2.py
