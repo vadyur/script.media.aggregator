@@ -363,9 +363,11 @@ def add_media_process(title, imdb, settings):
 		c, p = hdclub.search_generate(title, imdb, settings)
 		count += c
 	if nnmclub_enable:
-		count += nnmclub.search_generate(title, imdb, settings)
+		c, p = nnmclub.search_generate(title, imdb, settings)
+		count += c
 	if rutor_enable:
-		count += rutor.search_generate(title, imdb, settings)
+		c, p = rutor.search_generate(title, imdb, settings)
+		count += c
 	if soap4me_enable:
 		count += soap4me.search_generate(title, imdb, settings)
 

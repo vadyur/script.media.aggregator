@@ -464,11 +464,12 @@ def make_search_strms(result, settings, type):
 		if link:
 			if type == 'movie':
 				import movieapi
-				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path += '.strm'
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 
 	return count
@@ -548,31 +549,36 @@ def search_results(imdb, settings, url):
 def search_generate(what, imdb, settings):
 	count = 0
 
+	class PathOut:
+		path = None
+
+	po = PathOut()
+
 	if settings.movies_save:
 		url = 'http://rutor.info/search/0/1/010/2/' + imdb
 		result1 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie')
+			count += make_search_strms(result1, settings, 'movie', po)
 
 	if settings.animation_save:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result2 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie')
+			count += make_search_strms(result2, settings, 'movie', po)
 
 	if settings.animation_tvshows_save:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result3 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow')
+			count += make_search_strms(result3, settings, 'tvshow', po)
 
 	if settings.tvshows_save:
 		url = 'http://rutor.info/search/0/4/010/2/' + imdb
 		result4 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow')
+			count += make_search_strms(result4, settings, 'tvshow', po)
 
-	return count
+	return count, po.path
 
 if __name__ == '__main__':
 	settings = Settings('../../..')

@@ -648,6 +648,11 @@ def search_generate(what, imdb, settings):
 	count = 0
 	session = create_session(settings)
 
+	class PathOut:
+		path = None
+
+	po = PathOut()
+
 	if settings.movies_save:
 		url = make_search_url(what, '227,954')
 		result1 = search_results(imdb, session, settings, url)
@@ -672,22 +677,25 @@ def search_generate(what, imdb, settings):
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow')
 
-	return count
+	return count, po.path
 
 
-def make_search_strms(result, settings, type):
+def make_search_strms(result, settings, type, po):
 	count = 0
 	for item in result:
+		settings.progress_dialog.update(count * 100 / len(result))
+	
 		link = item['link']
 		parser = item['parser']
 		if link:
 			if type == 'movie':
 				import movieapi
-				movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path += '.strm'
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				po.path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				count += 1
 
 	return count
