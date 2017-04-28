@@ -456,7 +456,7 @@ def download_torrent(url, path, settings):
 	return False
 
 
-def make_search_strms(result, settings, type):
+def make_search_strms(result, settings, type, po):
 	count = 0
 	for item in result:
 		link = item['link']

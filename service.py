@@ -1,26 +1,7 @@
 # coding: utf-8
 
-_DEBUG=False
-
-try:
-	if _DEBUG:
-		# tcp://localhost:6663
-
-		import ptvsd
-		if __name__ == '__main__':
-			ptvsd.enable_attach(secret=None, address = ('0.0.0.0', 6663))
-			"""
-		else:
-			ptvsd.enable_attach(secret=None, address = ('0.0.0.0', 6662))
-			ptvsd.wait_for_attach()
-			"""
-except:
-	pass
-
-
 import math, urllib
-
-import log
+import log, brkpnt
 
 try:
 	import xbmc, xbmcaddon, xbmcgui
@@ -331,13 +312,10 @@ def add_media_process(title, imdb, settings):
 	#rpdb2.start_embedded_debugger('pw')
 	count = 0
 
-	try:
-		hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
-		nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-		rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
-		soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
-	except:
-		hdclub_enable = True
+	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
+	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
+	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
 
 	class RemoteDialogProgress:
 		def update(self, percent, *args, **kwargs):
@@ -374,13 +352,16 @@ def add_media_process(title, imdb, settings):
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
+			xbmc.sleep(1000)
+			while xbmc.getCondVisibility('Library.IsScanningVideo'):
+				xbmc.sleep(100)
 
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
 		if p:
 			f.write('\n')
-			f.write(p)
+			f.write(p.encode('utf-8'))
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -411,6 +392,8 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
+	brkpnt._bp(wait=False)
+
 	global _addon
 	_addon = AddonRO()
 	player._addon = _addon
@@ -504,7 +487,13 @@ def add_media(title, imdb):
 			with filesystem.fopen(ended_path, 'r') as f:
 				dlg = xbmcgui.Dialog()
 
-				count = f.read()
+				data = f.read().split('\n')
+				count = data[0]
+
+				try:
+					source = data[1]	# utf-8
+				except BaseException:
+					source = None
 
 				try:
 					count = int(count)

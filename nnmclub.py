@@ -657,25 +657,25 @@ def search_generate(what, imdb, settings):
 		url = make_search_url(what, '227,954')
 		result1 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie')
+			count += make_search_strms(result1, settings, 'movie', po)
 
 	if settings.animation_save:
 		url = make_search_url(what, '661')
 		result2 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie')
+			count += make_search_strms(result2, settings, 'movie', po)
 
 	if settings.animation_tvshows_save:
 		url = make_search_url(what, '232')
 		result3 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow')
+			count += make_search_strms(result3, settings, 'tvshow', po)
 
 	if settings.tvshows_save:
 		url = make_search_url(what, '768')
 		result4 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow')
+			count += make_search_strms(result4, settings, 'tvshow', po)
 
 	return count, po.path
 
