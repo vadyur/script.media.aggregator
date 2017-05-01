@@ -754,7 +754,7 @@ def main():
 		elif not params.get('norecursive'):
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
-				add_media(title, imdb)
+				add_media(title, imdb, settings)
 
 	else:
 		menu_items = [u'Генерировать .strm и .nfo файлы',

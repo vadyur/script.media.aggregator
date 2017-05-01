@@ -323,7 +323,7 @@ def main():
 		debug(title)
 
 		from service import add_media
-		add_media(title.decode('utf-8'), imdb_id)
+		add_media(title.decode('utf-8'), imdb_id, settings)
 		return
 
 	if link == 'plugin://script.media.aggregator/?action=united_search':

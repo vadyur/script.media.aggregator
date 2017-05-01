@@ -111,7 +111,6 @@ def addon_data_path():
 	else:
 		return _addondir
 
-
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
 
@@ -308,8 +307,6 @@ def scrape_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media_process(title, imdb, settings):
-	#import rpdb2
-	#rpdb2.start_embedded_debugger('pw')
 	count = 0
 
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
@@ -336,32 +333,41 @@ def add_media_process(title, imdb, settings):
 
 	settings.progress_dialog = RemoteDialogProgress()
 
-	p = None
+	p = []
 	if hdclub_enable:
-		c, p = hdclub.search_generate(title, imdb, settings)
+		c = hdclub.search_generate(title, imdb, settings, p)
 		count += c
 	if nnmclub_enable:
-		c, p = nnmclub.search_generate(title, imdb, settings)
+		c = nnmclub.search_generate(title, imdb, settings, p)
 		count += c
 	if rutor_enable:
-		c, p = rutor.search_generate(title, imdb, settings)
+		c = rutor.search_generate(title, imdb, settings, p)
 		count += c
 	if soap4me_enable:
 		count += soap4me.search_generate(title, imdb, settings)
 
+	if p:
+		path = filesystem.join(addon_data_path(), imdb + '.strm_path')
+		with filesystem.fopen(path, 'w') as f:
+			f.write(p[0].encode('utf-8'))
+
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video")')
-			xbmc.sleep(1000)
+			if p:
+				path = p[0]
+				if path.endswith('.strm'):
+					path = filesystem.dirname(p[0])
+				path = filesystem.join(settings.base_path(), path)
+				xbmc.executebuiltin('UpdateLibrary("video","%s")' % path.encode('utf-8'))
+			else:
+				xbmc.executebuiltin('UpdateLibrary("video")')
+			xbmc.sleep(250)
 			while xbmc.getCondVisibility('Library.IsScanningVideo'):
 				xbmc.sleep(100)
 
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
-		if p:
-			f.write('\n')
-			f.write(p.encode('utf-8'))
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -440,7 +446,7 @@ def update_library_next_start():
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def add_media(title, imdb):
+def add_media(title, imdb, settings):
 	#import web_pdb;	web_pdb.set_trace()
 
 	path = filesystem.join(addon_data_path(), 'add_media')
@@ -473,55 +479,61 @@ def add_media(title, imdb):
 					try:
 						percent = f.split('.')[1]
 						self.update(int(percent))
-					except:
-						pass
+					except: pass
 
 	info_dialog = RemoteDialogProgress()
 	info_dialog.create(_addon_name)
-
+	
 	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
+	strm_path = filesystem.join(addon_data_path(), imdb + '.strm_path')
 	for cnt in range(300):
 		info_dialog.Refresh()
-
+		#---------------------------------
+		"""
+		if filesystem.exists(strm_path):
+			with filesystem.fopen(strm_path, 'r') as f:
+				source = f.read()	# utf-8
+				if source and source.endswith('.strm'):
+					strm_path = filesystem.join(settings.base_path(), source)
+					if filesystem.exists(strm_path):
+						with filesystem.fopen(strm_path, 'r') as strm:
+							url = strm.read()
+							xbmc.executebuiltin('RunPlugin("%s")' % url)
+		"""
+		#---------------------------------
 		if filesystem.exists(ended_path):
 			with filesystem.fopen(ended_path, 'r') as f:
 				dlg = xbmcgui.Dialog()
 
-				data = f.read().split('\n')
-				count = data[0]
-
-				try:
-					source = data[1]	# utf-8
-				except BaseException:
-					source = None
-
-				try:
+				count = f.read()
+				try: 
 					count = int(count)
-				except BaseException:
-					count = 0
+				except ValueError: count = 0
 
-				if count:
-					dlg.notification(_addon_name, u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
+				if not xbmc.Player().isPlaying():
+					if count:
+						dlg.notification(_addon_name, u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
 
-					xbmc.executebuiltin('Container.Refresh')
+						xbmc.executebuiltin('Container.Refresh')
 
-					url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
-						{'action': 'add_media',
-						 'title': title.encode('utf-8'),
-						 'imdb': imdb,
-						 'norecursive': True})
+						url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
+							{'action': 'add_media',
+								'title': title.encode('utf-8'),
+								'imdb': imdb,
+								'norecursive': True})
 
-					xbmc.executebuiltin('RunPlugin("%s")' % url)
-				else:
-					dlg.notification(_addon_name,
-					                 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
-					                 time=10000)
+						xbmc.executebuiltin('RunPlugin("%s")' % url)
+					else:
+						dlg.notification(_addon_name,
+										 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
+										 time=10000)
 			filesystem.remove(ended_path)
 
 			break
 
 		sleep(1)
 
+	info_dialog.close()
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def save_dbs():
