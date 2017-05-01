@@ -674,7 +674,7 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 	imdb_api	= {}
 
 	@staticmethod
-	def get_by(self, title, ruTitle, imdbId=None, kinopoiskId=None):
+	def get_by(title, ruTitle, imdbId=None, kinopoiskId=None):
 		if imdbId and imdbId in TVShowAPI.imdb_api:
 			return TVShowAPI.imdb_api[imdbId]
 
