@@ -23,9 +23,9 @@
           <label>Выбор источников</label>
           <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
         </item>
-        <item library="context_tvshow.py">
+        <item library="context_get_sources.py">
           <label>Поиск источников</label>
-          <visible>StringCompare(ListItem.dbtype,tvshow)</visible>
+          <visible>StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)</visible>
         </item>
         <item library="context_search.py">
           <label>Поиск</label>

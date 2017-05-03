@@ -1,4 +1,9 @@
+_debug = False
+
 def _bp(wait=True):
+	if not _debug:
+		return
+
 	try:
 		import random, os
 		port = random.randint(6600, 6800)

@@ -316,8 +316,6 @@ def add_media_process(title, imdb, settings):
 
 	class RemoteDialogProgress:
 		def update(self, percent, *args, **kwargs):
-			import os
-
 			_from = None
 			for f in filesystem.listdir(addon_data_path()):
 				if imdb in f and f.endswith('.progress'):
@@ -327,9 +325,11 @@ def add_media_process(title, imdb, settings):
 			to = filesystem.join(addon_data_path(), '.'.join([imdb, str(percent),'progress']))
 
 			if _from:
+				import os
 				os.rename(filesystem.get_path(_from), filesystem.get_path(to))
-			else:
-				filesystem.fopen(to, 'a').close()
+
+			with filesystem.fopen(to, 'w') as progress_file:
+				progress_file.write('\n'.join(args).encode('utf-8'))
 
 	settings.progress_dialog = RemoteDialogProgress()
 
@@ -473,12 +473,18 @@ def add_media(title, imdb, settings):
 	class RemoteDialogProgress(xbmcgui.DialogProgressBG):
 
 		def Refresh(self):
-			import os
 			for f in filesystem.listdir(addon_data_path()):
 				if imdb in f and f.endswith('.progress'):
 					try:
 						percent = f.split('.')[1]
-						self.update(int(percent))
+						
+						try:
+							with filesystem.fopen(filesystem.join(addon_data_path(), f), 'r') as progress_file:
+								args = progress_file.read().split('\n')
+						except:
+							args = []
+
+						self.update(int(percent), *args)
 					except: pass
 
 	info_dialog = RemoteDialogProgress()

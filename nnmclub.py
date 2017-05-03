@@ -678,10 +678,10 @@ def search_generate(what, imdb, settings, path_out):
 def make_search_strms(result, settings, type, path_out):
 	count = 0
 	for item in result:
-		settings.progress_dialog.update(count * 100 / len(result))
-	
 		link = item['link']
 		parser = item['parser']
+
+		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
 				import movieapi

@@ -239,7 +239,7 @@ def make_search_strms(result, settings, type, path_out):
 		link = item['link']
 		parser = item['parser']
 		if link:
-			settings.progress_dialog.update(count * 100 / len(result))
+			settings.progress_dialog.update(count * 100 / len(result), 'hdclub', parser.get_value('full_title'))
 
 			if type == 'movie':
 				import movieapi
