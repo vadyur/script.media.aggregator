@@ -755,6 +755,13 @@ def main():
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
 				add_media(title, imdb, settings)
+		elif params.get('strm'):
+			strm_path = filesystem.join(settings.base_path(), params['strm'])
+			if filesystem.exists(strm_path):
+				with filesystem.fopen(strm_path, 'r') as f:
+					source = f.read()	# utf-8
+					if source and source.endswith('.strm'):
+						xbmc.executebuiltin('PlayMedia("%s")' % source)
 
 	else:
 		menu_items = [u'Генерировать .strm и .nfo файлы',

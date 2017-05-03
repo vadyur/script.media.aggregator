@@ -527,6 +527,7 @@ def add_media(title, imdb, settings):
 							{'action': 'add_media',
 								'title': title.encode('utf-8'),
 								'imdb': imdb,
+								'strm': strm_path.encode('utf-8'),
 								'norecursive': True})
 
 						xbmc.executebuiltin('RunPlugin("%s")' % url)
