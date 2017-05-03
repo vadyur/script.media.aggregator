@@ -20,15 +20,27 @@
       <menu>
         <label>[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]</label>
         <item library="context.py">
-          <label>Выбор источников</label>
+          <label>ВЫБОР ИСТОЧНИКОВ...</label>
           <visible>[ StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) ] + StringCompare(ListItem.FileExtension,strm)</visible>
+        </item>
+        <item library="context_show_similar.py">
+          <label>Смотри также</label>
+          <visible>StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)</visible>
         </item>
         <item library="context_get_sources.py">
           <label>Поиск источников</label>
           <visible>StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)</visible>
         </item>
+        <item library="context_united_search.py">
+          <label>Поиск в United Search</label>
+          <visible>[StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)] + !String.IsEmpty(System.AddonTitle(plugin.video.united.search)) ]</visible>
+        </item>
         <item library="context_search.py">
           <label>Поиск</label>
+          <visible>true</visible>
+        </item>
+        <item library="context_settings.py">
+          <label>НАСТРОЙКИ...</label>
           <visible>true</visible>
         </item>
       </menu>
