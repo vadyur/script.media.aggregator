@@ -358,7 +358,8 @@ def add_media_process(title, imdb, settings):
 				if path.endswith('.strm'):
 					path = filesystem.dirname(p[0])
 				path = filesystem.join(settings.base_path(), path)
-				xbmc.executebuiltin('UpdateLibrary("video","%s")' % path.encode('utf-8'))
+				#xbmc.executebuiltin('UpdateLibrary("video","%s")' % path.encode('utf-8'))
+				xbmc.executebuiltin('UpdateLibrary("video")')
 			else:
 				xbmc.executebuiltin('UpdateLibrary("video")')
 			xbmc.sleep(250)
