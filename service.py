@@ -319,7 +319,7 @@ def add_media_process(title, imdb, settings):
 			import os
 
 			_from = None
-			for f in os.listdir(addon_data_path()):
+			for f in filesystem.listdir(addon_data_path()):
 				if imdb in f and f.endswith('.progress'):
 					_from = filesystem.join(addon_data_path(), f)
 					break
@@ -474,7 +474,7 @@ def add_media(title, imdb, settings):
 
 		def Refresh(self):
 			import os
-			for f in os.listdir(addon_data_path()):
+			for f in filesystem.listdir(addon_data_path()):
 				if imdb in f and f.endswith('.progress'):
 					try:
 						percent = f.split('.')[1]
