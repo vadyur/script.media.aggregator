@@ -744,6 +744,7 @@ def main():
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
+			brkpnt._bp()
 			if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
 				#with filesystem.fopen(r['file'], 'r') as strm:
 				#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
@@ -756,12 +757,15 @@ def main():
 				from service import add_media
 				add_media(title, imdb, settings)
 		elif params.get('strm'):
-			strm_path = filesystem.join(settings.base_path(), params['strm'])
+			brkpnt._bp()
+			strm_path = urllib.unquote_plus(params.get('strm')).decode('utf-8')
 			if filesystem.exists(strm_path):
 				with filesystem.fopen(strm_path, 'r') as f:
 					source = f.read()	# utf-8
 					if source and source.endswith('.strm'):
-						xbmc.executebuiltin('PlayMedia("%s")' % source)
+						source = filesystem.join(settings.base_path(), source.decode('utf-8'))
+						xbmc.executebuiltin('PlayMedia("%s")' % source.encode('utf-8'))
+
 
 	else:
 		menu_items = [u'Генерировать .strm и .nfo файлы',

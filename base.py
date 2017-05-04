@@ -454,7 +454,7 @@ class DescriptionParserBase(Informer):
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
 
-		self._dict.clear()
+		self._dict = dict()
 		self._dict['full_title'] = full_title
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'

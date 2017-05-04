@@ -133,6 +133,10 @@ def update_service(show_progress=False):
 	if hdclub_enable:
 		hdclub.run(settings)
 
+	if rutor_enable:
+		import rutor
+		rutor.run(settings)
+
 	if nnmclub_enable:
 		addon = Addon('settings2.xml')
 
@@ -149,10 +153,6 @@ def update_service(show_progress=False):
 
 		addon.setSetting('nnm_last_generate', str(time()))
 		nnmclub.run(settings)
-
-	if rutor_enable:
-		import rutor
-		rutor.run(settings)
 
 	if soap4me_enable:
 		import soap4me
@@ -315,21 +315,18 @@ def add_media_process(title, imdb, settings):
 	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
 
 	class RemoteDialogProgress:
+		progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
+
 		def update(self, percent, *args, **kwargs):
-			_from = None
-			for f in filesystem.listdir(addon_data_path()):
-				if imdb in f and f.endswith('.progress'):
-					_from = filesystem.join(addon_data_path(), f)
-					break
-
-			to = filesystem.join(addon_data_path(), '.'.join([imdb, str(percent),'progress']))
-
-			if _from:
-				import os
-				os.rename(filesystem.get_path(_from), filesystem.get_path(to))
-
-			with filesystem.fopen(to, 'w') as progress_file:
+			with filesystem.fopen(self.progress_file_path, 'w') as progress_file:
+				progress_file.write(str(percent) + '\n')
 				progress_file.write('\n'.join(args).encode('utf-8'))
+
+		def close(self):
+			try:
+				filesystem.remove(self.progress_file_path)
+			except: pass
+
 
 	settings.progress_dialog = RemoteDialogProgress()
 
@@ -337,11 +334,11 @@ def add_media_process(title, imdb, settings):
 	if hdclub_enable:
 		c = hdclub.search_generate(title, imdb, settings, p)
 		count += c
-	if nnmclub_enable:
-		c = nnmclub.search_generate(title, imdb, settings, p)
-		count += c
 	if rutor_enable:
 		c = rutor.search_generate(title, imdb, settings, p)
+		count += c
+	if nnmclub_enable:
+		c = nnmclub.search_generate(title, imdb, settings, p)
 		count += c
 	if soap4me_enable:
 		count += soap4me.search_generate(title, imdb, settings)
@@ -350,6 +347,8 @@ def add_media_process(title, imdb, settings):
 		path = filesystem.join(addon_data_path(), imdb + '.strm_path')
 		with filesystem.fopen(path, 'w') as f:
 			f.write(p[0].encode('utf-8'))
+
+	settings.progress_dialog.close()
 
 	if count:
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
@@ -449,6 +448,11 @@ def update_library_next_start():
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media(title, imdb, settings):
 	#import web_pdb;	web_pdb.set_trace()
+	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
+	if filesystem.exists(ended_path):
+		try:
+			filesystem.remove(ended_path)
+		except: pass
 
 	path = filesystem.join(addon_data_path(), 'add_media')
 	log.debug(path)
@@ -473,25 +477,26 @@ def add_media(title, imdb, settings):
 
 	class RemoteDialogProgress(xbmcgui.DialogProgressBG):
 
-		def Refresh(self):
-			for f in filesystem.listdir(addon_data_path()):
-				if imdb in f and f.endswith('.progress'):
-					try:
-						percent = f.split('.')[1]
-						
-						try:
-							with filesystem.fopen(filesystem.join(addon_data_path(), f), 'r') as progress_file:
-								args = progress_file.read().split('\n')
-						except:
-							args = []
+		def __init__(self, *args, **kwargs):
+			self.progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
+			return super(RemoteDialogProgress, self).__init__(*args, **kwargs)
 
-						self.update(int(percent), *args)
-					except: pass
+		def Refresh(self):
+			if filesystem.exists(self.progress_file_path):
+				try:
+					try:
+						with filesystem.fopen(self.progress_file_path, 'r') as progress_file:
+							args = progress_file.read().split('\n')
+					except:
+						args = [0]
+
+					args[0] = int(args[0])
+					self.update(*args)
+				except: pass
 
 	info_dialog = RemoteDialogProgress()
 	info_dialog.create(_addon_name)
 	
-	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
 	strm_path = filesystem.join(addon_data_path(), imdb + '.strm_path')
 	for cnt in range(300):
 		info_dialog.Refresh()
@@ -509,6 +514,7 @@ def add_media(title, imdb, settings):
 		"""
 		#---------------------------------
 		if filesystem.exists(ended_path):
+			#brkpnt._bp()
 			with filesystem.fopen(ended_path, 'r') as f:
 				dlg = xbmcgui.Dialog()
 
@@ -535,7 +541,9 @@ def add_media(title, imdb, settings):
 						dlg.notification(_addon_name,
 										 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
 										 time=10000)
-			filesystem.remove(ended_path)
+			try:
+				filesystem.remove(ended_path)
+			except: pass
 
 			break
 

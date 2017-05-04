@@ -41,7 +41,7 @@ class DescriptionParser(DescriptionParserBase):
 	def __init__(self, content, settings=None):
 		Informer.__init__(self)
 
-		self._dict.clear()
+		self._dict = dict()
 		self.content = content
 		self.settings = settings
 		self.OK = self.parse()
@@ -293,7 +293,7 @@ class DescriptionParserRSS(DescriptionParser):
 	def __init__(self, title, link, settings=None):
 		Informer.__init__(self)
 
-		self._dict.clear()
+		self._dict = dict()
 		self.content = link
 		self.settings = settings
 		self._dict['full_title'] = title.strip(' \t\n\r')
@@ -469,7 +469,6 @@ def make_search_strms(result, settings, type, path_out):
 			if type == 'movie':
 				import movieapi
 				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path += '.strm'
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':

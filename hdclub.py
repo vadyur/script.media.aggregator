@@ -244,7 +244,6 @@ def make_search_strms(result, settings, type, path_out):
 			if type == 'movie':
 				import movieapi
 				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path += '.strm'
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':

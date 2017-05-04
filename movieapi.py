@@ -25,7 +25,7 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		from downloader import TorrentDownloader
 		TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		return filesystem.relpath( filesystem.join(filesystem.getcwd(), filename), start=settings.base_path())
+		return filesystem.relpath( filesystem.join(filesystem.getcwd(), base.make_fullpath(filename, '.strm')), start=settings.base_path())
 
 def get_tmdb_api_key():
 	try:
@@ -360,7 +360,7 @@ class MovieAPI(KinopoiskAPI):
 	tmdb_api_key = get_tmdb_api_key()
 
 	APIs	= {}
-	#kp_api		= []
+	IMDB_by_KP_URL = {}
 
 	@staticmethod
 	def url_imdb_id(idmb_id, type='movie'):
@@ -469,6 +469,9 @@ class MovieAPI(KinopoiskAPI):
 
 	@staticmethod
 	def get_by(imdb_id = None, kinopoisk_url = None, orig=None, year=None, imdbRaiting=None):
+		if kinopoisk_url in MovieAPI.IMDB_by_KP_URL:
+			imdb_id = MovieAPI.IMDB_by_KP_URL[kinopoisk_url]
+
 		if not imdb_id:
 			try:
 				imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
@@ -486,6 +489,9 @@ class MovieAPI(KinopoiskAPI):
 			except BaseException as e:
 				from log import print_tb
 				print_tb(e)
+
+		if imdb_id and kinopoisk_url:
+			MovieAPI.IMDB_by_KP_URL[kinopoisk_url] = imdb_id
 
 		if imdb_id and imdb_id in MovieAPI.APIs:
 			return MovieAPI.APIs[imdb_id], imdb_id

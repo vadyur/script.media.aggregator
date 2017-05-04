@@ -17,7 +17,7 @@ class soap4me_data:
 class DescriptionParser(DescriptionParserBase):
 	def __init__(self, info, settings=None):
 		Informer.__init__(self)
-		self._dict.clear()
+		self._dict = dict()
 
 		self.api_info = None
 		for item in soap4me_data.api_data:
