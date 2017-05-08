@@ -331,17 +331,21 @@ def add_media_process(title, imdb, settings):
 	settings.progress_dialog = RemoteDialogProgress()
 
 	p = []
-	if hdclub_enable:
-		c = hdclub.search_generate(title, imdb, settings, p)
-		count += c
-	if rutor_enable:
-		c = rutor.search_generate(title, imdb, settings, p)
-		count += c
-	if nnmclub_enable:
-		c = nnmclub.search_generate(title, imdb, settings, p)
-		count += c
-	if soap4me_enable:
-		count += soap4me.search_generate(title, imdb, settings)
+
+	try:
+		if hdclub_enable:
+			c = hdclub.search_generate(title, imdb, settings, p)
+			count += c
+		if rutor_enable:
+			c = rutor.search_generate(title, imdb, settings, p)
+			count += c
+		if nnmclub_enable:
+			c = nnmclub.search_generate(title, imdb, settings, p)
+			count += c
+		if soap4me_enable:
+			count += soap4me.search_generate(title, imdb, settings)
+	except BaseException as e:
+		log.print_tb(e)
 
 	if p:
 		path = filesystem.join(addon_data_path(), imdb + '.strm_path')
@@ -354,23 +358,28 @@ def add_media_process(title, imdb, settings):
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			if p:
 				path = p[0]
+				
 				if path.endswith('.strm'):
-					path = filesystem.dirname(p[0])
 					type = 'movies'
 				else:
 					type = 'tvshows'
-				#path = filesystem.join(settings.base_path(), path)
+
+				base_path = filesystem.dirname(p[0])
 
 				from sources import Sources
 				srcs = Sources()
 				for src in srcs.get('video'):
-					if path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
-						xbmc.executebuiltin('UpdateLibrary("video","%s")' % src.path.encode('utf-8'))
+					src_path_basename = filesystem.basename(src.path)
+					if src_path_basename == base_path:  #base_path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
+						path_update = src.path
+						if type == 'tvshows':
+							path_update = filesystem.join(src.path, filesystem.basename(path))
+						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'))
 
-				#xbmc.executebuiltin('UpdateLibrary("video","%s")' % path.encode('utf-8'))
 				#xbmc.executebuiltin('UpdateLibrary("video")')
 			else:
 				xbmc.executebuiltin('UpdateLibrary("video")')
+
 			xbmc.sleep(250)
 			while xbmc.getCondVisibility('Library.IsScanningVideo'):
 				xbmc.sleep(100)
