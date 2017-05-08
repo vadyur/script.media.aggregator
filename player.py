@@ -550,7 +550,7 @@ class dialog_action_case:
 	exit = 5
 
 
-def dialog_action(action, settings):
+def dialog_action(action, settings, params=None):
 	# import rpdb2
 	# rpdb2.start_embedded_debugger('pw')
 
@@ -599,12 +599,19 @@ def dialog_action(action, settings):
 
 	if action == dialog_action_case.search:
 		#brkpnt._bp()
+		import urllib
 
-		dlg = xbmcgui.Dialog()
-		s = dlg.input(u'Введите поисковую строку')
+		if not 'keyword' in params:
+			dlg = xbmcgui.Dialog()
+			s = dlg.input(u'Введите поисковую строку')
+			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
+			xbmc.executebuiltin(b'Container.Update(\"%s\")' % command)
+			debug('No keyword param. Return')
+			return False
 
+		s = urllib.unquote(params.get('keyword'))
 		if s:
-			debug(s)
+			debug('Keyword is: ' + s)
 			show_list(MovieAPI.search(s.decode('utf-8')))
 
 	if action == dialog_action_case.catalog:
@@ -687,7 +694,7 @@ def main():
 		dialog_action(dialog_action_case.settings, settings)
 
 	elif params.get('action') == 'search':
-		dialog_action(dialog_action_case.search, settings)
+		dialog_action(dialog_action_case.search, settings, params)
 
 	elif params.get('action') == 'search_context':
 		s = params.get('s')
@@ -744,7 +751,7 @@ def main():
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
-			brkpnt._bp()
+			#brkpnt._bp()
 			if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
 				#with filesystem.fopen(r['file'], 'r') as strm:
 				#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
@@ -757,7 +764,7 @@ def main():
 				from service import add_media
 				add_media(title, imdb, settings)
 		elif params.get('strm'):
-			brkpnt._bp()
+			#brkpnt._bp()
 			strm_path = urllib.unquote_plus(params.get('strm')).decode('utf-8')
 			if filesystem.exists(strm_path):
 				with filesystem.fopen(strm_path, 'r') as f:
@@ -782,7 +789,7 @@ def main():
 		]
 
 		if params.get('menu') in menu_actions:
-			dialog_action(menu_actions.index(params.get('menu')), settings)
+			dialog_action(menu_actions.index(params.get('menu')), settings, params)
 		else:
 			indx = 0
 			addon_handle = int(sys.argv[1])
