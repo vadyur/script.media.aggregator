@@ -368,12 +368,17 @@ def add_media_process(title, imdb, settings):
 
 				from sources import Sources
 				srcs = Sources()
-				for src in srcs.get('video'):
-					src_path_basename = filesystem.basename(src.path)
+				for src in srcs.get('video', normalize=False):
+					src_path_basename = filesystem.basename(src.path.rstrip('\\/'))
 					if src_path_basename == base_path:  #base_path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
 						path_update = src.path
 						if type == 'tvshows':
-							path_update = filesystem.join(src.path, filesystem.basename(path))
+							if src.path.startswith('smb://'):
+								path_update = src.path
+								path_update = path_update.strip('\\/') + '/' + filesystem.basename(path)
+							else:
+								path_update = filesystem.join(src.path, filesystem.basename(path))
+						log.debug(path_update)
 						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'))
 
 				#xbmc.executebuiltin('UpdateLibrary("video")')
