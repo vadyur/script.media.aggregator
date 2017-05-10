@@ -80,6 +80,10 @@ def get_rank(full_title, parser, settings):
 	rank = 0.0
 	conditions = 0
 
+	if '[ad]' in full_title.lower():
+		rank += 2
+		conditions += 1
+
 	if 'seeds' in parser:
 		seeds = parser['seeds']
 		if seeds == 0:
