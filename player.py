@@ -668,6 +668,12 @@ def show_list(listing):
 		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
 	xbmcplugin.endOfDirectory(addon_handle)
 
+
+def force_library_update(settings, params):
+	xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % '/fake_path')
+	xbmc.sleep(500)
+
+
 def main():
 	from service import create_mark_file
 	create_mark_file()
@@ -722,11 +728,11 @@ def main():
 		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
 		imdb = params.get('imdb')
 
+		if getSetting('role').decode('utf-8') == u'клиент' and params.get('norecursive'):
+			force_library_update(settings, params)
+
 		import json
 		found = None
-
-		# import rpdb2
-		# rpdb2.start_embedded_debugger('pw')
 
 		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
 		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
@@ -763,16 +769,6 @@ def main():
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
 				add_media(title, imdb, settings)
-		elif params.get('strm'):
-			#brkpnt._bp()
-			strm_path = urllib.unquote_plus(params.get('strm')).decode('utf-8')
-			if filesystem.exists(strm_path):
-				with filesystem.fopen(strm_path, 'r') as f:
-					source = f.read()	# utf-8
-					if source and source.endswith('.strm'):
-						source = filesystem.join(settings.base_path(), source.decode('utf-8'))
-						xbmc.executebuiltin('PlayMedia("%s")' % source.encode('utf-8'))
-
 
 	else:
 		menu_items = [u'Генерировать .strm и .nfo файлы',
