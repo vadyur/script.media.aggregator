@@ -141,7 +141,7 @@ class Sources(object):
 		self.xml_tree = ET.parse(SOURCES_REAL_PATH)
 		self.sources = None
 
-	def get(self, media_type=None):
+	def get(self, media_type=None, normalize=True):
 		if self.sources is None:
 			self.sources = []
 			for t in self.xml_tree.getroot():
@@ -150,7 +150,10 @@ class Sources(object):
 					continue
 				for s in t.findall('source'):
 					label = s.find('name').text
-					path = filesystem.normpath(s.find('path').text)
+					if normalize:
+						path = filesystem.normpath(s.find('path').text)
+					else:
+						path = s.find('path').text
 					self.sources.append(Source(m_type, path, label))
 		return self.sources
 

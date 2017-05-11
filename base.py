@@ -80,6 +80,10 @@ def get_rank(full_title, parser, settings):
 	rank = 0.0
 	conditions = 0
 
+	if '[ad]' in full_title.lower():
+		rank += 2
+		conditions += 1
+
 	if 'seeds' in parser:
 		seeds = parser['seeds']
 		if seeds == 0:
@@ -454,7 +458,7 @@ class DescriptionParserBase(Informer):
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
 
-		self._dict.clear()
+		self._dict = dict()
 		self._dict['full_title'] = full_title
 		self.content = content
 		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
@@ -513,12 +517,14 @@ class TorrentPlayer(object):
 		except UnicodeDecodeError:
 			import chardet
 			enc = chardet.detect(name)
-			debug('UnicodeDecodeError detected', log.lineno())
+			#debug('UnicodeDecodeError detected', log.lineno())
 			# debug(enc['confidence'])
 			# debug(enc['encoding'])
 			if enc['confidence'] > 0.7:
-				name = name.decode(enc['encoding'])
-				debug(name)
+				try:
+					name = name.decode(enc['encoding'])
+				except UnicodeDecodeError:
+					pass
 				return name
 			else:
 				log.print_tb()

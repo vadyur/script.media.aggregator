@@ -22,7 +22,7 @@ class DescriptionParser(DescriptionParserBase):
 	def __init__(self, url):
 		Informer.__init__(self)
 		
-		self._dict.clear()
+		self._dict = dict()
 		self.content = self.get_content(url)
 		#html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(self.content, 'html.parser')

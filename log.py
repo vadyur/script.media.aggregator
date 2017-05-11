@@ -12,6 +12,7 @@ def debug(s, line = None):
 
 	if isinstance(s, BaseException):
 		print_tb(s)
+		return
 	elif isinstance(s, unicode):
 		s = s.encode('utf-8')
 	elif not isinstance(s, str):

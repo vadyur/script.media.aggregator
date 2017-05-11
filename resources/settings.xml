@@ -84,5 +84,14 @@
         <setting label="Домен" type="text" id="rutor_domain" default="rutor.info"/>
         <setting label="Фильтр" type="text" id="rutor_filter" default="CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP"/>
     </category>
-
+    <!--
+    <category label="soap4.me">
+      <setting label="Использовать" type="bool" id="soap4me_enable" default="false"/>
+      <setting label="Учётные данные сайта soap4.me (необходима регистрация на сайте)" type="lsep"/>
+      <setting label="Login" type="text"   id="soap4me_login" enable="eq(-2,true)" default=""/>
+      <setting label="Password" type="text"   id="soap4me_password" enable="eq(-3,true)" option="hidden"  default=""/>
+	  <setting label="" type="lsep"/>
+	  <setting label="RSS" type="select" id="soap4me_rss" enable="eq(-5,true)" values="Все сериалы|Дополнительный #1|Дополнительный #2|Дополнительный #3|Дополнительный #4|Дополнительный #5" default="Все сериалы"/>
+    </category>
+    -->
 </settings>

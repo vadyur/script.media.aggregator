@@ -18,6 +18,8 @@ class FakeProgressDlg(object):
 	def update(self, *args):
 		pass
 
+_addon_name = '[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]'
+
 class Settings:
 	# feed=dl&
 	
@@ -33,6 +35,7 @@ class Settings:
 	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 	             rutor_domain = 'rutor.info',
 	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
+	             soap4me_login = '', soap4me_password = '', soap4me_rss='',
 	             preffered_bitrate = 10000, preffered_type = QulityType.Q1080, preffered_codec = CodecType.MPGHD,
 	             torrent_player = TorrentPlayer.YATP, storage_path = '',
 	             movies_save			= True,
@@ -66,6 +69,10 @@ class Settings:
 
 		self.rutor_domain           = rutor_domain
 		self.rutor_filter           = rutor_filter
+
+		self.soap4me_login			= soap4me_login
+		self.soap4me_password		= soap4me_password
+		self.soap4me_rss			= soap4me_rss
 		
 		self.preffered_bitrate		= preffered_bitrate
 		self.preffered_type			= preffered_type
@@ -97,6 +104,10 @@ class Settings:
 			result += "%s: %s" % (key, value)
 		return result
 	
+	@property
+	def addon_name(self):
+		return _addon_name
+
 	def base_path(self):
 		return self.__base_path
 

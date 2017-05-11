@@ -1,5 +1,16 @@
 # -*- coding: utf-8 -*-
 
+_DEBUG=False
+
+"""
+try:
+	if _DEBUG:
+		import ptvsd
+		ptvsd.enable_attach(secret=None, address = ('0.0.0.0', 6666))
+		ptvsd.wait_for_attach()
+except:
+	pass
+"""
 
 import operator
 import sys
@@ -21,6 +32,8 @@ from settings import *
 from torrent2httpplayer import *
 from yatpplayer import *
 from movieapi import MovieAPI
+
+import brkpnt
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
@@ -91,6 +104,10 @@ def load_settings():
 	rutor_domain = getSetting('rutor_domain')
 	rutor_filter = getSetting('rutor_filter')
 
+	soap4me_login = getSetting('soap4me_login')
+	soap4me_password = getSetting('soap4me_password')
+	soap4me_rss = getSetting('soap4me_rss')
+
 	preffered_bitrate = int(getSetting('preffered_bitrate'))
 	preffered_type = getSetting('preffered_type')
 	preffered_codec = getSetting('preffered_codec')
@@ -119,6 +136,9 @@ def load_settings():
 	                    nnmclub_password 	=nnmclub_password,
 	                    rutor_domain        =rutor_domain,
 	                    rutor_filter        =rutor_filter,
+	                    soap4me_login		=soap4me_login,
+	                    soap4me_password	=soap4me_password,
+						soap4me_rss			=soap4me_rss,
 	                    preffered_bitrate 	=preffered_bitrate,
 	                    preffered_type 		=preffered_type,
 	                    preffered_codec     =preffered_codec,
@@ -415,7 +435,7 @@ def openInTorrenter(nfoReader):
 
 def play_torrent(settings, params):
 	info_dialog = xbmcgui.DialogProgress()
-	info_dialog.create('Media Aggregator')
+	info_dialog.create(settings.addon_name)
 
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	base_path = settings.base_path().encode('utf-8')
@@ -432,6 +452,7 @@ def play_torrent(settings, params):
 	hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+	soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -447,6 +468,8 @@ def play_torrent(settings, params):
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
 		if not rutor_enable and 'rutor.info' in v['link']:
+			links_with_ranks.remove(v)
+		if not soap4me_enable and 'soap4.me' in v['link']:
 			links_with_ranks.remove(v)
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
@@ -467,7 +490,7 @@ def play_torrent(settings, params):
 		for tryCount, variant in enumerate(links_with_ranks, 1):
 
 			if tryCount > 1:
-				info_dialog.update(0, 'Media Aggregator', 'Попытка #%d' % tryCount)
+				info_dialog.update(0, settings.addon_name, 'Попытка #%d' % tryCount)
 			debug(variant)
 
 			torrent_source = variant['link']
@@ -507,9 +530,9 @@ def check_sources(settings):
 	import sources
 	if sources.need_create(settings):
 		dialog = xbmcgui.Dialog()
-		if dialog.yesno('Media Aggregator', u'Источники категорий не созданы. Создать?'):
+		if dialog.yesno(settings.addon_name, u'Источники категорий не созданы. Создать?'):
 			if sources.create(settings):
-				if dialog.yesno('Media Aggregator', restart_msg):
+				if dialog.yesno(settings.addon_name, restart_msg):
 					xbmc.executebuiltin('Quit')
 			return True
 		else:
@@ -527,7 +550,7 @@ class dialog_action_case:
 	exit = 5
 
 
-def dialog_action(action, settings):
+def dialog_action(action, settings, params=None):
 	# import rpdb2
 	# rpdb2.start_embedded_debugger('pw')
 
@@ -537,8 +560,9 @@ def dialog_action(action, settings):
 		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
+		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
 
-		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable):
+		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable):
 			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:
@@ -556,7 +580,7 @@ def dialog_action(action, settings):
 		# sources.create(settings)
 		dialog = xbmcgui.Dialog()
 		if sources.create(settings):
-			if dialog.yesno('Media Aggregator', restart_msg):
+			if dialog.yesno(settings.addon_name, restart_msg):
 				from service import update_library_next_start
 
 				update_library_next_start()
@@ -574,12 +598,20 @@ def dialog_action(action, settings):
 			settings.nnmclub_passkey = passkey
 
 	if action == dialog_action_case.search:
+		#brkpnt._bp()
+		import urllib
 
-		dlg = xbmcgui.Dialog()
-		s = dlg.input(u'Введите поисковую строку')
+		if not 'keyword' in params:
+			dlg = xbmcgui.Dialog()
+			s = dlg.input(u'Введите поисковую строку')
+			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
+			xbmc.executebuiltin(b'Container.Update(\"%s\")' % command)
+			debug('No keyword param. Return')
+			return False
 
+		s = urllib.unquote(params.get('keyword'))
 		if s:
-			debug(s)
+			debug('Keyword is: ' + s)
 			show_list(MovieAPI.search(s.decode('utf-8')))
 
 	if action == dialog_action_case.catalog:
@@ -637,6 +669,11 @@ def show_list(listing):
 	xbmcplugin.endOfDirectory(addon_handle)
 
 
+def force_library_update(settings, params):
+	xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % '/fake_path')
+	xbmc.sleep(500)
+
+
 def main():
 	from service import create_mark_file
 	create_mark_file()
@@ -663,7 +700,7 @@ def main():
 		dialog_action(dialog_action_case.settings, settings)
 
 	elif params.get('action') == 'search':
-		dialog_action(dialog_action_case.search, settings)
+		dialog_action(dialog_action_case.search, settings, params)
 
 	elif params.get('action') == 'search_context':
 		s = params.get('s')
@@ -691,11 +728,11 @@ def main():
 		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
 		imdb = params.get('imdb')
 
+		if getSetting('role').decode('utf-8') == u'клиент' and params.get('norecursive'):
+			force_library_update(settings, params)
+
 		import json
 		found = None
-
-		# import rpdb2
-		# rpdb2.start_embedded_debugger('pw')
 
 		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
 		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
@@ -720,6 +757,7 @@ def main():
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
+			#brkpnt._bp()
 			if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
 				#with filesystem.fopen(r['file'], 'r') as strm:
 				#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
@@ -730,7 +768,7 @@ def main():
 		elif not params.get('norecursive'):
 			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
 				from service import add_media
-				add_media(title, imdb)
+				add_media(title, imdb, settings)
 
 	else:
 		menu_items = [u'Генерировать .strm и .nfo файлы',
@@ -747,7 +785,7 @@ def main():
 		]
 
 		if params.get('menu') in menu_actions:
-			dialog_action(menu_actions.index(params.get('menu')), settings)
+			dialog_action(menu_actions.index(params.get('menu')), settings, params)
 		else:
 			indx = 0
 			addon_handle = int(sys.argv[1])

@@ -23,7 +23,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 		self.files = None
 		self.left_menu = None
-		self.list = pyxbmct.List('font14', _itemHeight=100)
+		self.list = pyxbmct.List('font14', _itemHeight=120)
 		self.placeControl(self.list, 0, 0)
 
 		for item in links:
@@ -38,6 +38,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[HDclub] '
 				elif 'rutor' in link:
 					s += '[rutor] '
+				elif 'soap4' in link:
+					s += '[soap4me] '
 			except:
 				pass
 			try:
@@ -68,25 +70,28 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#list.addItem('Item 2\nNew line')
 			#list.addItem('Item 3\nNew line\nAdd line')
 
-		li = xbmcgui.ListItem(u'НАСТРОЙКИ...')
-		li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
-		self.list.addItem(li)
+		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
-		# (u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
-		li = xbmcgui.ListItem(u'СМОТРИТЕ ТАКЖЕ...')
-		li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
-		self.list.addItem(li)
-
-		li = xbmcgui.ListItem(u'ПОИСК ИСТОЧНИКОВ...')
-		li.setProperty('link', 'plugin://script.media.aggregator/?action=add_media')
-		self.list.addItem(li)
-
-		pathUnited = 'special://home/addons/plugin.video.united.search'
-		pathUnited = xbmc.translatePath(pathUnited)
-		if filesystem.exists(pathUnited.decode('utf-8')):
-			li = xbmcgui.ListItem(u'UNITED SEARCH...')
-			li.setProperty('link', 'plugin://script.media.aggregator/?action=united_search')
+		if kodi_ver_major < 16:
+			li = xbmcgui.ListItem(u'НАСТРОЙКИ...')
+			li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
 			self.list.addItem(li)
+
+			# (u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
+			li = xbmcgui.ListItem(u'СМОТРИТЕ ТАКЖЕ...')
+			li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
+			self.list.addItem(li)
+
+			li = xbmcgui.ListItem(u'ПОИСК ИСТОЧНИКОВ...')
+			li.setProperty('link', 'plugin://script.media.aggregator/?action=add_media')
+			self.list.addItem(li)
+
+			pathUnited = 'special://home/addons/plugin.video.united.search'
+			pathUnited = xbmc.translatePath(pathUnited)
+			if filesystem.exists(pathUnited.decode('utf-8')):
+				li = xbmcgui.ListItem(u'UNITED SEARCH...')
+				li.setProperty('link', 'plugin://script.media.aggregator/?action=united_search')
+				self.list.addItem(li)
 		
 
 		self.setFocus(self.list)
@@ -270,7 +275,7 @@ def main():
 
 	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
-	window = MyWindow('Media Aggregator', settings=settings, links=links)
+	window = MyWindow(settings.addon_name, settings=settings, links=links)
 	window.doModal()
 
 	debug(window.has_choice)
@@ -291,46 +296,18 @@ def main():
 		return
 
 	if link == 'plugin://script.media.aggregator/?action=show_similar':
-		imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
-		type='movie'
-
-		if not imdb_id and xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
-			from nforeader import NFOReader
-			nfo_path = xbmc.getInfoLabel('ListItem.FileNameAndPath').replace('.strm', '.nfo').decode('utf-8')
-			debug(nfo_path)
-			rd = NFOReader(nfo_path, '')
-			tvs_rd = rd.tvs_reader()
-			imdb_id = tvs_rd.imdb_id()
-			type='tv'
-
-		if imdb_id:
-			from movieapi import MovieAPI
-			res = MovieAPI.tmdb_by_imdb(imdb_id, type)
-			debug(res)
-			if res and len(res) > 0:
-				tmdb_id = res[0].tmdb_id()
-				xbmc.executebuiltin('Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % tmdb_id)
-				del window
-				return
+		from context_show_similar import show_similar
+		if show_similar():
+			del window
+			return
 
 	if link == 'plugin://script.media.aggregator/?action=add_media':
-		imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
-		title = xbmc.getInfoLabel('ListItem.Title')
-
-		debug(imdb_id)
-		debug(title)
-
-		from service import add_media
-		add_media(title.decode('utf-8'), imdb_id)
+		from context_get_sources import get_sources
+		get_sources(settings)
 		return
 
 	if link == 'plugin://script.media.aggregator/?action=united_search':
-		import urllib
-		title = xbmc.getInfoLabel('ListItem.Title')
-		
-		if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
-			title = xbmc.getInfoLabel('ListItem.TVShowTitle')
-		xbmc.executebuiltin('Container.Update("plugin://plugin.video.united.search/?action=search&keyword=%s")' % urllib.quote(title))
+		import context_united_search
 
 	selected_file = None
 	if window.has_select_file:
