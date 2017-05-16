@@ -30,13 +30,24 @@ def get_path(path):
 		path = path.replace('smb://', r'\\').replace('/', '\\')
 
 	path = ensure_unicode(path)
+
 	if os.name == 'nt':
 		return path
 	return path.encode(get_filesystem_encoding(), errors)
 
 
 def exists(path):
-	return os.path.exists(get_path(path))
+	try:
+		import xbmcvfs, xbmc
+		p = xbmc.translatePath(path.encode('utf-8')).decode('utf-8')
+		if not '://' in p:
+			bOk = os.path.exists(get_path(p))
+			if bOk:
+				return True
+
+		return xbmcvfs.exists(xbmc.translatePath(path.encode('utf-8')))
+	except BaseException as e:
+		return os.path.exists(get_path(path))
 
 
 def getcwd():
@@ -44,10 +55,20 @@ def getcwd():
 
 
 def makedirs(path):
-	os.makedirs(get_path(path))
+	try:
+		import xbmcvfs, xbmc
+
+		return xbmcvfs.mkdirs(xbmc.translatePath(path.encode('utf-8')))
+	except ImportError:
+		os.makedirs(get_path(path))
 
 
 def chdir(path):
+	try:
+		import xbmc
+		path = xbmc.translatePath(path.encode('utf-8')).decode('utf-8')
+	except:
+		pass
 	os.chdir(get_path(path))
 
 
@@ -93,7 +114,15 @@ class save_make_chdir_context(object):
 
 
 def isfile(path):
-	return os.path.isfile(get_path(path))
+	if not exists(path):
+		return False
+		#raise Exception('sfile.isFile error %s does not exists' % path)
+
+	try:
+		import xbmcvfs, stat, xbmc
+		return stat.S_ISREG(xbmcvfs.Stat(xbmc.translatePath(path.encode('utf-8'))).st_mode())
+	except ImportError:
+		return os.path.isfile(get_path(path))
 
 
 def abspath(path):
@@ -109,7 +138,30 @@ def normpath(path):
 
 	
 def fopen(path, mode):
-	return open(get_path(path), mode)
+	try:
+		import xbmcvfs, xbmc
+
+		class File(xbmcvfs.File):
+			def __enter__(self):
+				return self
+
+			def __exit__(self, exc_type, exc_val, exc_tb):
+				self.close()
+
+				if exc_type:
+					import traceback
+					traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)
+					log.debug("!!error!! " + str(exc_val))
+					return True
+
+
+		if 'w' in mode:
+			return File(xbmc.translatePath(path.encode('utf-8')), ['w'])
+		else:
+			return File(xbmc.translatePath(path.encode('utf-8')))
+
+	except BaseException:
+		return open(get_path(path), mode)
 
 	
 def join(path, *paths):
@@ -172,10 +224,10 @@ def test():
 	subpath = u'Подпапка'
 	subpath2 = u'файл.ext'
 
-	with save_make_chdir_context(join(getcwd(), subpath)):
+	with save_make_chdir_context(join('special://temp', subpath)):
 		log.debug('aaaaa')
-		raise Exception('save_make_chdir')
-		log.debug('bbbbb')
+		#raise Exception('save_make_chdir')
+		#log.debug('bbbbb')
 	
 	fullpath = join(getcwd(), subpath, subpath2)
 	log.debug('subpath: %s' % subpath.encode('utf-8'))
@@ -184,7 +236,7 @@ def test():
 
 	log.debug(u'dirname(%s): %s' % (fullpath, dirname(fullpath)))
 
-	remote_file = u'smb://vd/Incoming/test.txt'
+	remote_file = u'smb://192.168.21.33/Incoming/test.txt'
 	if isfile(remote_file):
 		with fopen(remote_file, "r") as f:
 			log.debug(f.read())
