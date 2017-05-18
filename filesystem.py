@@ -171,9 +171,13 @@ def fopen(path, mode):
 
 			def __init__(self, filename, opt=''):
 				self.opt = opt
-				
+
 				self.filename = xbmcvfs_path(filename)
 				if 'w' not in opt:
+					if not exists(filename):
+						from errno import ENOENT
+						raise IOError(ENOENT, 'Not a file', filename)
+
 					# read
 					f = xbmcvfs.File(self.filename)
 					buf = f.read()
@@ -186,8 +190,8 @@ def fopen(path, mode):
 			def close(self):
 				if 'w' in self.opt:
 					if not self.closed:
-						f = xbmcvfs.File(self.filename)
-						f.write(self.buf)
+						f = xbmcvfs.File(self.filename, 'w')
+						f.write(self.getvalue())
 						f.close()
 
 				StringIO.close(self)
