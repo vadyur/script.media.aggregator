@@ -50,12 +50,6 @@ def xbmcvfs_path(path):
 
 def exists(path):
 	try:
-		p = xbmcvfs_path(path).decode('utf-8')
-		if not '://' in p:
-			bOk = os.path.exists(get_path(p))
-			if bOk:
-				return True
-
 		return xbmcvfs.exists(xbmcvfs_path(path))
 	except BaseException as e:
 		return os.path.exists(get_path(path))
@@ -142,6 +136,8 @@ def isfile(path):
 
 
 def abspath(path):
+	if '://' in path:
+		return path
 	return ensure_unicode(os.path.abspath(get_path(path)), get_filesystem_encoding())
 
 
