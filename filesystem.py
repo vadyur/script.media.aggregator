@@ -42,11 +42,31 @@ def get_path(path):
 	return path.encode(get_filesystem_encoding(), errors)
 
 
+def _is_abs_path(path):
+	if path.startswith('/'):
+		return True
+
+	if '://' in path:
+		return True
+
+	if os.name == 'nt':
+		import re
+		if re.match(r"[a-zA-Z]:", path):
+			return True
+
+		if path.startswith(r'\\'):
+			return True
+
+	return False
+
 def xbmcvfs_path(path):
 	if isinstance(path, unicode):
-		path = path.encode('utf-8')
+		u8path = path.encode('utf-8')
 
-	return xbmc.translatePath(path)
+	if _is_abs_path(path):
+		return xbmc.translatePath(u8path)
+	else:
+		return xbmc.translatePath(os.path.join(_cwd.encode('utf-8'), u8path))
 
 def exists(path):
 	try:
@@ -167,24 +187,26 @@ def fopen(path, mode):
 
 			def __init__(self, filename, opt=''):
 				self.opt = opt
+				buf = ''
 
 				self.filename = xbmcvfs_path(filename)
-				if 'w' not in opt:
-					if not exists(filename):
+				if 'r' in opt or 'a+' in opt:
+					exst = exists(filename)
+					if not exst and 'r' in opt:
 						from errno import ENOENT
 						raise IOError(ENOENT, 'Not a file', filename)
 
-					# read
-					f = xbmcvfs.File(self.filename)
-					buf = f.read()
-					f.close()
+					if exst:
+						# read
+						f = xbmcvfs.File(self.filename)
+						buf = f.read()
+						f.close()
 
-					StringIO.__init__(self, buf)
-				else:
-					StringIO.__init__(self)
+				StringIO.__init__(self, buf)
+
 
 			def close(self):
-				if 'w' in self.opt:
+				if 'w' in self.opt or 'a' in self.opt:
 					if not self.closed:
 						f = xbmcvfs.File(self.filename, 'w')
 						f.write(self.getvalue())

@@ -40,3 +40,10 @@ def _bp(wait=True):
 	
 	except:
 		pass
+
+def _bp2():
+	try:
+		ptvsd.wait_for_attach()
+		pass
+	except:
+		pass
