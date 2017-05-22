@@ -124,6 +124,8 @@ def load_settings():
 
 	torrent_path = getSetting('torrent_path')
 
+	kp_googlecache = getSetting('kp_googlecache') == 'true'
+
 	settings = Settings(base_path,
 	                    movies_path=movies_path,
 	                    animation_path=animation_path, documentary_path=documentary_path,
@@ -150,7 +152,8 @@ def load_settings():
 	                    anime_save 			=anime_save,
 	                    tvshows_save 		=tvshows_save,
 	                    animation_tvshows_save =animation_tvshows_save,
-	                    torrent_path        =torrent_path)
+	                    torrent_path        =torrent_path,
+						kp_googlecache		= kp_googlecache)
 
 	settings.addon_data_path		= _addondir
 	if getSetting('data_path'):

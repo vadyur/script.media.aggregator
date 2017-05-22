@@ -365,7 +365,7 @@ class Informer(object):
 	def __init__(self):
 		self.__movie_api = None
 
-	def make_movie_api(self, imdb_id, kp_id):
+	def make_movie_api(self, imdb_id, kp_id, kp_googlecache=False):
 		orig=None
 		year=None
 		#imdbRaiting=None
@@ -376,7 +376,7 @@ class Informer(object):
 			if u'year' in self.Dict():
 				year = self.Dict()['year']
 
-		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id, kp_id, orig, year)
+		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id, kp_id, orig, year, kp_googlecache=kp_googlecache)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id
 
