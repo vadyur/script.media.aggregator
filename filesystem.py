@@ -85,7 +85,7 @@ def getcwd():
 def makedirs(path):
 	try:
 		return xbmcvfs.mkdirs(xbmcvfs_path(path))
-	except ImportError:
+	except (ImportError, NameError):
 		os.makedirs(get_path(path))
 
 
@@ -151,7 +151,7 @@ def isfile(path):
 	try:
 		import stat
 		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode())
-	except ImportError:
+	except (ImportError, NameError):
 		return os.path.isfile(get_path(path))
 
 
@@ -282,7 +282,7 @@ def getmtime(path):
 	try:
 		import stat
 		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_mtime())
-	except ImportError:
+	except (ImportError, NameError):
 		return os.path.getmtime(get_path(path))
 
 
@@ -290,7 +290,7 @@ def getctime(path):
 	try:
 		import stat
 		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_ctime())
-	except ImportError:
+	except (ImportError, NameError):
 		return os.path.getctime(get_path(path))
 
 
