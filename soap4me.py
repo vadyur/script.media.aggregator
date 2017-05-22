@@ -30,10 +30,11 @@ class DescriptionParser(DescriptionParserBase):
 		from movieapi import KinopoiskAPI
 		kp_url = KinopoiskAPI.make_url_by_id(self.kp_id)
 
-		self.make_movie_api(self.imdb_id, kp_url)
+		self.settings = settings
+
+		self.make_movie_api(self.imdb_id, kp_url, kp_googlecache=self.settings.kp_googlecache)
 		self.tvshow_api = TVShowAPI.get_by(info['originaltitle'], self.api_info['title_ru'], self.imdb_id, kp_url)
 
-		self.settings = settings
 		self.OK = self.parse(self.api_info)
 
 	@property

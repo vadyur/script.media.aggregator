@@ -148,7 +148,8 @@ class KinopoiskAPI(object):
 	def make_url_by_id(kp_id):
 		return 'http://www.kinopoisk.ru/film/' + str(kp_id) + '/'
 
-	def __init__(self, kinopoisk_url = None):
+	def __init__(self, kinopoisk_url = None, force_googlecache=False):
+		self.force_googlecache = force_googlecache
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self.actors = None
@@ -162,8 +163,11 @@ class KinopoiskAPI(object):
 			self.session = requests.session()
 
 		try:
-			headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
-			r = self.session.get(url, headers=headers, timeout=5.0)
+			if self.force_googlecache:
+				r = self.get_google_cache(self.kinopoisk_url)
+			else:
+				headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+				r = self.session.get(url, headers=headers, timeout=5.0)
 		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
 			r.status_code = requests.codes.service_unavailable
@@ -175,8 +179,9 @@ class KinopoiskAPI(object):
 
 			debug(str(te))
 
-		if 'captcha' in r.text:
-			r = self.get_google_cache(self.kinopoisk_url)
+		if not self.force_googlecache:
+			if 'captcha' in r.text:
+				r = self.get_google_cache(self.kinopoisk_url)
 
 		KinopoiskAPI.kp_requests.append({'url': url, 'response': r})
 
@@ -362,6 +367,8 @@ class MovieAPI(KinopoiskAPI):
 	APIs	= {}
 	IMDB_by_KP_URL = {}
 
+	use_omdb = False
+
 	@staticmethod
 	def url_imdb_id(idmb_id, type='movie'):
 		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
@@ -440,6 +447,9 @@ class MovieAPI(KinopoiskAPI):
 
 	@staticmethod
 	def imdb_by_omdb_request(orig, year, title=None):
+		if not MovieAPI.use_omdb:
+			return None
+
 		try:
 			if orig and year:
 				omdb_url = 'http://www.omdbapi.com/?t=%s&y=%s' % (urllib2.quote(orig.encode('utf-8')), year)
@@ -468,15 +478,17 @@ class MovieAPI(KinopoiskAPI):
 		return None
 
 	@staticmethod
-	def get_by(imdb_id = None, kinopoisk_url = None, orig=None, year=None, imdbRaiting=None):
+	def get_by(imdb_id = None, kinopoisk_url = None, orig=None, year=None, imdbRaiting=None, kp_googlecache=False):
 		if kinopoisk_url in MovieAPI.IMDB_by_KP_URL:
 			imdb_id = MovieAPI.IMDB_by_KP_URL[kinopoisk_url]
 
 		if not imdb_id:
 			try:
+				_orig = orig
+				_year = year
 				imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
 				if not imdb_id and kinopoisk_url is not None:
-					kp = KinopoiskAPI(kinopoisk_url)
+					kp = KinopoiskAPI(kinopoisk_url, force_googlecache=kp_googlecache)
 					orig = kp.getOriginalTitle()
 					if not orig:
 						orig = kp.getTitle()
@@ -484,7 +496,7 @@ class MovieAPI(KinopoiskAPI):
 					imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
 
 					if not imdb_id:
-						imdb_id = MovieAPI.imdb_by_tmdb_search(orig, year)
+						imdb_id = MovieAPI.imdb_by_tmdb_search(orig if orig else _orig, year if year else _year)
 
 			except BaseException as e:
 				from log import print_tb
@@ -498,7 +510,7 @@ class MovieAPI(KinopoiskAPI):
 		elif kinopoisk_url and kinopoisk_url in MovieAPI.APIs:
 			return MovieAPI.APIs[kinopoisk_url], imdb_id
 
-		api = MovieAPI(imdb_id, kinopoisk_url)
+		api = MovieAPI(imdb_id, kinopoisk_url, kp_googlecache)
 		if imdb_id:
 			MovieAPI.APIs[imdb_id] = api
 		elif kinopoisk_url:
@@ -506,8 +518,8 @@ class MovieAPI(KinopoiskAPI):
 
 		return api, imdb_id
 
-	def __init__(self, imdb_id = None, kinopoisk = None):
-		KinopoiskAPI.__init__(self, kinopoisk)
+	def __init__(self, imdb_id = None, kinopoisk = None, kp_googlecache=False):
+		KinopoiskAPI.__init__(self, kinopoisk, force_googlecache=kp_googlecache)
 
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
@@ -516,6 +528,9 @@ class MovieAPI(KinopoiskAPI):
 				debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
 			except:
 				pass
+
+			if not MovieAPI.use_omdb:
+				return
 
 			try:
 				omdb_url = 'http://www.omdbapi.com/?i=' + imdb_id + '&plot=short&r=json'
@@ -532,10 +547,20 @@ class MovieAPI(KinopoiskAPI):
 		return self.omdbapi['Genre']
 
 	def Year(self):
-		return self.omdbapi['Year']
+		try:
+			return self.omdbapi['Year']
+			kp_year = KinopoiskAPI.getYear(self)
+			if kp_year:
+				return kp_year
+		except: pass
+				
+		return self.tmdb_data['release_date'].split('-')[0]
 		
 	def Runtime(self):
-		return self.omdbapi['Runtime'].encode('utf-8').replace(' min', '')
+		try:
+			return self.omdbapi['Runtime'].encode('utf-8').replace(' min', '')
+		except: pass
+		return self.tmdb_data['runtime']
 		
 	def Rated(self):
 		return self.omdbapi.get(u'Rated', u'')

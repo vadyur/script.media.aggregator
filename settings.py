@@ -44,7 +44,8 @@ class Settings:
 	             anime_save			= True,
 	             tvshows_save		= True,
 	             animation_tvshows_save = True,
-	             torrent_path        = ''):
+	             torrent_path        = '',
+				 kp_googlecache     =False):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -88,6 +89,8 @@ class Settings:
 		self.tvshows_save 			= tvshows_save
 		self.animation_tvshows_save = animation_tvshows_save
 		self.torrent_path           = torrent_path
+
+		self.kp_googlecache			= kp_googlecache
 		
 		self.progress_dialog		= FakeProgressDlg()
 		
