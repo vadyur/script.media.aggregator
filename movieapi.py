@@ -360,6 +360,48 @@ class KinopoiskAPI(object):
 					return self.__trailer(a)
 		return None
 
+class ImdbAPI(object):
+	def __init__(self, imdb_id):
+		resp = requests.get('http://www.imdb.com/title/' + imdb_id + '/')
+		if resp.status_code == requests.codes.ok:
+			text = base.clean_html(resp.text)
+			self.page = BeautifulSoup(text, 'html.parser')
+
+	def __getitem__(self, key):
+		if key == 'Year':
+			a = self.page.select_one('#titleYear > a')
+			if a:
+				return a.get_text()
+
+		elif key == 'imdbRating':
+			"""<span itemprop="ratingValue">7,3</span>"""
+			span = self.page.find('span', attrs={'itemprop':'ratingValue'})
+			if span:
+				return span.get_text().replace(',', '.')
+
+		elif key == 'Runtime':
+			"""<time itemprop="duration" datetime="PT126M">
+                        2h 6min
+                    </time>"""
+			t = self.page.find('time', attrs={'itemprop':'duration'})
+			if t:
+				return t['datetime'].replace('PT', '').replace('M', '')
+
+		elif key == 'Rated':
+			"""<meta itemprop="contentRating" content="R">"""
+			rt = self.page.find('meta', attrs={'itemprop':'contentRating'})
+			if rt:
+				return 'Rated ' + rt['content']
+
+		else:
+			raise AttributeError
+
+	def get(self, key, default=None):
+		try:
+			return self.__getitem__(key)
+		except AttributeError:
+			return default
+
 class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
@@ -529,15 +571,15 @@ class MovieAPI(KinopoiskAPI):
 			except:
 				pass
 
-			if not MovieAPI.use_omdb:
-				return
-
-			try:
-				omdb_url = 'http://www.omdbapi.com/?i=' + imdb_id + '&plot=short&r=json'
-				self.omdbapi	= json.load(urllib2.urlopen( omdb_url ))
-				debug('omdbapi (' + omdb_url + ') \t\t\t[Ok]')
-			except:
-				pass
+			if MovieAPI.use_omdb:
+				try:
+					omdb_url = 'http://www.omdbapi.com/?i=' + imdb_id + '&plot=short&r=json'
+					self.omdbapi	= json.load(urllib2.urlopen( omdb_url ))
+					debug('omdbapi (' + omdb_url + ') \t\t\t[Ok]')
+				except:
+					pass
+			else:
+				self.omdbapi = ImdbAPI(imdb_id)
 			
 
 	def imdbRating(self):
