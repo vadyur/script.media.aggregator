@@ -149,7 +149,7 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['gold'] = True
 			debug('gold')
 
-		for span in self.soup.select('span.postbody span'):
+		for span in self.soup.select('.postbody span'):
 			try:
 				text = span.get_text()
 				tag = self.get_tag(text)
