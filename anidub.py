@@ -339,6 +339,8 @@ def write_favorites(path, settings):
 
 			if page.status_code == requests.codes.ok:
 				soup = BeautifulSoup(page.text, 'html.parser')
+			else:
+				break
 
 
 ###################################################################################################
