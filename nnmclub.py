@@ -198,8 +198,11 @@ class DescriptionParser(DescriptionParserBase):
 
 		if self.settings:
 			if self.settings.use_kinopoisk:
-				for kp_id in self.soup.select('#kp_id'):
-					self._dict['kp_id'] = kp_id['href']
+				kp = self.soup.select_one('div.kpi a')
+				if not kp:
+					kp = self.soup.select_one('#kp_id')
+				if kp:
+					self._dict['kp_id'] = kp['href']
 
 		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), kp_googlecache=self.settings.kp_googlecache)
 

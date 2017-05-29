@@ -164,7 +164,7 @@ class KinopoiskAPI(object):
 
 		try:
 			if self.force_googlecache:
-				r = self.get_google_cache(self.kinopoisk_url)
+				r = self.get_google_cache(url)
 			else:
 				headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
 				r = self.session.get(url, headers=headers, timeout=5.0)
@@ -181,7 +181,7 @@ class KinopoiskAPI(object):
 
 		if not self.force_googlecache:
 			if 'captcha' in r.text:
-				r = self.get_google_cache(self.kinopoisk_url)
+				r = self.get_google_cache(url)
 
 		KinopoiskAPI.kp_requests.append({'url': url, 'response': r})
 
@@ -302,23 +302,17 @@ class KinopoiskAPI(object):
 				if not soup:
 					return []
 
-				for a in soup.select('a[name="actor"]'):
-					for sibling in a.next_siblings:
-						if not hasattr(sibling, 'tag'):
-							continue
-						if sibling.tag == 'a':
-							return self.actors
-						for actorInfo in sibling.select('.actorInfo'):
-							photo 		= actorInfo.select('div.photo a')[0]['href']
-							#http://st.kp.yandex.net/images/actor_iphone/iphone360_30098.jpg
-							#/name/7627/
-							photo 		= photo.replace('/', '').replace('name', '')
-							photo 		= 'http://st.kp.yandex.net/images/actor_iphone/iphone360_' + photo + '.jpg'
-							ru_name		= actorInfo.select('div.info .name a')[0].get_text()
-							en_name		= actorInfo.select('div.info .name span')[0].get_text()
-							role		= actorInfo.select('div.info .role')[0].get_text().replace('... ', '')
-							role 		= role.split(',')[0]
-							self.actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
+				for actorInfo in soup.find_all('div', class_='actorInfo'):
+					photo 		= actorInfo.select('div.photo a')[0]['href']
+					#http://st.kp.yandex.net/images/actor_iphone/iphone360_30098.jpg
+					#/name/7627/
+					photo 		= photo.replace('/', '').replace('name', '')
+					photo 		= 'http://st.kp.yandex.net/images/actor_iphone/iphone360_' + photo + '.jpg'
+					ru_name		= actorInfo.select('div.info .name a')[0].get_text()
+					en_name		= actorInfo.select('div.info .name span')[0].get_text()
+					role		= actorInfo.select('div.info .role')[0].get_text().replace('... ', '')
+					role 		= role.split(',')[0]
+					self.actors.append({'photo': photo,'ru_name': ru_name,'en_name': en_name,'role': role})
 		return self.actors
 
 	def __trailer(self, element):
