@@ -19,6 +19,7 @@ from nfowriter import NFOWriter
 from settings import Settings
 from strmwriter import STRMWriter
 
+import movieapi
 import tvshowapi
 
 
@@ -31,11 +32,11 @@ MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
 _NEXT_PAGE_SUFFIX = '&start='
 
 def real_url(url):
-	return url.replace('nnm-club.me', 'nnmclub.to').replace('nnm-club.ws', 'nnmclub.to')
+	return url.replace('nnm-club.me', 'nnm-club.name').replace('nnm-club.ws', 'nnm-club.name')
 
 
 def origin_url(url):
-	return url.replace('nnmclub.to', 'nnm-club.me')
+	return url.replace('nnm-club.name', 'nnm-club.me')
 
 
 class DescriptionParser(DescriptionParserBase):
@@ -315,7 +316,6 @@ class TrackerPostsEnumerator(PostsEnumerator):
 def write_movie_rss(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
-		import movieapi
 		if link:
 			save_download_link(parser, settings, link)
 		movieapi.write_movie(fulltitle, link, settings, parser)
@@ -687,12 +687,10 @@ def make_search_strms(result, settings, type, path_out):
 		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
-				import movieapi
 				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':
-				import tvshowapi
 				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
