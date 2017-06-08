@@ -396,18 +396,107 @@ class ImdbAPI(object):
 		except AttributeError:
 			return default
 
-class MovieAPI(KinopoiskAPI):
+class IDs(object):
+	kp_by_imdb = {}
+	imdb_by_kp = {}
+
+	@staticmethod
+	def id_by_kp_url(url):
+		import re
+		m = re.search(r"(\d\d+)", url)
+		if m:
+			return m.group(1)
+		
+		return None
+
+	@staticmethod
+	def get_by_kp(kp_url):
+		return IDs.imdb_by_kp.get(IDs.id_by_kp_url(kp_url))
+
+	@staticmethod
+	def get_by_imdb(imdb_id):
+		return IDs.kp_by_imdb.get(imdb_id)
+
+	@staticmethod
+	def set(imdb_id, kp_url):
+		if imdb_id and kp_url:
+			kp_id = IDs.id_by_kp_url(kp_url)
+			IDs.imdb_by_kp[kp_id] = imdb_id
+			IDs.kp_by_imdb[imdb_id] = kp_id
+
+	@staticmethod
+	def has_imdb(imdb_id):
+		return imdb_id in IDs.kp_by_imdb
+
+	@staticmethod
+	def has_kp(kp_url):
+		kp_id = IDs.id_by_kp_url(kp_url)
+		return kp_id in IDs.imdb_by_kp
+
+class KinopoiskAPI2(KinopoiskAPI):
+
+	movie_cc = {}
+	token = '037313259a17be837be3bd04a51bf678'
+
+	def __init__(self, kinopoisk_url = None, force_googlecache = False):
+		
+		self.kp_id = IDs.id_by_kp_url(kinopoisk_url)
+			
+		return super(KinopoiskAPI2, self).__init__(kinopoisk_url, force_googlecache)
+
+	@property
+	def data_cc(self):
+		if self.kp_id in self.movie_cc:
+			return self.movie_cc[self.kp_id]
+
+		url = 'http://getmovie.cc/api/kinopoisk.json?id=%s&token=%s' % (self.kp_id, self.token)
+		r = requests.get(url)
+		if r.status_code == requests.codes.ok:
+			self.movie_cc[self.kp_id] = r.json()
+			return self.movie_cc[self.kp_id]
+
+		return {}
+
+	def getTitle(self):
+		return self.data_cc.get('name_ru')
+
+	def getOriginalTitle(self):
+		return self.data_cc.get('name_en')
+
+	def getYear(self):
+		return self.data_cc.get('year')
+
+	def getPlot(self):
+		return self.data_cc.get('description')		#.replace('<br/>', '<br/>')
+
+	def Actors(self):
+		if self.actors is not None:
+			return self.actors
+
+		self.actors = []
+
+		creators = self.data_cc.get('creators')
+		if creators:
+			for actor in creators.get('actor', []):
+				self.actors.append({'photo': actor.get("photos_person"),
+						'ru_name': actor.get("name_person_ru"),'en_name': actor.get("name_person_en")})
+
+		return self.actors
+
+	def Trailer(self):
+		return self.data_cc.get('trailer')
+
+class MovieAPI(KinopoiskAPI2):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
 	APIs	= {}
-	IMDB_by_KP_URL = {}
 
 	use_omdb = False
 
 	@staticmethod
 	def url_imdb_id(idmb_id, type='movie'):
-		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits'
 
 	@staticmethod
 	def search(title):
@@ -515,16 +604,16 @@ class MovieAPI(KinopoiskAPI):
 
 	@staticmethod
 	def get_by(imdb_id = None, kinopoisk_url = None, orig=None, year=None, imdbRaiting=None, kp_googlecache=False):
-		if kinopoisk_url in MovieAPI.IMDB_by_KP_URL:
-			imdb_id = MovieAPI.IMDB_by_KP_URL[kinopoisk_url]
 
+		if not imdb_id:
+			imdb_id = IDs.get_by_kp(kinopoisk_url) if kinopoisk_url else None
 		if not imdb_id:
 			try:
 				_orig = orig
 				_year = year
 				imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
 				if not imdb_id and kinopoisk_url is not None:
-					kp = KinopoiskAPI(kinopoisk_url, force_googlecache=kp_googlecache)
+					kp = KinopoiskAPI2(kinopoisk_url, force_googlecache=kp_googlecache)
 					orig = kp.getOriginalTitle()
 					if not orig:
 						orig = kp.getTitle()
@@ -539,7 +628,7 @@ class MovieAPI(KinopoiskAPI):
 				print_tb(e)
 
 		if imdb_id and kinopoisk_url:
-			MovieAPI.IMDB_by_KP_URL[kinopoisk_url] = imdb_id
+			IDs.set( imdb_id, kinopoisk_url)
 
 		if imdb_id and imdb_id in MovieAPI.APIs:
 			return MovieAPI.APIs[imdb_id], imdb_id
@@ -555,7 +644,7 @@ class MovieAPI(KinopoiskAPI):
 		return api, imdb_id
 
 	def __init__(self, imdb_id = None, kinopoisk = None, kp_googlecache=False):
-		KinopoiskAPI.__init__(self, kinopoisk, force_googlecache=kp_googlecache)
+		KinopoiskAPI2.__init__(self, kinopoisk, force_googlecache=kp_googlecache)
 
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
@@ -575,6 +664,26 @@ class MovieAPI(KinopoiskAPI):
 			else:
 				self.omdbapi = ImdbAPI(imdb_id)
 			
+	def Actors(self):
+		if self.actors is not None:
+			return self.actors
+
+		kp_actors = KinopoiskAPI2.Actors(self)
+		try:
+			cast = self.tmdb_data['credits']['cast']
+		except:
+			cast = []
+
+		if cast:
+			for actor in kp_actors:
+				character = [item for item in cast if item['name'] == actor['en_name']]
+				if character and character[0]['profile_path']:
+					actor['photo'] = 'http://image.tmdb.org/t/p/original' + character[0]['profile_path']
+				if character and character[0]['character']:
+					actor['role'] = character[0]['character']
+
+		return self.actors
+
 
 	def imdbRating(self):
 		return self.omdbapi['imdbRating']
@@ -585,7 +694,7 @@ class MovieAPI(KinopoiskAPI):
 	def Year(self):
 		try:
 			return self.omdbapi['Year']
-			kp_year = KinopoiskAPI.getYear(self)
+			kp_year = KinopoiskAPI2.getYear(self)
 			if kp_year:
 				return kp_year
 		except: pass
@@ -616,7 +725,7 @@ class MovieAPI(KinopoiskAPI):
 		return u''
 
 	def Plot(self):
-		return KinopoiskAPI.getPlot(self)
+		return KinopoiskAPI2.getPlot(self)
 		
 	def Tags(self):
 		tags = []
