@@ -31,6 +31,10 @@ def need_create(settings):
 	return False
 
 def create(settings):
+	
+	import vsdbg
+	vsdbg._bp()
+
 	need_restart = False
 	sources = Sources()
 

@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import math, urllib
-import log, brkpnt
+import log
 
 try:
 	import xbmc, xbmcaddon, xbmcgui
@@ -422,7 +422,8 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
-	brkpnt._bp(wait=False)
+	import vsdbg
+	vsdbg._bp()
 
 	global _addon
 	_addon = AddonRO()
@@ -538,7 +539,6 @@ def add_media(title, imdb, settings):
 		"""
 		#---------------------------------
 		if filesystem.exists(ended_path):
-			#brkpnt._bp()
 			with filesystem.fopen(ended_path, 'r') as f:
 				dlg = xbmcgui.Dialog()
 

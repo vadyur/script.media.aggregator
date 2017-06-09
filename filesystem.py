@@ -7,7 +7,6 @@ except ImportError: pass
 
 __DEBUG__ = False
 
-
 class MakeCHDirException(Exception):
 	def __init__(self, path):
 		self.path = path
@@ -91,6 +90,10 @@ def makedirs(path):
 
 def chdir(path):
 	global _cwd
+
+	if not _is_abs_path(path):
+		path = join(_cwd, path)
+
 	_cwd = path
 
 	try:
@@ -204,9 +207,12 @@ def fopen(path, mode):
 
 				StringIO.__init__(self, buf)
 
+				if '+' in opt or 'a' in opt:
+					self.seek(0, mode=2)
+
 
 			def close(self):
-				if 'w' in self.opt or 'a' in self.opt:
+				if 'w' in self.opt or 'a' in self.opt or '+' in self.opt:
 					if not self.closed:
 						f = xbmcvfs.File(self.filename, 'w')
 						f.write(self.getvalue())
@@ -220,7 +226,7 @@ def fopen(path, mode):
 		if 'w' in mode:
 			return File(path, 'w')
 		else:
-			return File(path)
+			return File(path, mode)
 
 	except BaseException:
 		return open(get_path(path), mode)
@@ -231,7 +237,10 @@ def join(path, *paths):
 	fpaths = []
 	for p in paths:
 		fpaths.append( get_path(p) )
-	return ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
+	res = ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
+	if '://' in res:
+		res = res.replace('\\', '/')
+	return res
 
 
 def listdir(path):
@@ -281,7 +290,7 @@ def movefile(src, dst):
 def getmtime(path):
 	try:
 		import stat
-		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_mtime())
+		return xbmcvfs.Stat(xbmcvfs_path(path)).st_mtime()
 	except (ImportError, NameError):
 		return os.path.getmtime(get_path(path))
 
@@ -289,7 +298,7 @@ def getmtime(path):
 def getctime(path):
 	try:
 		import stat
-		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_ctime())
+		return xbmcvfs.Stat(xbmcvfs_path(path)).st_ctime()
 	except (ImportError, NameError):
 		return os.path.getctime(get_path(path))
 
