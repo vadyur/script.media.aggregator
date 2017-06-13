@@ -31,8 +31,11 @@ _cwd = ensure_unicode(os.getcwd(), get_filesystem_encoding())
 def get_path(path):
 	errors='strict'
 
-	if path.startswith('smb://') and os.name == 'nt':
-		path = path.replace('smb://', r'\\').replace('/', '\\')
+	try:
+		import xbmcvfs
+	except ImportError:
+		if path.startswith('smb://') and os.name == 'nt':
+			path = path.replace('smb://', r'\\').replace('/', '\\')
 
 	path = ensure_unicode(path)
 
@@ -61,6 +64,8 @@ def _is_abs_path(path):
 def xbmcvfs_path(path):
 	if isinstance(path, unicode):
 		u8path = path.encode('utf-8')
+	else:
+		u8path = path
 
 	if _is_abs_path(path):
 		return xbmc.translatePath(u8path)

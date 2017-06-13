@@ -439,13 +439,18 @@ class KinopoiskAPI2(KinopoiskAPI):
 	token = '037313259a17be837be3bd04a51bf678'
 
 	def __init__(self, kinopoisk_url = None, force_googlecache = False):
-		
-		self.kp_id = IDs.id_by_kp_url(kinopoisk_url)
-			
-		return super(KinopoiskAPI2, self).__init__(kinopoisk_url, force_googlecache)
+
+		if kinopoisk_url:		
+			self.kp_id = IDs.id_by_kp_url(kinopoisk_url)
+			return super(KinopoiskAPI2, self).__init__(kinopoisk_url, force_googlecache)
+		else:
+			self.kp_id = None
 
 	@property
 	def data_cc(self):
+		if self.kp_id is None:
+			return {}
+
 		if self.kp_id in self.movie_cc:
 			return self.movie_cc[self.kp_id]
 
