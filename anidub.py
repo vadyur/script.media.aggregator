@@ -178,6 +178,9 @@ class DescriptionParser(DescriptionParserBase):
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
+	if write_tvshow_nfo.favorites:
+		parser.Dict().get('tag', []).append('favorites')
+
 	debug(filesystem.getcwd().encode('utf-8'))
 	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
 	return
@@ -346,7 +349,9 @@ def write_favorites(path, settings):
 ###################################################################################################
 def run(settings):
 	if settings.anime_save:
+		write_tvshow_nfo.favorites = False
 		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
+		write_tvshow_nfo.favorites = True
 		write_favorites(settings.anime_tvshow_path(), settings)
 
 
