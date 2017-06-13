@@ -422,8 +422,8 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
-	import vsdbg
-	vsdbg._bp()
+	#import vsdbg
+	#vsdbg._bp()
 
 	global _addon
 	_addon = AddonRO()
