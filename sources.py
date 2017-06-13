@@ -32,8 +32,8 @@ def need_create(settings):
 
 def create(settings):
 	
-	import vsdbg
-	vsdbg._bp()
+	#import vsdbg
+	#vsdbg._bp()
 
 	need_restart = False
 	sources = Sources()

@@ -9,7 +9,4 @@ def main():
 	xbmc.executebuiltin(b'Container.Update(\"%s\")' % command)
 
 if __name__ == '__main__':
-	#import brkpnt
-	#brkpnt._bp()
-
 	main()
