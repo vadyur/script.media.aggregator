@@ -1,6 +1,9 @@
 ﻿# -*- coding: utf-8 -*-
 
 import os, sys, log
+try:
+	import xbmc, xbmcvfs
+except ImportError: pass
 
 __DEBUG__ = False
 
@@ -22,6 +25,8 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 		
 	return string
 
+_cwd = ensure_unicode(os.getcwd(), get_filesystem_encoding())
+
 
 def get_path(path):
 	errors='strict'
@@ -30,25 +35,74 @@ def get_path(path):
 		path = path.replace('smb://', r'\\').replace('/', '\\')
 
 	path = ensure_unicode(path)
+
 	if os.name == 'nt':
 		return path
 	return path.encode(get_filesystem_encoding(), errors)
 
 
+def _is_abs_path(path):
+	if path.startswith('/'):
+		return True
+
+	if '://' in path:
+		return True
+
+	if os.name == 'nt':
+		import re
+		if re.match(r"[a-zA-Z]:", path):
+			return True
+
+		if path.startswith(r'\\'):
+			return True
+
+	return False
+
+def xbmcvfs_path(path):
+	if isinstance(path, unicode):
+		u8path = path.encode('utf-8')
+
+	if _is_abs_path(path):
+		return xbmc.translatePath(u8path)
+	else:
+		return xbmc.translatePath(os.path.join(_cwd.encode('utf-8'), u8path))
+
 def exists(path):
-	return os.path.exists(get_path(path))
+	try:
+		return xbmcvfs.exists(xbmcvfs_path(path))
+	except BaseException as e:
+		return os.path.exists(get_path(path))
 
 
 def getcwd():
-	return ensure_unicode(os.getcwd(), get_filesystem_encoding())
+	if '://' in _cwd:
+		return _cwd
+	else:
+		return ensure_unicode(os.getcwd(), get_filesystem_encoding())
 
 
 def makedirs(path):
-	os.makedirs(get_path(path))
+	try:
+		return xbmcvfs.mkdirs(xbmcvfs_path(path))
+	except (ImportError, NameError):
+		os.makedirs(get_path(path))
 
 
 def chdir(path):
-	os.chdir(get_path(path))
+	global _cwd
+
+	if not _is_abs_path(path):
+		path = join(_cwd, path)
+
+	_cwd = path
+
+	try:
+		path = xbmcvfs_path(path).decode('utf-8')
+	except: pass
+
+	try:
+		os.chdir(get_path(path))
+	except: pass
 
 
 def save_make_chdir(new_path):
@@ -93,10 +147,20 @@ class save_make_chdir_context(object):
 
 
 def isfile(path):
-	return os.path.isfile(get_path(path))
+	if not exists(path):
+		return False
+		#raise Exception('sfile.isFile error %s does not exists' % path)
+
+	try:
+		import stat
+		return stat.S_ISREG(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode())
+	except (ImportError, NameError):
+		return os.path.isfile(get_path(path))
 
 
 def abspath(path):
+	if '://' in path:
+		return path
 	return ensure_unicode(os.path.abspath(get_path(path)), get_filesystem_encoding())
 
 
@@ -109,7 +173,63 @@ def normpath(path):
 
 	
 def fopen(path, mode):
-	return open(get_path(path), mode)
+	try:
+		from StringIO import StringIO
+		class File(StringIO):
+			def __enter__(self):
+				return self
+
+			def __exit__(self, exc_type, exc_val, exc_tb):
+				self.close()
+
+				if exc_type:
+					import traceback
+					traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)
+					log.debug("!!error!! " + str(exc_val))
+					return True
+
+			def __init__(self, filename, opt=''):
+				self.opt = opt
+				buf = ''
+
+				self.filename = xbmcvfs_path(filename)
+				if 'r' in opt or 'a+' in opt:
+					exst = exists(filename)
+					if not exst and 'r' in opt:
+						from errno import ENOENT
+						raise IOError(ENOENT, 'Not a file', filename)
+
+					if exst:
+						# read
+						f = xbmcvfs.File(self.filename)
+						buf = f.read()
+						f.close()
+
+				StringIO.__init__(self, buf)
+
+				if '+' in opt or 'a' in opt:
+					self.seek(0, mode=2)
+
+
+			def close(self):
+				if 'w' in self.opt or 'a' in self.opt or '+' in self.opt:
+					if not self.closed:
+						f = xbmcvfs.File(self.filename, 'w')
+						f.write(self.getvalue())
+						f.close()
+
+				StringIO.close(self)
+
+			def size(self):
+				return self.len
+
+		if 'w' in mode:
+			return File(path, 'w')
+		else:
+			return File(path, mode)
+
+	except BaseException:
+		return open(get_path(path), mode)
 
 	
 def join(path, *paths):
@@ -117,43 +237,70 @@ def join(path, *paths):
 	fpaths = []
 	for p in paths:
 		fpaths.append( get_path(p) )
-	return ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
+	res = ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
+	if '://' in res:
+		res = res.replace('\\', '/')
+	return res
 
 
 def listdir(path):
 	ld = []
-	path = get_path(path)
-	if path.startswith(r'\\'):
-		with save_make_chdir_context(path):
-			for p in os.listdir('.'):
+	try:
+		dirs, files = xbmcvfs.listdir(xbmcvfs_path(path))
+		for d in dirs:
+			ld.append(d.decode('utf-8'))
+		for f in files:
+			ld.append(f.decode('utf-8'))
+	except:
+		path = get_path(path)
+		if path.startswith(r'\\'):
+			with save_make_chdir_context(path):
+				for p in os.listdir('.'):
+					ld.append(ensure_unicode(p))
+		else:
+			for p in os.listdir(path):
 				ld.append(ensure_unicode(p))
-	else:
-		for p in os.listdir(path):
-			ld.append(ensure_unicode(p))
 
 	return ld
 
 
 def remove(path):
-	os.remove(get_path(path))
+	try:
+		xbmcvfs.delete(xbmcvfs_path(path))
+	except:
+		os.remove(get_path(path))
 
 
 def copyfile(src, dst):
-	import shutil
-	shutil.copyfile(get_path(src), get_path(dst))
+	try:
+		xbmcvfs.copy(xbmcvfs_path(src), xbmcvfs_path(dst))
+	except:
+		import shutil
+		shutil.copyfile(get_path(src), get_path(dst))
 
 
 def movefile(src, dst):
-	import shutil
-	shutil.move(get_path(src), get_path(dst))
+	try:
+		xbmcvfs.rename(xbmcvfs_path(src), xbmcvfs_path(dst))
+	except:
+		import shutil
+		shutil.move(get_path(src), get_path(dst))
 
 
 def getmtime(path):
-	return os.path.getmtime(get_path(path))
+	try:
+		import stat
+		return xbmcvfs.Stat(xbmcvfs_path(path)).st_mtime()
+	except (ImportError, NameError):
+		return os.path.getmtime(get_path(path))
 
 
 def getctime(path):
-	return os.path.getctime(get_path(path))
+	try:
+		import stat
+		return xbmcvfs.Stat(xbmcvfs_path(path)).st_ctime()
+	except (ImportError, NameError):
+		return os.path.getctime(get_path(path))
 
 
 def dirname(path):
@@ -172,10 +319,10 @@ def test():
 	subpath = u'Подпапка'
 	subpath2 = u'файл.ext'
 
-	with save_make_chdir_context(join(getcwd(), subpath)):
+	with save_make_chdir_context(join('special://temp', subpath)):
 		log.debug('aaaaa')
-		raise Exception('save_make_chdir')
-		log.debug('bbbbb')
+		#raise Exception('save_make_chdir')
+		#log.debug('bbbbb')
 	
 	fullpath = join(getcwd(), subpath, subpath2)
 	log.debug('subpath: %s' % subpath.encode('utf-8'))
@@ -184,7 +331,7 @@ def test():
 
 	log.debug(u'dirname(%s): %s' % (fullpath, dirname(fullpath)))
 
-	remote_file = u'smb://vd/Incoming/test.txt'
+	remote_file = u'smb://192.168.21.33/Incoming/test.txt'
 	if isfile(remote_file):
 		with fopen(remote_file, "r") as f:
 			log.debug(f.read())

@@ -171,7 +171,8 @@ class NFOWriter:
 				if actorInfo['ru_name'] in self.parser.get_value('actor'):
 					actor = ET.SubElement(root, 'actor')
 					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
-					ET.SubElement(actor, 'role').text = actorInfo['role']
+					if 'role' in actorInfo:
+						ET.SubElement(actor, 'role').text = actorInfo['role']
 					ET.SubElement(actor, 'order').text = str(index)
 					ET.SubElement(actor, 'thumb').text = actorInfo['photo']
 					index += 1

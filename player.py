@@ -33,8 +33,6 @@ from torrent2httpplayer import *
 from yatpplayer import *
 from movieapi import MovieAPI
 
-import brkpnt
-
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
 _addon = xbmcaddon.Addon(id=_ADDON_NAME)
@@ -601,7 +599,6 @@ def dialog_action(action, settings, params=None):
 			settings.nnmclub_passkey = passkey
 
 	if action == dialog_action_case.search:
-		#brkpnt._bp()
 		import urllib
 
 		if not 'keyword' in params:
@@ -760,7 +757,6 @@ def main():
 
 		dialog = xbmcgui.Dialog()
 		if found == 'movie':
-			#brkpnt._bp()
 			if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
 				#with filesystem.fopen(r['file'], 'r') as strm:
 				#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
