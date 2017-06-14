@@ -316,10 +316,10 @@ class TrackerPostsEnumerator(PostsEnumerator):
 def write_movie_rss(fulltitle, description, link, settings):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
-		if link:
-			save_download_link(parser, settings, link)
+		#if link:
+		#	save_download_link(parser, settings, link)
 		movieapi.write_movie(fulltitle, link, settings, parser)
-		save_download_link(parser, settings, link)
+		#save_download_link(parser, settings, link)
 
 
 def write_movie(post, settings, tracker):
@@ -346,8 +346,8 @@ def write_movie(post, settings, tracker):
 					link = post.find_parent('tr').select('a[href*="download.php"]')[0]['href']
 				except:
 					pass
-			if link:
-				save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
+			#if link:
+			#	save_download_link(parser, settings, 'http://nnm-club.me/forum/' + link + '&uk=' + settings.nnmclub_passkey)
 
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
@@ -376,7 +376,8 @@ def write_movies(content, path, settings, tracker=False):
 
 
 def save_download_link(parser, settings, link):
-	try:
+	#try:
+	if True:
 		path_store = filesystem.join(settings.torrents_path(), 'nnmclub')
 		if not filesystem.exists(path_store):
 			filesystem.makedirs(path_store)
@@ -385,15 +386,15 @@ def save_download_link(parser, settings, link):
 		if match:
 			with filesystem.fopen(filesystem.join(path_store, match.group(1)), 'w') as f:
 				f.write(link)
-	except:
-		pass
+	#except:
+	#	pass
 
 
 def write_tvshow(fulltitle, description, link, settings):
 	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
-		if link:
-			save_download_link(parser, settings, link)
+		#if link:
+		#	save_download_link(parser, settings, link)
 		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
 		#save_download_link(parser, settings, link)
 
@@ -592,7 +593,7 @@ def download_torrent(url, path, settings):
 	debug('download_torrent:' + url)
 
 	href = None
-	link = find_direct_link(url, settings)
+	link = None # find_direct_link(url, settings)
 	if link is None:
 		s = create_session(settings)
 		page = s.get(real_url(url))

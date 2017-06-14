@@ -722,7 +722,7 @@ class MovieAPI(KinopoiskAPI2):
 		try:
 			if u'belongs_to_collection' in self.tmdb_data:
 				belongs_to_collection = self.tmdb_data[u'belongs_to_collection']
-				if u'name' in belongs_to_collection:
+				if belongs_to_collection and u'name' in belongs_to_collection:
 					return belongs_to_collection[u'name']
 		except:
 			pass
