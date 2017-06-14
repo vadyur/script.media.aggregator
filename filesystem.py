@@ -215,6 +215,14 @@ def fopen(path, mode):
 				if '+' in opt or 'a' in opt:
 					self.seek(0, mode=2)
 
+			def write(self, s):
+				if not s: return
+
+				if not isinstance(s, str):
+					s = str(s)
+
+				StringIO.write(self, s)
+
 
 			def close(self):
 				if 'w' in self.opt or 'a' in self.opt or '+' in self.opt:
