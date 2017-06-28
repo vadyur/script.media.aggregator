@@ -94,6 +94,8 @@ def load_settings():
 	hdclub_passkey = getSetting('hdclub_passkey')
 	anidub_login = getSetting('anidub_login')
 	anidub_password = getSetting('anidub_password')
+	anidub_rss = getSetting('anidub_rss')
+	anidub_favorite = getSetting('anidub_favorite')
 
 	nnmclub_pages = 3
 	nnmclub_login = getSetting('nnmclub_login')
@@ -131,6 +133,8 @@ def load_settings():
 	                    hdclub_passkey 		=hdclub_passkey,
 	                    anidub_login 		=anidub_login,
 	                    anidub_password 	=anidub_password,
+	                    anidub_rss 	        =anidub_rss,
+	                    anidub_favorite 	=anidub_favorite,
 	                    nnmclub_pages 		=nnmclub_pages,
 	                    nnmclub_login 		=nnmclub_login,
 	                    nnmclub_password 	=nnmclub_password,
