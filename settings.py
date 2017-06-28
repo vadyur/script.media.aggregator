@@ -31,7 +31,7 @@ class Settings:
 	             documentary_path	= u'Documentary',
 	             anime_path			= u'Anime',
 	             hdclub_passkey 		= '',
-	             anidub_login = '', anidub_password = '',
+	             anidub_login = '', anidub_password = '', anidub_rss=True, anidub_favorite=True,
 	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 	             rutor_domain = 'rutor.info',
 	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
@@ -61,6 +61,8 @@ class Settings:
 		self.__anime_tvshow_path 	= anime_path
 		self.anidub_login 			= anidub_login
 		self.anidub_password 		= anidub_password
+		self.anidub_rss 			= anidub_rss
+		self.anidub_favorite 		= anidub_favorite
 
 		self.nnmclub_login 			= nnmclub_login
 		self.nnmclub_password 		= nnmclub_password

@@ -68,6 +68,8 @@
 		  <setting label="Учётные данные сайта tr.anidub.com (необходима регистрация на сайте)" type="lsep"/>
           <setting label="Login" type="text"   id="anidub_login" enable="eq(-2,true)" default=""/>
           <setting label="Password" type="text"   id="anidub_password" enable="eq(-3,true)" option="hidden"  default=""/>
+		  <setting label="Обновления" type="bool" id="anidub_rss" enable="eq(-4,true)" default="true"/>
+		  <setting label="Избранное" type="bool" id="anidub_favorite" enable="eq(-5,true)+!eq(-2,'')" default="true"/>
     </category>
   
     <category label="HDClub">

@@ -349,10 +349,12 @@ def write_favorites(path, settings):
 ###################################################################################################
 def run(settings):
 	if settings.anime_save:
-		write_tvshow_nfo.favorites = False
-		write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
-		write_tvshow_nfo.favorites = True
-		write_favorites(settings.anime_tvshow_path(), settings)
+		if settings.anidub_rss:
+			write_tvshow_nfo.favorites = False
+			write_tvshow(settings.anidub_url, settings.anime_tvshow_path(), settings)
+		if settings.anidub_favorite:
+			write_tvshow_nfo.favorites = True
+			write_favorites(settings.anime_tvshow_path(), settings)
 
 
 if __name__ == '__main__':
