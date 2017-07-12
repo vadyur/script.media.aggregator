@@ -29,20 +29,32 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
 
 def get_tmdb_api_key():
 	try:
-		import xbmc, filesystem
-		xml_path = xbmc.translatePath('special://home').decode('utf-8')
-		xml_path = filesystem.join(xml_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
+		import filesystem
+		import xbmc
+		home_path = xbmc.translatePath('special://home').decode('utf-8')
+	except ImportError:
+		cur = filesystem.dirname(__file__)
+		home_path = filesystem.join(cur, '../..')
+
+	key = '6889f6089877fd092454d00edb44a84d'
+	host = 'api.tmdb.org'
+	try:
+		xml_path = filesystem.join(home_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
 		with filesystem.fopen(xml_path, 'r') as xml:
 			content = xml.read()
-			match = re.search('api_key=(\w+)', content)
+			match = re.search(r'api_key=(\w+)', content)
 			if match:
 				key = match.group(1)
 				debug('get_tmdb_api_key: ok')
-				return key
-
+			
+			m = re.search(r'://(.+)/3/', content)
+			if m:
+				host = m.group(1)
+	
 	except BaseException as e:
 		debug('get_tmdb_api_key: ' + str(e))
-		return 'f7f51775877e0bb6703520952b3c7840'
+
+	return {'host': host, 'key': key }
 
 
 class tmdb_movie_item(object):
@@ -491,6 +503,9 @@ class KinopoiskAPI2(KinopoiskAPI):
 	def Trailer(self):
 		return self.data_cc.get('trailer')
 
+	def Poster(self):
+		return 'https://st.kp.yandex.net/images/film_big/{}.jpg'.format(self.kp_id)
+
 class MovieAPI(KinopoiskAPI2):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
@@ -500,14 +515,24 @@ class MovieAPI(KinopoiskAPI2):
 	use_omdb = False
 
 	@staticmethod
-	def url_imdb_id(idmb_id, type='movie'):
-		return 'http://api.themoviedb.org/3/' + type + '/' + idmb_id + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits'
+	def url_imdb_id(idmb_id):
+		
+		url = 'http://%s/3/find/%s?api_key=%s&language=ru&external_source=imdb_id' % (MovieAPI.tmdb_api_key['host'], idmb_id, MovieAPI.tmdb_api_key['key'])
+		tmdb_data 	= json.load(urllib2.urlopen( url ))
+
+		for type in ['movie', 'tv']:
+			try:
+				id = tmdb_data['%s_results' % type][0]['id']
+				return 'http://%s/3/' % MovieAPI.tmdb_api_key['host'] + type + '/' + str(id) + '?api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru&append_to_response=credits'
+			except: pass
+
+		return None
 
 	@staticmethod
 	def search(title):
-		url = 'http://api.themoviedb.org/3/search/movie?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/search/movie?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		movies = MovieAPI.tmdb_query(url)
-		url = 'http://api.themoviedb.org/3/search/tv?query=' + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/search/tv?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		tv = MovieAPI.tmdb_query(url, 'tv')
 		return movies + tv
 
@@ -526,7 +551,7 @@ class MovieAPI(KinopoiskAPI2):
 					if not r['overview']:
 						continue
 
-					url2 = 'http://api.themoviedb.org/3/' + type + '/' + str(
+					url2 = 'http://%s/3/' % MovieAPI.tmdb_api_key['host'] + type + '/' + str(
 						r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
 					data2 = json.load(urllib2.urlopen(url2))
 
@@ -539,34 +564,34 @@ class MovieAPI(KinopoiskAPI2):
 
 	@staticmethod
 	def tmdb_by_imdb(imdb, type):
-		url = 'http://api.themoviedb.org/3/find/' + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/find/' % MovieAPI.tmdb_api_key['host'] + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		url += '&append_to_response=credits,videos,external_ids'
 		debug(url)
 		return MovieAPI.tmdb_query(url, type)
 
 	@staticmethod
 	def popular():
-		url = 'http://api.themoviedb.org/3/movie/popular?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/movie/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
 		return MovieAPI.tmdb_query(url)
 
 	@staticmethod
 	def popular_tv():
-		url = 'http://api.themoviedb.org/3/tv/popular?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/tv/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
 		return MovieAPI.tmdb_query(url, 'tv')
 
 	@staticmethod
 	def top_rated():
-		url = 'http://api.themoviedb.org/3/movie/top_rated?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/movie/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
 		return MovieAPI.tmdb_query(url)
 
 	@staticmethod
 	def top_rated_tv():
-		url = 'http://api.themoviedb.org/3/tv/top_rated?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/tv/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
 		return MovieAPI.tmdb_query(url, 'tv')
 
 	@staticmethod
 	def show_similar_t(tmdb_id, type):
-		url = 'http://api.themoviedb.org/3/' + type + '/' + str(
+		url = 'http://%s/3/' % MovieAPI.tmdb_api_key['host'] + type + '/' + str(
 				tmdb_id) + '/similar?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
 		log.debug(url)
 		return MovieAPI.tmdb_query(url, type)
@@ -654,8 +679,9 @@ class MovieAPI(KinopoiskAPI2):
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
 			try:
-				self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
-				debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
+				if url_:
+					self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
+					debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
 			except:
 				pass
 
@@ -716,6 +742,10 @@ class MovieAPI(KinopoiskAPI2):
 		return self.omdbapi.get(u'Rated', u'')
 
 	def Poster(self):
+		kp_poster = KinopoiskAPI2.Poster(self)
+		if kp_poster:
+			return kp_poster
+
 		return self.omdbapi.get(u'Poster', u'')
 		
 	def Collection(self):                           
