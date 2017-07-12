@@ -316,8 +316,9 @@ class NFOWriter:
 
 	def write_mpaa(self, root):
 		try:
-			debug('Rated: ' + self.movie_api.Rated())
-			ET.SubElement(root, 'mpaa').text = str(self.movie_api.Rated())
+			if self.movie_api.Rated():
+				debug('Rated: ' + str(self.movie_api.Rated()))
+				ET.SubElement(root, 'mpaa').text = str(self.movie_api.Rated())
 		except:
 			pass
 
