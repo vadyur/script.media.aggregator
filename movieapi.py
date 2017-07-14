@@ -530,9 +530,9 @@ class MovieAPI(KinopoiskAPI2):
 
 	@staticmethod
 	def search(title):
-		url = 'http://%s/3/search/movie?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/search/movie?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		movies = MovieAPI.tmdb_query(url)
-		url = 'http://%s/3/search/tv?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/search/tv?query=' % MovieAPI.tmdb_api_key['host'] + urllib2.quote(title.encode('utf-8')) + '&api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		tv = MovieAPI.tmdb_query(url, 'tv')
 		return movies + tv
 
@@ -552,7 +552,7 @@ class MovieAPI(KinopoiskAPI2):
 						continue
 
 					url2 = 'http://%s/3/' % MovieAPI.tmdb_api_key['host'] + type + '/' + str(
-						r['id']) + '?api_key=' + MovieAPI.tmdb_api_key + '&language=ru&append_to_response=credits,videos,external_ids'
+						r['id']) + '?api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru&append_to_response=credits,videos,external_ids'
 					data2 = json.load(urllib2.urlopen(url2))
 
 					if 'imdb_id' in data2:
@@ -564,35 +564,35 @@ class MovieAPI(KinopoiskAPI2):
 
 	@staticmethod
 	def tmdb_by_imdb(imdb, type):
-		url = 'http://%s/3/find/' % MovieAPI.tmdb_api_key['host'] + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/find/' % MovieAPI.tmdb_api_key['host'] + imdb + '?external_source=imdb_id&api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		url += '&append_to_response=credits,videos,external_ids'
 		debug(url)
 		return MovieAPI.tmdb_query(url, type)
 
 	@staticmethod
 	def popular():
-		url = 'http://%s/3/movie/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/movie/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		return MovieAPI.tmdb_query(url)
 
 	@staticmethod
 	def popular_tv():
-		url = 'http://%s/3/tv/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/tv/popular?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		return MovieAPI.tmdb_query(url, 'tv')
 
 	@staticmethod
 	def top_rated():
-		url = 'http://%s/3/movie/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/movie/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		return MovieAPI.tmdb_query(url)
 
 	@staticmethod
 	def top_rated_tv():
-		url = 'http://%s/3/tv/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key + '&language=ru'
+		url = 'http://%s/3/tv/top_rated?api_key=' % MovieAPI.tmdb_api_key['host'] + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		return MovieAPI.tmdb_query(url, 'tv')
 
 	@staticmethod
 	def show_similar_t(tmdb_id, type):
 		url = 'http://%s/3/' % MovieAPI.tmdb_api_key['host'] + type + '/' + str(
-				tmdb_id) + '/similar?api_key=' + MovieAPI.tmdb_api_key + '&language=ru'
+				tmdb_id) + '/similar?api_key=' + MovieAPI.tmdb_api_key['key'] + '&language=ru'
 		log.debug(url)
 		return MovieAPI.tmdb_query(url, type)
 
