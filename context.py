@@ -245,26 +245,49 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 def debug_info_label(s):
 	debug('%s: ' % s + xbmc.getInfoLabel(s))
+	debug('%s: ' % s + sys.listitem.getProperty(s.split('.')[-1]))
 
 def main():
-	debug_info_label('ListItem.FileName')
-	debug_info_label('ListItem.Path')
-	debug_info_label('ListItem.FileExtension')
-	debug_info_label('ListItem.FileNameAndPath')
-	debug_info_label('ListItem.DBID')		# movie id)
-	debug_info_label('ListItem.IMDBNumber')
+	import vsdbg
+	#vsdbg._bp()
 
-	debug_info_label('Container.FolderPath')
+	dbpath = sys.listitem.getfilename()
 
-	# import rpdb2
-	# rpdb2.start_embedded_debugger('pw')
+	dbid = None
+	dbtype = None
+	if dbpath.startswith('videodb://'):
+		dbpath = dbpath.split('://')[-1]
+		dbpath = dbpath.split('?')[0]
+		parts = dbpath.split('/')
+		dbtype = parts[0]
+		dbid = int(parts[-1])
 
+		import json
+		path = None
+		if dbtype == 'movies':
+			jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
+			result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
+			path = result[u'result'][u'moviedetails'][u'file']
+		if dbtype == 'tvshows':
+			jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+			result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
+			path = result[u'result'][u'episodedetails'][u'file']
+
+		try:
+			path = path.encode('utf-8')
+		except UnicodeDecodeError:
+			pass
+
+		name = path.replace('\\', '/').split('/')[-1]
+
+	else:
+		path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+		name = xbmc.getInfoLabel('ListItem.FileName')
+
+		
 	import player
 	settings = player.load_settings()
 
-	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
-	name = xbmc.getInfoLabel('ListItem.FileName')
-	
 	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
 	if xbmcvfs.exists(path+'.alternative'):
@@ -272,6 +295,8 @@ def main():
 		xbmcvfs.copy(path, os.path.join(tempPath, name))
 		xbmcvfs.copy(path + '.alternative', os.path.join(tempPath, name + '.alternative'))
 		path = os.path.join(tempPath, name)
+	else:
+		return
 
 	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
