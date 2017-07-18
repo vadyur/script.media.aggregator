@@ -249,40 +249,45 @@ def debug_info_label(s):
 
 def main():
 	import vsdbg
-	#vsdbg._bp()
+	vsdbg._bp()
 
+	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
+	name = xbmc.getInfoLabel('ListItem.FileName')
 	dbpath = sys.listitem.getfilename()
 
-	dbid = None
-	dbtype = None
-	if dbpath.startswith('videodb://'):
-		dbpath = dbpath.split('://')[-1]
-		dbpath = dbpath.split('?')[0]
-		parts = dbpath.split('/')
-		dbtype = parts[0]
-		dbid = int(parts[-1])
+	if not path or not name:
+		if not dbpath.startswith('videodb://') and dbpath.endswith('.strm'):
+			path = dbpath
 
-		import json
-		path = None
-		if dbtype == 'movies':
-			jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
-			result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-			path = result[u'result'][u'moviedetails'][u'file']
-		if dbtype == 'tvshows':
-			jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
-			result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-			path = result[u'result'][u'episodedetails'][u'file']
-
-		try:
-			path = path.encode('utf-8')
-		except UnicodeDecodeError:
-			pass
-
+	if path and not name:
 		name = path.replace('\\', '/').split('/')[-1]
 
-	else:
-		path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
-		name = xbmc.getInfoLabel('ListItem.FileName')
+	if not path or not name:
+		if dbpath.startswith('videodb://'):
+			dbpath = dbpath.split('://')[-1]
+			dbpath = dbpath.split('?')[0]
+			parts = dbpath.split('/')
+			dbtype = parts[0]
+			dbid = int(parts[-1])
+
+			import json
+			path = None
+			if dbtype == 'movies':
+				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
+				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
+				path = result[u'result'][u'moviedetails'][u'file']
+			if dbtype == 'tvshows':
+				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
+				path = result[u'result'][u'episodedetails'][u'file']
+
+			try:
+				if path:
+					path = path.encode('utf-8')
+			except UnicodeDecodeError:
+				pass
+
+			name = path.replace('\\', '/').split('/')[-1]
 
 		
 	import player
