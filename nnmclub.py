@@ -163,7 +163,7 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 		if 'genre' in self._dict:
-			self._dict['genre'] = self._dict['genre'].lower().replace('.', '')
+			self._dict['genre'] = self._dict['genre'].replace('.', '')
 
 		count_id = 0
 		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):

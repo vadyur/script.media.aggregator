@@ -336,7 +336,23 @@ class NFOWriter:
 		self.add_trailer(root)
 
 	def write_genre(self, root):
-		self.add_element_split(root, 'genre', self.parser)
+		#self.add_element_split(root, 'genre', self.parser)
+
+		s = self.parser.get_value('genre')
+		from base import lower
+
+		if ',' in s:
+			values = lower(s).split(',')
+		elif ' ' in s:
+			values = lower(s).split(' ')
+		else:
+			values = [lower(s)]
+
+		for i in values:
+			if i:
+				ET.SubElement(root, 'genre').text = i.strip()
+		return len(values) > 0
+
 
 	def write_tag(self, root):
 		tags = self.parser.get('tag', None)

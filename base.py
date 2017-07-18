@@ -14,6 +14,17 @@ KB = 1024
 MB = KB * KB
 GB = KB * MB
 
+def lower(s):
+	s = s.lower()
+	_s = unicode()
+	for ch in s:
+		if ord(ch) >= ord(u'А') and ord(ch) <= ord(u'Я'):
+			ofs = ord(u'а') - ord(u'А')
+			_s += unichr(ord(ch) + ofs)
+		else:
+			_s += ch
+	return _s
+
 def make_fullpath(title, ext):
 	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
 
