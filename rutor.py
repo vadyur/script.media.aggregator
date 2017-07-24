@@ -534,8 +534,11 @@ def search_results(imdb, settings, url):
 	enumerator.process_page(url)
 
 	for post in enumerator.items():
-		if 'seeds' in post and int(post['seeds']) < 5:
-			continue
+		try:
+			if 'seeds' in post and int(post['seeds']) < 5:
+				continue
+		except ValueError:
+			pass
 
 		title = post['a'].get_text()
 		dl_link = str('http://rutor.info' + post['dl_link'])
