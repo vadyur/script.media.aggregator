@@ -1,17 +1,5 @@
 # -*- coding: utf-8 -*-
 
-_DEBUG=False
-
-"""
-try:
-	if _DEBUG:
-		import ptvsd
-		ptvsd.enable_attach(secret=None, address = ('0.0.0.0', 6666))
-		ptvsd.wait_for_attach()
-except:
-	pass
-"""
-
 import operator
 import sys
 
@@ -19,19 +7,10 @@ import xbmc
 import xbmcaddon
 import xbmcgui
 import xbmcplugin
-from torrent2http import Error as TPError
 
-import anidub
-import nnmclub
-import tvshowapi
-from base import STRMWriterBase
-from downloader import TorrentDownloader
-from kodidb import *
-from nforeader import NFOReader
-from settings import *
-from torrent2httpplayer import *
-from yatpplayer import *
-from movieapi import MovieAPI
+from log import debug
+import filesystem
+import urllib, time
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
@@ -46,30 +25,6 @@ except:
 debug(_addondir.encode('utf-8'))
 
 
-def get_params():
-	if len(sys.argv) < 3:
-		return None
-
-	param = dict()
-
-	paramstring = sys.argv[2]
-	if len(paramstring) >= 2:
-		params = sys.argv[2]
-		cleanedparams = params.replace('?', '')
-		if (params[len(params) - 1] == '/'):
-			params = params[0:len(params) - 2]
-		pairsofparams = cleanedparams.split('&')
-		param = {}
-		for i in range(len(pairsofparams)):
-			splitparams = {}
-			splitparams = pairsofparams[i].split('=')
-			if (len(splitparams)) == 2:
-				param[splitparams[0]] = splitparams[1]
-
-	# debug(param)
-	return param
-
-
 def getSetting(id, default=''):
 	result = _addon.getSetting(id)
 	if result != '':
@@ -79,9 +34,6 @@ def getSetting(id, default=''):
 
 
 def load_settings():
-	# import rpdb2
-	# rpdb2.start_embedded_debugger('pw')
-
 	base_path = getSetting('base_path', '').decode('utf-8')
 	if base_path == u'Videos':
 		base_path = filesystem.join(_addondir, base_path)
@@ -126,6 +78,7 @@ def load_settings():
 
 	kp_googlecache = getSetting('kp_googlecache') == 'true'
 
+	from settings import Settings
 	settings = Settings(base_path,
 	                    movies_path=movies_path,
 	                    animation_path=animation_path, documentary_path=documentary_path,
@@ -182,9 +135,6 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	play_torrent_variant. resultTryNext	= 'TryNext'
 	play_torrent_variant. resultTryAgain	= 'TryAgain'
 
-	# import rpdb2
-	# rpdb2.start_embedded_debugger('pw')
-
 	start_time = time.time()
 	start_play_max_time 	= int(_addon.getSetting(  'start_play_max_time'))	  # default 60 seconds
 	search_seed_max_time = int(_addon.getSetting('search_seed_max_time'))  # default 15 seconds
@@ -201,10 +151,13 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	torrent_info = None
 	torrent_path = path
 
+	from torrent2http import Error as TPError
 	try:
 		if settings.torrent_player == 'YATP':
+			from yatpplayer import YATPPlayer
 			player = YATPPlayer()
 		elif settings.torrent_player == 'torrent2http':
+			from torrent2httpplayer import Torrent2HTTPPlayer
 			player = Torrent2HTTPPlayer(settings)
 		elif settings.torrent_player == 'Ace Stream':
 			import aceplayer
@@ -271,7 +224,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				index = -1
 				for item in files:
 					name = item['name'].lower()
-					if cutName in unicode(tvshowapi.cutStr(name)):
+					from tvshowapi import cutStr
+					if cutName in unicode(cutStr(name)):
 						playable_item = item
 						index = playable_item.get('index')
 						break
@@ -347,6 +301,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		rel_path = urllib.unquote(params['path']).decode('utf-8')
 		filename = urllib.unquote(params['nfo']).decode('utf-8')
 
+		from kodidb import KodiDB
 		k_db = KodiDB(filename.replace(u'.nfo', u'.strm'), \
 		              rel_path,
 		              sys.argv[0] + sys.argv[2])
@@ -374,9 +329,6 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		xbmc.sleep(1000)
 
-		# import rpdb2
-		# rpdb2.start_embedded_debugger('pw')
-
 		k_db.PlayerPostProccessing()
 
 		torrent_info = player.GetTorrentInfo()
@@ -385,7 +337,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		xbmc.executebuiltin('Container.Refresh')
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
-		log.debug(UpdateLibrary_path)
+		debug(UpdateLibrary_path)
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
 
@@ -405,6 +357,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+	
+	from downloader import TorrentDownloader
 	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
 
 	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(),
@@ -439,6 +393,8 @@ def openInTorrenter(nfoReader):
 
 
 def play_torrent(settings, params):
+	from nforeader import NFOReader
+
 	info_dialog = xbmcgui.DialogProgress()
 	info_dialog.create(settings.addon_name)
 
@@ -451,6 +407,8 @@ def play_torrent(settings, params):
 	nfoReader = NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
 	debug(strmFilename.encode('utf-8'))
+	
+	from base import STRMWriterBase
 	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
 
 	anidub_enable = _addon.getSetting('anidub_enable') == 'true'
@@ -556,9 +514,6 @@ class dialog_action_case:
 
 
 def dialog_action(action, settings, params=None):
-	# import rpdb2
-	# rpdb2.start_embedded_debugger('pw')
-
 
 	if action == dialog_action_case.generate:
 		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
@@ -577,12 +532,8 @@ def dialog_action(action, settings, params=None):
 			return True
 
 	if action == dialog_action_case.sources:
-		# import rpdb2
-		# rpdb2.start_embedded_debugger('pw')
-
 		import sources
 
-		# sources.create(settings)
 		dialog = xbmcgui.Dialog()
 		if sources.create(settings):
 			if dialog.yesno(settings.addon_name, restart_msg):
@@ -598,13 +549,12 @@ def dialog_action(action, settings, params=None):
 		settings = load_settings()
 
 		if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
-			passkey = nnmclub.get_passkey(settings=settings)
+			from nnmclub import get_passkey
+			passkey = get_passkey(settings=settings)
 			_addon.setSetting('nnmclub_passkey', passkey)
 			settings.nnmclub_passkey = passkey
 
 	if action == dialog_action_case.search:
-		import urllib
-
 		if not 'keyword' in params:
 			dlg = xbmcgui.Dialog()
 			s = dlg.input(u'Введите поисковую строку')
@@ -615,6 +565,8 @@ def dialog_action(action, settings, params=None):
 
 		s = urllib.unquote(params.get('keyword'))
 		if s:
+			from movieapi import MovieAPI
+
 			debug('Keyword is: ' + s)
 			show_list(MovieAPI.search(s.decode('utf-8')))
 
@@ -661,9 +613,11 @@ def show_list(listing):
 			 'title': info['title'].encode('utf-8'),
 			 'imdb': item.imdb()})
 
-		items = [(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),]
+		items = [(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
+				(u'Искать источники', 'RunPlugin("%s")' % (url + '&force=true') )]
 		pathUnited = 'special://home/addons/plugin.video.united.search'
 		pathUnited = xbmc.translatePath(pathUnited)
+
 		if filesystem.exists(pathUnited.decode('utf-8')):
 			items.append((u'United search', 'Container.Update("plugin://plugin.video.united.search/?action=search&keyword=%s")' % urllib.quote(info['title'].encode('utf-8'))))
 
@@ -678,136 +632,122 @@ def force_library_update(settings, params):
 	xbmc.sleep(500)
 
 
+menu_items = [u'Генерировать .strm и .nfo файлы',
+				u'Создать источники',
+				u'Настройки',
+				u'Поиск',
+				u'Каталог'
+]
+
+menu_actions = ['generate',
+		        'sources',
+				'settings',
+				'search',
+				'catalog'
+]
+
+
+def main_menu(menu_actions):
+	
+	indx = 0
+	addon_handle = int(sys.argv[1])
+	for menu in menu_items:
+		li = xbmcgui.ListItem(menu)
+		url = 'plugin://script.media.aggregator/?menu=' + menu_actions[indx]
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=indx > dialog_action_case.settings)
+		indx += 1
+	
+	xbmcplugin.endOfDirectory(addon_handle)
+
+def action_add_media(params, settings):
+	title = urllib.unquote_plus(params.get('title')).decode('utf-8')
+	imdb = params.get('imdb')
+	force = params.get('force') == 'true'
+	
+	if getSetting('role').decode('utf-8') == u'клиент' and params.get('norecursive'):
+		force_library_update(settings, params)
+
+	if force:
+		from service import add_media
+		add_media(title, imdb, settings)
+		return
+	
+	import json
+	found = None
+	
+	req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
+	result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+	try:
+		for r in result['result']['movies']:
+			if r['imdbnumber'] == imdb:
+				found = 'movie'
+				break
+	except KeyError:
+		debug('KeyError: Movies not found')
+	
+	if not found:
+		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
+		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		try:
+			for r in result['result']['tvshows']:
+				if r['imdbnumber'] == imdb:
+					found = 'tvshow'
+					break
+		except KeyError:
+			debug('KeyError: TVShows not found')
+	
+	dialog = xbmcgui.Dialog()
+	if found == 'movie':
+		if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
+			#with filesystem.fopen(r['file'], 'r') as strm:
+			#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
+			xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
+	elif found == 'tvshow':
+		if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):
+			xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % r['file'].encode('utf-8'))
+	elif not params.get('norecursive'):
+		if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
+			from service import add_media
+			add_media(title, imdb, settings)
+
+def action_show_similar(params):
+	from movieapi import MovieAPI
+	listing = MovieAPI.show_similar(params.get('tmdb'))
+	debug(listing)
+	show_list(listing)
+
+def action_show_category(params):
+	from movieapi import MovieAPI
+	if params.get('category') == 'popular':
+		show_list(MovieAPI.popular())
+	if params.get('category') == 'top_rated':
+		show_list(MovieAPI.top_rated())
+	if params.get('category') == 'popular_tv':
+		show_list(MovieAPI.popular_tv())
+	if params.get('category') == 'top_rated_tv':
+		show_list(MovieAPI.top_rated_tv())
+
+def action_search_context(params):
+	from movieapi import MovieAPI
+	s = params.get('s')
+	show_list(MovieAPI.search(s.decode('utf-8')))
+
+def action_anidub_add_favorites(settings):
+	debug('anidub-add-favorites')
+	anidub_enable = _addon.getSetting('anidub_enable') == 'true'
+	if anidub_enable:
+		if settings.anime_save:
+			from anidub import write_favorites
+			debug('scan for anidub-add-favorites')
+			write_favorites(settings.anime_tvshow_path(), settings)
+
 def main():
 	from service import create_mark_file
 	create_mark_file()
 
-	params = get_params()
-	debug(params)
-	settings = load_settings()
+	from dispatcher import dispatch
+	dispatch()
 
-	debug(settings.base_path())
-	if 'torrent' in params:
-		# import rpdb2
-		# rpdb2.start_embedded_debugger('pw')
-		play_torrent(settings=settings, params=params)
-
-	elif params.get('action') == 'anidub-add-favorites':
-		debug('anidub-add-favorites')
-		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
-		if anidub_enable:
-			if settings.anime_save:
-				debug('scan for anidub-add-favorites')
-				anidub.write_favorites(settings.anime_tvshow_path(), settings)
-
-	elif params.get('action') == 'settings':
-		dialog_action(dialog_action_case.settings, settings)
-
-	elif params.get('action') == 'search':
-		dialog_action(dialog_action_case.search, settings, params)
-
-	elif params.get('action') == 'search_context':
-		s = params.get('s')
-		show_list(MovieAPI.search(s.decode('utf-8')))
-
-	elif params.get('action') == 'catalog':
-		dialog_action(dialog_action_case.catalog, settings)
-
-	elif params.get('action') == 'show_category':
-		if params.get('category') == 'popular':
-			show_list(MovieAPI.popular())
-		if params.get('category') == 'top_rated':
-			show_list(MovieAPI.top_rated())
-		if params.get('category') == 'popular_tv':
-			show_list(MovieAPI.popular_tv())
-		if params.get('category') == 'top_rated_tv':
-			show_list(MovieAPI.top_rated_tv())
-
-	elif params.get('action') == 'show_similar':
-		listing = MovieAPI.show_similar(params.get('tmdb'))
-		log.debug(listing)
-		show_list(listing)
-
-	elif params.get('action') == 'add_media':
-		title = urllib.unquote_plus(params.get('title')).decode('utf-8')
-		imdb = params.get('imdb')
-
-		if getSetting('role').decode('utf-8') == u'клиент' and params.get('norecursive'):
-			force_library_update(settings, params)
-
-		import json
-		found = None
-
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-		try:
-			for r in result['result']['movies']:
-				if r['imdbnumber'] == imdb:
-					found = 'movie'
-					break
-		except KeyError:
-			debug('KeyError: Movies not found')
-
-		if not found:
-			req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
-			result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-			try:
-				for r in result['result']['tvshows']:
-					if r['imdbnumber'] == imdb:
-						found = 'tvshow'
-						break
-			except KeyError:
-				debug('KeyError: TVShows not found')
-
-		dialog = xbmcgui.Dialog()
-		if found == 'movie':
-			if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
-				#with filesystem.fopen(r['file'], 'r') as strm:
-				#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
-				xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
-		elif found == 'tvshow':
-			if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):
-				xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % r['file'].encode('utf-8'))
-		elif not params.get('norecursive'):
-			if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
-				from service import add_media
-				add_media(title, imdb, settings)
-
-	else:
-		menu_items = [u'Генерировать .strm и .nfo файлы',
-		              u'Создать источники',
-		              u'Настройки',
-		              u'Поиск',
-		              u'Каталог'
-		]
-		menu_actions = ['generate',
-		                'sources',
-						'settings',
-						'search',
-						'catalog'
-		]
-
-		if params.get('menu') in menu_actions:
-			dialog_action(menu_actions.index(params.get('menu')), settings, params)
-		else:
-			indx = 0
-			addon_handle = int(sys.argv[1])
-			for menu in menu_items:
-				li = xbmcgui.ListItem(menu)
-				url = 'plugin://script.media.aggregator/?menu=' + menu_actions[indx]
-				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=indx > dialog_action_case.settings)
-				indx += 1
-
-			xbmcplugin.endOfDirectory(addon_handle)
-
-		'''
-		while True:
-			dialog = xbmcgui.Dialog()
-			action = dialog.select(u'Выберите опцию:', menu_items)
-
-			if dialog_action(action, settings):
-				break
-		'''
 
 if __name__ == '__main__':
 	main()

@@ -15,7 +15,6 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import anidub, hdclub, nnmclub, rutor, soap4me
 import filesystem
 try:
 	import player
@@ -111,127 +110,17 @@ def addon_data_path():
 	else:
 		return _addondir
 
-# ------------------------------------------------------------------------------------------------------------------- #
-def update_service(show_progress=False):
-
-	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
-	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
-	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
-
-	settings			= player.load_settings()
-
-	if show_progress:
-		info_dialog = xbmcgui.DialogProgressBG()
-		info_dialog.create(settings.addon_name)
-		settings.progress_dialog = info_dialog
-	
-	if anidub_enable:
-		anidub.run(settings)
-
-	if hdclub_enable:
-		hdclub.run(settings)
-
-	if rutor_enable:
-		import rutor
-		rutor.run(settings)
-
-	if nnmclub_enable:
-		addon = Addon('settings2.xml')
-
-		try:
-			settings.nnmclub_hours = int(math.ceil((time() - float(addon.getSetting('nnm_last_generate'))) / 3600.0))
-		except BaseException as e:
-			settings.nnmclub_hours = 168
-			log.print_tb(e)
-
-		if settings.nnmclub_hours > 168:
-			settings.nnmclub_hours = 168
-
-		log.debug('NNM hours: ' + str(settings.nnmclub_hours))
-
-		addon.setSetting('nnm_last_generate', str(time()))
-		nnmclub.run(settings)
-
-	if soap4me_enable:
-		import soap4me
-		soap4me.run(settings)
-
-	if show_progress:
-		info_dialog.update(0, '', '')
-		info_dialog.close()
-
-	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable:
-		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video")')
-
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def chunks(l, n):
-	"""Yield successive n-sized chunks from l."""
-	for i in xrange(0, len(l), n):
-		yield l[i:i + n]
+def call_bg(action, params = {}):
+	params['action'] = action
 
+	for key, value in params.iteritems(): 
+		if isinstance(value, unicode):
+			params[key] = value.encode('utf-8')
+	url = 'plugin://script.media.aggregator/?' + urllib.urlencode(params)
+	xbmc.executebuiltin('RunPlugin("%s")' % url)
 
-# ------------------------------------------------------------------------------------------------------------------- #
-def scrape_nnm():
-	settings = player.load_settings()
-	data_path = settings.torrents_path()
-
-	if not filesystem.exists(filesystem.join(data_path, 'nnmclub')):
-		return
-
-	hashes = []
-	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
-		if torr.endswith('.torrent'):
-			try:
-				from base import TorrentPlayer
-				tp = TorrentPlayer()
-				tp.AddTorrent(filesystem.join(data_path, 'nnmclub', torr))
-				data = tp.GetLastTorrentData()
-				if data:
-					hashes.append((data['announce'], data['info_hash'], torr.replace('.torrent', '.stat')))
-			except BaseException as e:
-				log.print_tb(e)
-
-	for chunk in chunks(hashes, 32):
-		import scraper
-		try:
-			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
-		except RuntimeError as RunE:
-			if '414 status code returned' in RunE.message:
-				for c in chunks(chunk, 16):
-					try:
-						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c])
-						process_chunk(c, data_path, seeds_peers)
-					except BaseException as e:
-						log.print_tb(e)
-			continue
-		except BaseException as e:
-			log.print_tb(e)
-			continue
-
-		process_chunk(chunk, data_path, seeds_peers)
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def process_chunk(chunk, data_path, seeds_peers):
-	import json
-
-	for item in chunk:
-		filename = filesystem.join(data_path, 'nnmclub', item[2])
-		remove_file = False
-		with filesystem.fopen(filename, 'w') as stat_file:
-			try:
-				json.dump(seeds_peers[item[1]], stat_file)
-			except KeyError:
-				remove_file = True
-		if remove_file:
-			filesystem.remove(filename)
-
-
-# ------------------------------------------------------------------------------------------------------------------- #
 def update_case():
 	# Init
 	if not hasattr(update_case, 'first_start'):
@@ -254,7 +143,8 @@ def update_case():
 		log.debug('User action!!!')
 
 		filesystem.remove(path)
-		update_service(show_progress=True)
+		call_bg('update_service', {'show_progress': True})
+
 		update_case.first_start = False
 		return
 
@@ -264,7 +154,8 @@ def update_case():
 			try:
 				log.debug("Persistent Update Service starting...")
 				log.debug(_addon.getSetting('service_startup'))
-				update_service(show_progress=False)
+				#update_service(show_progress=False)
+				call_bg('update_service', {	'show_progress': False })
 			except BaseException as e:
 				log.print_tb(e)
 			finally:
@@ -275,7 +166,8 @@ def update_case():
 		if _addon.getSetting('service_generate_persistent') == 'true':
 			try:
 				update_case.prev_generate_time = time()
-				update_service(show_progress=False)
+				#update_service(show_progress=False)
+				call_bg('update_service', {'show_progress': False})
 				log.debug('Update List at %s' % asctime(localtime(update_case.prev_generate_time)))
 				log.debug('Next Update in %s' % strftime("%H:%M:%S", gmtime(every)))
 			except BaseException as e:
@@ -289,7 +181,8 @@ def scrape_case():
 	# Init
 	if not hasattr(scrape_case, 'prev_scrape_time'):
 		try:
-			scrape_nnm()
+			#scrape_nnm()
+			call_bg('scrape_nnm')
 			log.debug('scrape_nnm at %s' % asctime())
 		except BaseException as e:
 			log.print_tb(e)
@@ -299,99 +192,13 @@ def scrape_case():
 	if time() >= scrape_case.prev_scrape_time + scrape_every:
 		try:
 			scrape_case.prev_scrape_time = time()
-			scrape_nnm()
+			#scrape_nnm()
+			call_bg('scrape_nnm')
+
 			log.debug('scrape_nnm at %s' % asctime())
 		except BaseException as e:
 			log.print_tb(e)
 
-
-# ------------------------------------------------------------------------------------------------------------------- #
-def add_media_process(title, imdb, settings):
-	count = 0
-
-	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
-	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
-	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
-	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
-
-	class RemoteDialogProgress:
-		progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
-
-		def update(self, percent, *args, **kwargs):
-			with filesystem.fopen(self.progress_file_path, 'w') as progress_file:
-				progress_file.write(str(percent) + '\n')
-				progress_file.write('\n'.join(args).encode('utf-8'))
-
-		def close(self):
-			try:
-				filesystem.remove(self.progress_file_path)
-			except: pass
-
-
-	settings.progress_dialog = RemoteDialogProgress()
-
-	p = []
-
-	try:
-		if hdclub_enable:
-			c = hdclub.search_generate(title, imdb, settings, p)
-			count += c
-		if rutor_enable:
-			c = rutor.search_generate(title, imdb, settings, p)
-			count += c
-		if nnmclub_enable:
-			c = nnmclub.search_generate(title, imdb, settings, p)
-			count += c
-		if soap4me_enable:
-			count += soap4me.search_generate(title, imdb, settings)
-	except BaseException as e:
-		log.print_tb(e)
-
-	if p:
-		path = filesystem.join(addon_data_path(), imdb + '.strm_path')
-		with filesystem.fopen(path, 'w') as f:
-			f.write(p[0].encode('utf-8'))
-
-	settings.progress_dialog.close()
-
-	if count:
-		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			if p:
-				path = p[0]
-				
-				if path.endswith('.strm'):
-					type = 'movies'
-				else:
-					type = 'tvshows'
-
-				base_path = filesystem.dirname(p[0])
-
-				from sources import Sources
-				srcs = Sources()
-				for src in srcs.get('video', normalize=False):
-					src_path_basename = filesystem.basename(src.path.rstrip('\\/'))
-					if src_path_basename == base_path:  #base_path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
-						path_update = src.path
-						if type == 'tvshows':
-							if src.path.startswith('smb://'):
-								path_update = src.path
-								path_update = path_update.strip('\\/') + '/' + filesystem.basename(path)
-							else:
-								path_update = filesystem.join(src.path, filesystem.basename(path))
-						log.debug(path_update)
-						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'))
-
-				#xbmc.executebuiltin('UpdateLibrary("video")')
-			else:
-				xbmc.executebuiltin('UpdateLibrary("video")')
-
-			xbmc.sleep(250)
-			while xbmc.getCondVisibility('Library.IsScanningVideo'):
-				xbmc.sleep(100)
-
-	path = filesystem.join(addon_data_path(), imdb + '.ended')
-	with filesystem.fopen(path, 'w') as f:
-		f.write(str(count))
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -411,7 +218,7 @@ def add_media_case():
 					log.debug(title)
 
 					if title and imdb:
-						add_media_process(title, imdb, player.load_settings())
+						call_bg( 'add_media_process', {'title': title, 'imdb': imdb} )
 					else:
 						break
 				except BaseException as e:
@@ -422,8 +229,8 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
-	#import vsdbg
-	#vsdbg._bp()
+	import vsdbg
+	vsdbg._attach(False)
 
 	global _addon
 	_addon = AddonRO()
@@ -472,7 +279,6 @@ def update_library_next_start():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media(title, imdb, settings):
-	#import web_pdb;	web_pdb.set_trace()
 	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
 	if filesystem.exists(ended_path):
 		try:
@@ -563,8 +369,8 @@ def add_media(title, imdb, settings):
 						xbmc.executebuiltin('RunPlugin("%s")' % url)
 					else:
 						dlg.notification(_addon_name,
-										 u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
-										 time=10000)
+											u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
+											time=10000)
 			try:
 				filesystem.remove(ended_path)
 			except: pass

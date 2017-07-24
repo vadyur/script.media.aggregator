@@ -489,9 +489,6 @@ def get_fav_rss_url(f_id, passkey, uid):
 
 
 def run(settings):
-	#import rpdb2
-	#rpdb2.start_embedded_debugger('pw')
-
 	session = create_session(settings)
 
 	passkey = get_passkey(settings, session)
