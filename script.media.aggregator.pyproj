@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{a1163bd6-35d4-47e7-908b-be0a65c3f951}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>hdclub_test.py</StartupFile>
+    <StartupFile>nnmclub_test.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>c:\Users\vd\AppData\Roaming\Kodi\addons\script.media.aggregator\</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -33,6 +33,9 @@ VSDEV=1</Environment>
     <Compile Include="afteractions.py" />
     <Compile Include="anidub.py" />
     <Compile Include="anidub_test.py" />
+    <Compile Include="backgrounds.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="base.py" />
     <Compile Include="bencode.py" />
     <Compile Include="brkpnt.py" />
@@ -47,6 +50,9 @@ VSDEV=1</Environment>
     <Compile Include="jsonrpc_test.py" />
     <Compile Include="kodidb.py" />
     <Compile Include="log.py" />
+    <Compile Include="dispatcher.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="movieapi.py" />
     <Compile Include="nforeader.py" />
     <Compile Include="nfowriter.py" />
