@@ -32,7 +32,7 @@ def dispatch():
 	from player import load_settings
 
 	import vsdbg
-	vsdbg._bp()
+	#vsdbg._bp()
 	
 	if 'torrent' in params:
 		from player import play_torrent
@@ -84,6 +84,9 @@ def dispatch():
 		import urllib
 		title = urllib.unquote_plus(title)
 		title = title.decode('utf-8')
+	
+		vsdbg._bp()
+
 		add_media_process(title, params.get('imdb'))
 	
 	else:
