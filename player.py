@@ -77,6 +77,7 @@ def load_settings():
 	torrent_path = getSetting('torrent_path')
 
 	kp_googlecache = getSetting('kp_googlecache') == 'true'
+	rutor_nosd = getSetting('rutor_nosd') == 'true'
 
 	from settings import Settings
 	settings = Settings(base_path,
@@ -93,6 +94,7 @@ def load_settings():
 	                    nnmclub_password 	=nnmclub_password,
 	                    rutor_domain        =rutor_domain,
 	                    rutor_filter        =rutor_filter,
+						rutor_nosd			=rutor_nosd,
 	                    soap4me_login		=soap4me_login,
 	                    soap4me_password	=soap4me_password,
 						soap4me_rss			=soap4me_rss,
