@@ -74,7 +74,10 @@ def xbmcvfs_path(path):
 
 def exists(path):
 	try:
-		return xbmcvfs.exists(xbmcvfs_path(path))
+		if '://' in path:
+			return xbmcvfs.exists(xbmcvfs_path(path))
+		else:
+			return os.path.exists(get_path(path))
 	except BaseException as e:
 		return os.path.exists(get_path(path))
 

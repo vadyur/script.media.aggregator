@@ -8,6 +8,13 @@ import inspect
 
 prefix = 'script.media.aggregator'
 
+import sys
+try:
+	handle = int(sys.argv[1])
+	prefix += ': ' + sys.argv[1]
+except:
+	pass
+
 def debug(s, line = None):
 
 	if isinstance(s, BaseException):

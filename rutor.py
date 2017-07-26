@@ -196,6 +196,24 @@ class DescriptionParser(DescriptionParserBase):
 
 		if 'video' in self._dict:
 			self._dict['video'] = self._dict['video'].replace('|', ',')
+
+			if settings.rutor_nosd:
+				video = self._dict['video']
+				parts = video.split(',')
+
+				for part in parts:
+					part = part.strip()
+
+					if 'XviD' in part:
+						return False
+
+					m = re.search(ur'(\d+)[xXхХ](\d+)', part)
+					if m:
+						w = int(m.group(1))
+						#h = int(m.group(2))
+						if w < 1280:
+							return False
+			
 		
 		count_id = 0
 		for a in self.soup.select('a[href*="www.imdb.com/title/"]'):
@@ -534,8 +552,11 @@ def search_results(imdb, settings, url):
 	enumerator.process_page(url)
 
 	for post in enumerator.items():
-		if 'seeds' in post and int(post['seeds']) < 5:
-			continue
+		try:
+			if 'seeds' in post and int(post['seeds']) < 5:
+				continue
+		except ValueError:
+			pass
 
 		title = post['a'].get_text()
 		dl_link = str('http://rutor.info' + post['dl_link'])
@@ -584,6 +605,6 @@ if __name__ == '__main__':
 	settings = Settings('../../..')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
 	settings.rutor_domain = 'rutor.info'
-	#run(settings)
+	run(settings)
 
-	search_generate(None, 'tt2948356', settings)
+	#search_generate(None, 'tt2948356', settings)

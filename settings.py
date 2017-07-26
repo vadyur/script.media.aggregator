@@ -45,7 +45,8 @@ class Settings:
 	             tvshows_save		= True,
 	             animation_tvshows_save = True,
 	             torrent_path        = '',
-				 kp_googlecache     =False):
+				 kp_googlecache     =False,
+				 rutor_nosd			= True):
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -93,6 +94,7 @@ class Settings:
 		self.torrent_path           = torrent_path
 
 		self.kp_googlecache			= kp_googlecache
+		self.rutor_nosd				= rutor_nosd
 		
 		self.progress_dialog		= FakeProgressDlg()
 		

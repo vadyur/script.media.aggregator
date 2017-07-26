@@ -526,19 +526,26 @@ class TorrentPlayer(object):
 		try:
 			return name.decode('utf-8')
 		except UnicodeDecodeError:
-			import chardet
-			enc = chardet.detect(name)
-			#debug('UnicodeDecodeError detected', log.lineno())
-			# debug(enc['confidence'])
-			# debug(enc['encoding'])
-			if enc['confidence'] > 0.7:
-				try:
-					name = name.decode(enc['encoding'])
-				except UnicodeDecodeError:
-					pass
-				return name
-			else:
+			try:
+				import chardet
+				enc = chardet.detect(name)
+				log.debug('confidence: {0}'.format(enc['confidence']))
+				log.debug('encoding: {0}'.format(enc['encoding']))
+				if enc['confidence'] > 0.5:
+					try:
+						name = name.decode(enc['encoding'])
+					except UnicodeDecodeError:
+						pass
+				else:
+					import vsdbg
+					#vsdbg._bp()
+					log.print_tb()
+			except BaseException as e:
+				import vsdbg
+				#vsdbg._bp()
 				log.print_tb()
+				
+		return name
 
 	def GetLastTorrentData(self):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
