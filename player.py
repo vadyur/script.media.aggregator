@@ -8,7 +8,7 @@ import xbmcaddon
 import xbmcgui
 import xbmcplugin
 
-from log import debug
+from log import debug, print_tb
 import filesystem
 import urllib, time
 
@@ -148,7 +148,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		return play_torrent_variant.resultCancel
 
 	if downloader:
-		downloader.start(True)
+		try:
+			downloader.start(True)
+		except:
+			print_tb()
 
 	torrent_info = None
 	torrent_path = path
@@ -344,7 +347,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
 
 	except TPError as e:
-		log.print_tb(e)
+		print_tb(e)
 		return play_torrent_variant.resultTryNext
 
 	finally:
@@ -366,7 +369,8 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(),
 	                       torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
-		torr_downloader.download()
+		if not torr_downloader.download():
+			return None
 		torr_downloader.move_file_to(path)
 		torr_downloader = None
 
