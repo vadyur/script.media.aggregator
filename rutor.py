@@ -197,7 +197,7 @@ class DescriptionParser(DescriptionParserBase):
 		if 'video' in self._dict:
 			self._dict['video'] = self._dict['video'].replace('|', ',')
 
-			if settings.rutor_nosd:
+			if self.settings.rutor_nosd:
 				video = self._dict['video']
 				parts = video.split(',')
 
@@ -213,6 +213,8 @@ class DescriptionParser(DescriptionParserBase):
 						#h = int(m.group(2))
 						if w < 1280:
 							return False
+		else:
+			pass
 			
 		
 		count_id = 0
