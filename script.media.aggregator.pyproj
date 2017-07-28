@@ -36,11 +36,12 @@ VSDEV=1</Environment>
     <Compile Include="backgrounds.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="base.py" />
+    <Compile Include="base1.py" />
     <Compile Include="bencode.py" />
     <Compile Include="brkpnt.py" />
     <Compile Include="context.py" />
     <Compile Include="context_search.py" />
+    <Compile Include="context_show_similar.py" />
     <Compile Include="countries.py" />
     <Compile Include="downloader.py" />
     <Compile Include="downloader_test.py" />

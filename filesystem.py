@@ -75,6 +75,10 @@ def xbmcvfs_path(path):
 def exists(path):
 	try:
 		if '://' in path:
+			import stat
+			if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
+				return True
+
 			return xbmcvfs.exists(xbmcvfs_path(path))
 		else:
 			return os.path.exists(get_path(path))

@@ -247,48 +247,57 @@ def debug_info_label(s):
 	debug('%s: ' % s + xbmc.getInfoLabel(s))
 	debug('%s: ' % s + sys.listitem.getProperty(s.split('.')[-1]))
 
-def main():
-	import vsdbg
-	vsdbg._bp()
-
+def get_path_name():
 	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
 	name = xbmc.getInfoLabel('ListItem.FileName')
 	dbpath = sys.listitem.getfilename()
-
+	
 	if not path or not name:
 		if not dbpath.startswith('videodb://') and dbpath.endswith('.strm'):
 			path = dbpath
-
+	
 	if path and not name:
 		name = path.replace('\\', '/').split('/')[-1]
-
+	
 	if not path or not name:
 		if dbpath.startswith('videodb://'):
 			dbpath = dbpath.split('://')[-1]
 			dbpath = dbpath.split('?')[0]
+			dbpath = dbpath.rstrip('/')
 			parts = dbpath.split('/')
 			dbtype = parts[0]
 			dbid = int(parts[-1])
-
+	
 			import json
 			path = None
 			if dbtype == 'movies':
 				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
 				path = result[u'result'][u'moviedetails'][u'file']
-			if dbtype == 'tvshows':
-				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+			if dbtype == 'tvshows' or dbtype == 'inprogresstvshows':
+				if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
+					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+					res_type = 'episodedetails'
+				else:
+					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": { "properties": ["file"], "tvshowid": dbid }, "id": 13}
+					res_type = 'tvshowdetails'
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-				path = result[u'result'][u'episodedetails'][u'file']
-
+				path = result[u'result'][res_type][u'file']
+	
 			try:
 				if path:
 					path = path.encode('utf-8')
 			except UnicodeDecodeError:
 				pass
-
+	
 			name = path.replace('\\', '/').split('/')[-1]
+	return path, name
 
+def main():
+	import vsdbg
+	vsdbg._bp()
+
+	path, name = get_path_name()
 		
 	import player
 	settings = player.load_settings()

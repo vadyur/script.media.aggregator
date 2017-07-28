@@ -4,7 +4,6 @@ from log import debug
 
 
 import os, re, filesystem
-from bs4 import BeautifulSoup
 from settings import *
 import urllib
 from movieapi import *
@@ -468,6 +467,8 @@ class DescriptionParserBase(Informer):
 
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
+
+		from bs4 import BeautifulSoup
 
 		self._dict = dict()
 		self._dict['full_title'] = full_title

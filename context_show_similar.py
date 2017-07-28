@@ -1,13 +1,34 @@
 from log import debug
-import xbmc
 
 def show_similar():
+	import xbmc
+
+	import vsdbg
+	vsdbg._bp()
+	
 	imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
 	type='movie'
 
-	if not imdb_id and xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
+	from context import get_path_name
+	path, name = get_path_name()
+
+	FileNameAndPath = path.decode('utf-8')
+	dbtype = xbmc.getInfoLabel('ListItem.DBTYPE')
+
+	if 'Anime' in path and not name:
+		import filesystem
+		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
+			import sys
+			it = sys.listitem.getVideoInfoTag()
+
+			import shikicore
+			oo = shikicore.animes_search(it.getOriginalTitle())
+			if oo:
+				pass
+
+	if not imdb_id and dbtype == 'episode':
 		from nforeader import NFOReader
-		nfo_path = xbmc.getInfoLabel('ListItem.FileNameAndPath').replace('.strm', '.nfo').decode('utf-8')
+		nfo_path = FileNameAndPath.replace('.strm', '.nfo')
 		debug(nfo_path)
 		rd = NFOReader(nfo_path, '')
 		tvs_rd = rd.tvs_reader()
@@ -22,7 +43,7 @@ def show_similar():
 			tmdb_id = res[0].tmdb_id()
 			xbmc.executebuiltin('Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % tmdb_id)
 			return True
-			
+
 	return False
 
 if __name__ == '__main__':
