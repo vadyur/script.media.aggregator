@@ -36,7 +36,7 @@ VSDEV=1</Environment>
     <Compile Include="backgrounds.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="base1.py" />
+    <Compile Include="base.py" />
     <Compile Include="bencode.py" />
     <Compile Include="brkpnt.py" />
     <Compile Include="context.py" />
