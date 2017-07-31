@@ -580,20 +580,23 @@ def dialog_action(action, settings, params=None):
 		addon_handle = int(sys.argv[1])
 		xbmcplugin.setContent(addon_handle, 'movies')
 
-		listing = {
+		listing = [
 
-			'popular': u'Популярные',
-			'top_rated': u'Рейтинговые',
-			'popular_tv': u'Популярные сериалы',
-			'top_rated_tv': u'Рейтинговые сериалы'
-		}
+			('popular', u'Популярные'),
+			('top_rated', u'Рейтинговые'),
+			('popular_tv', u'Популярные сериалы'),
+			('top_rated_tv', u'Рейтинговые сериалы')
+		]
+
+		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
+			listing.append(('anime', u'Аниме (Shikimori.org)' ), )
 
 		for l in listing:
-			li = xbmcgui.ListItem(listing[l])
+			li = xbmcgui.ListItem(l[1])
 			li.setProperty("folder", "true")
 			li.setProperty('IsPlayable', 'false')
 
-			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l
+			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l[0]
 			debug(url)
 			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 
@@ -732,6 +735,10 @@ def action_show_category(params):
 		show_list(MovieAPI.popular_tv())
 	if params.get('category') == 'top_rated_tv':
 		show_list(MovieAPI.top_rated_tv())
+	if params.get('category') == 'anime':
+		uri = 'plugin://plugin.video.shikimori.2/'
+		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+		
 
 def action_search_context(params):
 	from movieapi import MovieAPI

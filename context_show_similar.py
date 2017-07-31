@@ -20,10 +20,15 @@ def show_similar():
 		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
 			import sys
 			it = sys.listitem.getVideoInfoTag()
-
-			import shikicore
-			oo = shikicore.animes_search(it.getOriginalTitle())
-			if oo:
+			
+			try:
+				import shikicore
+				if shikicore.authorize_me():
+					oo = shikicore.animes_search(it.getOriginalTitle())
+					if oo:
+						uri = 'plugin://plugin.video.shikimori.2/?action=similar&id={0}'.format(oo[0]['id'])
+						xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+			except ImportError:
 				pass
 
 	if not imdb_id and dbtype == 'episode':
