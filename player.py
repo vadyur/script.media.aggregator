@@ -683,16 +683,28 @@ def action_add_media(params, settings):
 	
 	import json
 	found = None
+
+	if imdb.startswith('sm') and title:
+		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
+		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		try:
+			for r in result['result']['tvshows']:
+				if r['originaltitle'] == title:
+					found = 'tvshow'
+					break
+		except KeyError:
+			debug('KeyError: Animes not found')
 	
-	req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-	result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-	try:
-		for r in result['result']['movies']:
-			if r['imdbnumber'] == imdb:
-				found = 'movie'
-				break
-	except KeyError:
-		debug('KeyError: Movies not found')
+	if not found:
+		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
+		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		try:
+			for r in result['result']['movies']:
+				if r['imdbnumber'] == imdb:
+					found = 'movie'
+					break
+		except KeyError:
+			debug('KeyError: Movies not found')
 	
 	if not found:
 		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}

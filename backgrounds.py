@@ -149,6 +149,7 @@ def add_media_process(title, imdb):
 
 	settings = load_settings()
 
+	anidub_enable		= getSetting('anidub_enable') == 'true'
 	hdclub_enable		= getSetting('hdclub_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
@@ -173,17 +174,22 @@ def add_media_process(title, imdb):
 	p = []
 
 	try:
-		if hdclub_enable:
-			c = hdclub.search_generate(title, imdb, settings, p)
+		if anidub_enable and imdb.startswith('sm'):
+			c = anidub.search_generate(title, settings, p)
 			count += c
-		if rutor_enable:
-			c = rutor.search_generate(title, imdb, settings, p)
-			count += c
-		if nnmclub_enable:
-			c = nnmclub.search_generate(title, imdb, settings, p)
-			count += c
-		if soap4me_enable:
-			count += soap4me.search_generate(title, imdb, settings)
+
+		if imdb.startswith('tt'):
+			if hdclub_enable:
+				c = hdclub.search_generate(title, imdb, settings, p)
+				count += c
+			if rutor_enable:
+				c = rutor.search_generate(title, imdb, settings, p)
+				count += c
+			if nnmclub_enable:
+				c = nnmclub.search_generate(title, imdb, settings, p)
+				count += c
+			if soap4me_enable:
+				count += soap4me.search_generate(title, imdb, settings)
 	except BaseException as e:
 		log.print_tb(e)
 
