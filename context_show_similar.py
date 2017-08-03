@@ -1,7 +1,7 @@
 from log import debug
 
 def show_similar():
-	import xbmc
+	import xbmc, xbmcgui
 
 	import vsdbg
 	vsdbg._bp()
@@ -26,8 +26,14 @@ def show_similar():
 				if shikicore.authorize_me():
 					oo = shikicore.animes_search(it.getOriginalTitle())
 					if oo:
+						#wname = xbmc.getInfoLabel('System.CurrentWindow')
+						wid = xbmcgui.getCurrentWindowId()
+
 						uri = 'plugin://plugin.video.shikimori.2/?action=similar&id={0}'.format(oo[0]['id'])
-						xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+						if wid == 10000:
+							xbmc.executebuiltin('ActivateWindow(10025,"%s")' % uri)
+						else:
+							xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
 			except ImportError:
 				pass
 
