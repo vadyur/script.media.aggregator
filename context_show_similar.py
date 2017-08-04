@@ -30,10 +30,10 @@ def show_similar():
 						wid = xbmcgui.getCurrentWindowId()
 
 						uri = 'plugin://plugin.video.shikimori.2/?action=similar&id={0}'.format(oo[0]['id'])
-						if wid == 10000:
-							xbmc.executebuiltin('ActivateWindow(10025,"%s")' % uri)
-						else:
+						if wid == 10025:
 							xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+						else:
+							xbmc.executebuiltin('ActivateWindow(10025,"%s")' % uri)
 			except ImportError:
 				pass
 
