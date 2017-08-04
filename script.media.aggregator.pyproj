@@ -23,6 +23,7 @@ VSDEV=1</Environment>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="addon.xml" />
     <Content Include="changelog.txt" />
     <Content Include="fanart.jpg" />
     <Content Include="icon.png" />
@@ -38,7 +39,6 @@ VSDEV=1</Environment>
     </Compile>
     <Compile Include="base.py" />
     <Compile Include="bencode.py" />
-    <Compile Include="brkpnt.py" />
     <Compile Include="context.py" />
     <Compile Include="context_search.py" />
     <Compile Include="context_show_similar.py" />
