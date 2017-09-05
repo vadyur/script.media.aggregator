@@ -621,11 +621,17 @@ class MovieAPI(KinopoiskAPI2):
 		try:
 			for res in MovieAPI.search(orig):
 				r = res.json_data_
-				#print res.get_info()
-				if year and year not in r['release_date']:
+
+				release_date = r.get('release_date')
+				if year and release_date and year not in release_date:
 					continue
-				if orig and ( orig == r['title'] or orig == r['original_title']):
+
+				r_title				= r.get('title')
+				r_original_title	= r.get('original_title')
+
+				if orig and ( orig == r_title or orig == r_original_title):
 					return r['imdb_id']
+
 		except BaseException as e:
 			from log import print_tb
 			print_tb(e)
