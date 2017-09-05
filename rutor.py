@@ -257,7 +257,8 @@ class DescriptionParser(DescriptionParserBase):
 			return False
 
 		if 'imdb_id' not in self._dict:
-			return False
+			if not hasattr(self.settings, 'no_skip_by_imdb'):
+				return False
 
 		for det in self.soup.select('#details'):
 			tr = det.find('tr', recursive=False)
@@ -547,7 +548,7 @@ class PostsEnumerator(object):
 		return self._items
 
 
-def search_results(imdb, settings, url):
+def search_results(imdb, settings, url, what=None):
 	result = []
 
 	enumerator = PostsEnumerator(settings)
@@ -555,7 +556,7 @@ def search_results(imdb, settings, url):
 
 	for post in enumerator.items():
 		try:
-			if 'seeds' in post and int(post['seeds']) < 5:
+			if 'seeds' in post and int(post['seeds']) < 1:
 				continue
 		except ValueError:
 			pass
@@ -564,12 +565,20 @@ def search_results(imdb, settings, url):
 		dl_link = str('http://rutor.info' + post['dl_link'])
 		link = get_source_url(dl_link)
 
+		import copy
+		s = copy.copy(settings)
+		if not imdb:
+			s.no_skip_by_imdb = True
+
 		if is_tvshow(title):
-			parser = DescriptionParserRSSTVShows(title, link, settings)	#parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+			parser = DescriptionParserRSSTVShows(title, link, s)	#parser = DescriptionParser(post['a'], settings=settings, tracker=True)
 		else:
-			parser = DescriptionParserRSS(title, link, settings)
-		if parser.parsed() and parser.get_value('imdb_id') == imdb:
-			result.append({'parser': parser, 'link': dl_link})
+			parser = DescriptionParserRSS(title, link, s)
+		if parser.parsed():
+			if (imdb and parser.get_value('imdb_id') == imdb):
+				result.append({'parser': parser, 'link': dl_link})
+			elif what and parser.Dict().get('title') == what:
+				result.append({'parser': parser, 'link': dl_link})
 
 	return result
 
@@ -582,6 +591,13 @@ def search_generate(what, imdb, settings, path_out):
 		result1 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie', path_out)
+
+		# 0/5/000/0 - Наше кино, поиск по названию в разделе
+		if not result1:
+			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
+			result1 = search_results(None, settings, url, what)
+			with filesystem.save_make_chdir_context(settings.movies_path()):
+				count += make_search_strms(result1, settings, 'movie', path_out)
 
 	if settings.animation_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
