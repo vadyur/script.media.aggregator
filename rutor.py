@@ -188,7 +188,9 @@ class DescriptionParser(DescriptionParserBase):
 						tag = self.get_tag(key+':')
 						if tag and desc and tag not in self._dict:
 							self._dict[tag] = desc
-			except TypeError:
+			except BaseException as e:
+				debug('No parse #details')
+				debug(e)
 				pass
 
 		if 'genre' in self._dict:
