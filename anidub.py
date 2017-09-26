@@ -92,6 +92,35 @@ class DescriptionParser(DescriptionParserBase):
 			return int(found)
 		except AttributeError:
 			return 1
+
+	def date_added_duration(self):
+		ul = self.soup.find('ul', class_='story_inf')
+		if ul:
+			for li in ul.find_all('li'):
+				txt = li.get_text()
+				parts = txt.split(':')
+				if len(parts) > 1 and parts[0] == u'Дата':
+					date, t = parts[1].split(',')	# 		d	u' 30-09-2012'	unicode
+
+					from datetime import datetime, timedelta
+
+					day = timedelta(1)
+					yesterday = datetime.today() - day
+
+					#date = ' 30-09-2012'
+
+					if u'Сегодня' in date:
+						d = datetime.today()
+					elif u'Вчера' in date:
+						d = yesterday
+					else:
+						try:
+							d = datetime.strptime(date.strip(), '%d-%m-%Y')
+						except TypeError:
+							d = datetime.today()
+
+					dt = datetime.today() - d
+					return dt
 		
 	#==============================================================================================
 	def parse(self):
@@ -158,7 +187,9 @@ class DescriptionParser(DescriptionParserBase):
 		if len(fanart) != 0:
 			self._dict['fanart'] = fanart
 		else:
-			return False
+			dt = self.date_added_duration()
+			if dt and dt.days <= 14:
+				return False
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
@@ -178,8 +209,11 @@ class DescriptionParser(DescriptionParserBase):
 
 ###################################################################################################
 def write_tvshow_nfo(parser, tvshow_api):
-	if write_tvshow_nfo.favorites:
-		parser.Dict().get('tag', []).append('favorites')
+	try:
+		if write_tvshow_nfo.favorites:
+			parser.Dict().get('tag', []).append('favorites')
+	except:
+		pass
 
 	debug(filesystem.getcwd().encode('utf-8'))
 	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
