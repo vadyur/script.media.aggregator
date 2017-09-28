@@ -15,6 +15,24 @@ from movieapi import *
 from nfowriter import *
 from strmwriter import *
 
+def real_url(url):
+	import urlparse
+	res = urlparse.urlparse(url)
+	res = urlparse.ParseResult('https', 'elitehd.org', res.path, res.params, res.query, res.fragment)
+	res = urlparse.urlunparse(res)
+	debug('real_url(%s, ...) return %s' % (url, res))
+	return res
+
+
+def origin_url(url):
+	import urlparse
+	res = urlparse.urlparse(url)
+	res = urlparse.ParseResult('http', 'hdclub.org', res.path, res.params, res.query, res.fragment)
+	res = urlparse.urlunparse(res)
+	debug('original_url(%s, ...) return %s' % (url, res))
+	return res
+
+
 class DescriptionParser(DescriptionParserBase):
 
 	def __init__(self, full_title, content, link, settings, imdb=None):
@@ -24,7 +42,7 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['imdb_id'] = imdb
 
 	def link(self):
-		return self._link
+		return origin_url(self._link)
 
 	def get_tag(self, x):
 		return {
@@ -119,7 +137,7 @@ def write_movie(item, settings):
 			return
 		
 		debug('filename: ' + filename.encode('utf-8'))
-		STRMWriter(item.link).write(filename, parser=parser, settings=settings)
+		STRMWriter(origin_url(item.link)).write(filename, parser=parser, settings=settings)
 		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
 		from downloader import TorrentDownloader
 		TorrentDownloader(item.link, settings.torrents_path(), settings).download()
@@ -130,16 +148,17 @@ def write_movie(item, settings):
 		
 def write_movies(rss_url, path, settings):
 	with filesystem.save_make_chdir_context(path):
-		d = feedparser.parse(rss_url)
+		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
-		settings.progress_dialog.update(0, 'hdclub', path)
+		settings.progress_dialog.update(0, 'elitehd', path)
 
 		for item in d.entries:
+			item.link = origin_url(item.link)
 			write_movie(item, settings)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'hdclub', path)
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'elitehd', path)
 
 
 def write_tvshow(item, settings):
@@ -161,20 +180,21 @@ def write_tvshow(item, settings):
 def write_tvshows(rss_url, path, settings):
 
 	with filesystem.save_make_chdir_context(path):
-		d = feedparser.parse(rss_url)
+		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
-		settings.progress_dialog.update(0, 'hdclub', path)
+		settings.progress_dialog.update(0, 'elitehd', path)
 
 		for item in d.entries:
+			item.link = origin_url(item.link)
 			write_tvshow(item, settings)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'hdclub', path)
+			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'elitehd', path)
 
 
 def get_rss_url(f_id, passkey):
-	return 'http://hdclub.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey
+	return 'https://hdclub.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey
 
 
 def run(settings):
@@ -192,7 +212,7 @@ def run(settings):
 
 
 def make_search_url(what, IDs, imdb, settings):
-	url = u'http://hdclub.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
+	url = u'https://hdclub.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
 	url += '?c=' + str(IDs)
 	url += '&passkey=' + settings.hdclub_passkey
 	if imdb is None:
@@ -202,6 +222,8 @@ def make_search_url(what, IDs, imdb, settings):
 
 
 def search_generate(what, imdb, settings, path_out):
+
+	return 0	# TODO login with captcha
 
 	count = 0
 	session = requests.session()
@@ -239,7 +261,7 @@ def make_search_strms(result, settings, type, path_out):
 		link = item['link']
 		parser = item['parser']
 		if link:
-			settings.progress_dialog.update(count * 100 / len(result), 'hdclub', parser.get_value('full_title'))
+			settings.progress_dialog.update(count * 100 / len(result), 'elitehd', parser.get_value('full_title'))
 
 			if type == 'movie':
 				import movieapi
@@ -266,7 +288,7 @@ class TrackerPostsEnumerator(object):
 		return self._items
 
 	def process_page(self, url):
-		request = self._s.get(url)
+		request = self._s.get(real_url(url))
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -311,7 +333,7 @@ def search_results(imdb, session, settings, url, cat):
 
 		# full_title, content, link, settings
 
-		page = requests.get(make_full_url(post['a']))
+		page = requests.get(real_url(make_full_url(post['a'])))
 
 		soup = BeautifulSoup(page.text, "html.parser")
 
@@ -321,7 +343,6 @@ def search_results(imdb, session, settings, url, cat):
 		for td in tbl.find_all('td', class_='heading_r'):
 			content += td.prettify()
 
-		# <img src="imdb/imdb_tt3748528.gif" alt="IMDB" title="IMDB" border="0" /></a> <a href="http://www.kinopoisk.ru/level/1/film/840152/" rel="nofollow"><img src="http://rating.kinopoisk.ru/840152.gif" alt="Кинопоиск" title="Кинопоиск" border="0" /></a> <a href="http://www.hdclub.ua/movies/catalog/rogue-one:-a-star-wars-story/2891" title="http://www.hdclub.ua/movies/catalog/rogue-one:-a-star-wars-story/2891"><img class="linked-image" src="http://www.hdclub.ua/button/movie/2891.png" border="0" alt="http://www.hdclub.ua/button/movie/2891.png" title="http://www.hdclub.ua/button/movie/2891.png" /></a><br />
 		img = soup.find('img', attrs = {'title': "IMDB"})
 		if img:
 			content += img.parent.prettify()
@@ -329,9 +350,6 @@ def search_results(imdb, session, settings, url, cat):
 		img = soup.find('img', attrs = {'title': u"Кинопоиск"})
 		if img:
 			content += img.parent.prettify()
-
-		#with filesystem.fopen('hdclub.' + imdb + '.html', 'w') as html:
-		#	html.write(content.encode('utf-8'))
 
 		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings, imdb=imdb)
 		
@@ -349,7 +367,7 @@ def download_torrent(url, path, settings):
 
 	try:
 		import shutil
-		response = urllib2.urlopen(url)
+		response = urllib2.urlopen(real_url(url))
 		with filesystem.fopen(path, 'wb') as f:
 			shutil.copyfileobj(response, f)
 		return True

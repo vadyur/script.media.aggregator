@@ -33,7 +33,7 @@
         <setting label="    %f - путь к проигрываемому файлу" type="text" enable="false" visible="eq(-4,true)" />
         <setting label="    %F - путь к проигрываемому файлу, относительно каталага загрузки" type="text" enable="false" visible="eq(-5,true)" />
         <setting label="    %u - URL раздачи" type="text" enable="false" visible="eq(-6,true)" />
-        <setting label="    %s - короткое имя источника (anidub, hdclub, nnmclub)" type="text" enable="false" visible="eq(-7,true)" />
+        <setting label="    %s - короткое имя источника (anidub, elitehd, nnmclub)" type="text" enable="false" visible="eq(-7,true)" />
         <setting label="    %p - количество загруженного (%)" type="text" enable="false" visible="eq(-8,true)" />
         <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" visible="eq(-9,true)" />
         <setting label="Видео файлы по завершению просмотра" type="select" id="action_files" values="оставить|переместить|удалить" default="оставить"/>
@@ -72,9 +72,9 @@
 		  <setting label="Избранное" type="bool" id="anidub_favorite" enable="eq(-5,true)+!eq(-2,'')" default="true"/>
     </category>
   
-    <category label="HDClub">
+    <category label="EliteHD(HDClub)">
 		  <setting label="Использовать" type="bool" id="hdclub_enable" default="false"/>
-		  <setting label="Получить Passkey можно перейдя на 'http://hdclub.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
+		  <setting label="Получить Passkey можно перейдя на 'https://elitehd.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
       <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
     </category>
   
