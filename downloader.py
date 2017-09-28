@@ -12,7 +12,7 @@ class Downloader(object):
 		if 'nnm-club' in self.url:
 			return 'nnmclub'
 		elif 'hdclub' in self.url:
-			return 'hdclub'
+			return 'elitehd'
 		elif 'anidub' in self.url:
 			return 'anidub'
 		elif 'rutor' in self.url:
