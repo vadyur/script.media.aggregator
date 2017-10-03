@@ -522,6 +522,9 @@ class TorrentPlayer(object):
 		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 		return filesystem.exists(self.path)
 
+	def updateCheckingProgress(self, progressBar):
+		pass
+
 	@staticmethod
 	def Name(name):
 		try:
