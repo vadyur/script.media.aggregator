@@ -256,6 +256,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		while not info_dialog.iscanceled() and not player.CheckTorrentAdded():
 			xbmc.sleep(1000)
 			start_time = time.time()
+			player.updateCheckingProgress(info_dialog)
 
 		info_dialog.update(0, 'Media Aggregator: буфферизация')
 
