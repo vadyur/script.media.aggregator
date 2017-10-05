@@ -304,6 +304,9 @@ def get_session(settings):
 	return s
 	
 def download_torrent(url, path, settings):
+	from base import save_hashes
+	save_hashes(path)
+
 	url = urllib2.unquote(url)
 	debug('download_torrent:' + url)
 
@@ -338,6 +341,7 @@ def download_torrent(url, path, settings):
 			with filesystem.fopen(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
 					torr.write(chunk)
+			save_hashes(path)
 			return True
 		except: 
 			pass

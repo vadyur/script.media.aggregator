@@ -585,6 +585,8 @@ def find_direct_link(url, settings):
 
 
 def download_torrent(url, path, settings):
+	from base import save_hashes
+	save_hashes(path)
 	import shutil
 	url = urllib2.unquote(url)
 	debug('download_torrent:' + url)
@@ -607,7 +609,8 @@ def download_torrent(url, path, settings):
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
 			shutil.copyfileobj(response, f)
-			return True
+		save_hashes(path)
+		return True
 
 		#r = requests.head(link)
 		#debug(r.headers)
@@ -630,6 +633,7 @@ def download_torrent(url, path, settings):
 			with filesystem.fopen(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
 					torr.write(chunk)
+			save_hashes(path)
 			return True
 		except:
 			pass

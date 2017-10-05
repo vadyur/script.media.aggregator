@@ -446,11 +446,13 @@ def get_magnet_link(url):
 
 
 def download_torrent(url, path, settings):
+	from base import save_hashes
+	save_hashes(path)
+
 	url = urllib2.unquote(url)
 	debug('download_torrent:' + url)
 
 	page = requests.get(real_url(url, settings))
-	# debug(page.text.encode('cp1251'))
 
 	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 	a = soup.select('#download > a')
@@ -472,6 +474,8 @@ def download_torrent(url, path, settings):
 			with filesystem.fopen(path, 'wb') as torr:
 				for chunk in r.iter_content(100000):
 					torr.write(chunk)
+
+			save_hashes(path)
 			return True
 		except:
 			pass
@@ -625,6 +629,16 @@ if __name__ == '__main__':
 	settings = Settings('../../..')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
 	settings.rutor_domain = 'rutor.info'
-	run(settings)
+	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
+	settings.torrent_player = 'torrent2http'
+
+	import time
+	from_time = time.time()
+
+	from backgrounds import recheck_torrent_if_need
+
+	#run(settings)
+
+	recheck_torrent_if_need(from_time, settings)
 
 	#search_generate(None, 'tt2948356', settings)
