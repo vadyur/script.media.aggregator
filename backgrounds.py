@@ -8,6 +8,62 @@ def addon_data_path():
 	else:
 		return _addondir
 
+def recheck_torrent_if_need(from_time, settings):
+	if settings.torrent_player != 'torrent2http':
+		return
+
+	def check_modify_time(fn):
+		import time, filesystem
+		mt = filesystem.getmtime(fn)
+		if abs(from_time - mt) < 3600:
+			return True
+		return False
+
+	def get_hashes(fn):
+		with filesystem.fopen(fn, 'r') as hf:
+			hashes = hf.readlines()
+			return [ h.strip('\r\n') for h in hashes ]
+		return []
+
+	def rehash_torrent(hashes, torrent_path):
+		import time
+		try:
+			from torrent2httpplayer import Torrent2HTTPPlayer
+			from torrent2http import State
+		except ImportError:
+			return
+
+		player = Torrent2HTTPPlayer(settings)
+		player.AddTorrent(torrent_path)
+		player.GetLastTorrentData()
+		#player.StartBufferFile(0)
+		player._AddTorrent(torrent_path)
+		player.engine.start()
+		f_status = player.engine.file_status(0)
+
+		while True:
+			time.sleep(1.0)
+			status = player.engine.status()
+
+			if status.state in [State.FINISHED, State.SEEDING, State.DOWNLOADING]:
+				break;
+
+		player.engine.wait_on_close()
+		player.close()
+
+	def process_dir(_d):
+		for fn in filesystem.listdir(_d):
+			full_name = filesystem.join(_d, fn)
+			if fn.endswith('.hashes') and check_modify_time(full_name):
+				hashes = get_hashes(full_name)
+				if len(hashes) > 1:
+					rehash_torrent(hashes, full_name.replace('.hashes', ''))
+
+	for d in filesystem.listdir(settings.torrents_path()):
+		dd = filesystem.join(settings.torrents_path(), d)
+		if not filesystem.isfile(dd):
+			process_dir(dd)
+
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
@@ -24,6 +80,9 @@ def update_service(show_progress=False):
 
 	from player import load_settings
 	settings = load_settings()
+
+	import time
+	from_time = time.time()
 
 	if show_progress:
 		import xbmcgui
@@ -73,6 +132,8 @@ def update_service(show_progress=False):
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
+
+	recheck_torrent_if_need(from_time, settings)
 
 
 # ------------------------------------------------------------------------------------------------------------------- #

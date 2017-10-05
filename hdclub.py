@@ -361,6 +361,8 @@ def search_results(imdb, session, settings, url, cat):
 
 
 def download_torrent(url, path, settings):
+	from base import save_hashes
+	save_hashes(path)
 	url = url.replace('details.php', 'download.php')
 	if not 'passkey' in url:
 		url += '&passkey=' + settings.hdclub_passkey
@@ -370,6 +372,7 @@ def download_torrent(url, path, settings):
 		response = urllib2.urlopen(real_url(url))
 		with filesystem.fopen(path, 'wb') as f:
 			shutil.copyfileobj(response, f)
+		save_hashes(path)
 		return True
 	except BaseException as e:
 		print_tb(e)
