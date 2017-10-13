@@ -313,7 +313,58 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		              sys.argv[0] + sys.argv[2])
 		k_db.PlayerPreProccessing()
 
-		xbmc_player = xbmc.Player()
+
+		class OurPlayer(xbmc.Player):
+			def __init__(self):
+				xbmc.Player.__init__(self)
+				self.show_overlay = False
+				
+				self.fs_video = xbmcgui.Window(12005)
+
+				x = 20
+				y = 20
+				w = self.fs_video.getWidth()
+				h = 100
+
+				self.info_label = xbmcgui.ControlLabel(x, y, w, h, '', textColor='0xFF00EE00', font='font16')
+				self.info_label_bg = xbmcgui.ControlLabel(x+2, y+2, w, h, '', textColor='0xAA000000', font='font16')
+
+			def _show_progress(self):
+				if settings.torrent_player == 'Ace Stream':
+					return
+
+				if not self.show_overlay:
+					self.fs_video.addControls([self.info_label_bg, self.info_label])
+					self.show_overlay = True
+
+			def _hide_progress(self):
+				if self.show_overlay:
+					self.fs_video.removeControls([self.info_label_bg, self.info_label])
+					self.show_overlay = False
+
+			def UpdateProgress(self):
+				#debug('UpdateProgress')
+				if self.show_overlay:
+					info = player.GetTorrentInfo()
+					#debug(info)
+					percent = float(info['downloaded']) * 100 / info['size'];
+					#debug(percent)
+					if percent >= 0:
+						heading = u"{} KB из {} KB - {}%\n".format(info['downloaded'], info['size'], int(percent))
+						if percent < 100:
+							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
+							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
+						#debug(heading)
+						self.info_label.setLabel(heading)
+						self.info_label_bg.setLabel(heading)
+					
+			def __del__(self):				self._hide_progress()
+			def onPlayBackPaused(self):		self._show_progress()
+			def onPlayBackResumed(self):	self._hide_progress()
+			def onPlayBackEnded(self):		self._hide_progress()
+			def onPlayBackStopped(self):	self._hide_progress()
+
+		xbmc_player = OurPlayer()
 		xbmcplugin.setResolvedUrl(handle, True, list_item)
 
 		while not xbmc_player.isPlaying():
@@ -330,6 +381,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		while not xbmc.abortRequested and xbmc_player.isPlaying():
 			player.loop()
 			xbmc.sleep(1000)
+			xbmc_player.UpdateProgress()
 
 		debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
@@ -352,6 +404,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		return play_torrent_variant.resultTryNext
 
 	finally:
+		debug('FINALLY')
 		player.close()
 
 	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:
