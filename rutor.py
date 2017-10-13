@@ -69,6 +69,7 @@ class DescriptionParser(DescriptionParserBase):
 		}.get(x.strip(), u'')
 
 	def clean(self, title):
+		title = re.sub('\[.+\]', '', title)
 		return title.strip(' \t\n\r')
 
 	def get_title(self, full_title):
@@ -349,6 +350,10 @@ def is_tvshow(title):
 	if m:
 		return True
 
+	m = re.search(r'\[[Ss]\d', title)
+	if m:
+		return True
+
 	return False
 
 def get_source_url(link):
@@ -623,6 +628,14 @@ def search_generate(what, imdb, settings, path_out):
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow', path_out)
 
+	"""
+		if not result4:
+			url = 'http://rutor.info/search/0/4/000/0/' + urllib2.quote(what.encode('utf-8'))
+			result4 = search_results(None, settings, url, what)
+			with filesystem.save_make_chdir_context(settings.tvshow_path()):
+				count += make_search_strms(result4, settings, 'tvshow', path_out)
+	"""
+
 	return count
 
 if __name__ == '__main__':
@@ -632,13 +645,16 @@ if __name__ == '__main__':
 	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
 	settings.torrent_player = 'torrent2http'
 
-	import time
-	from_time = time.time()
+	path_out = []
+	search_generate(u'Ольга', 'tt6481562', settings, path_out)
 
-	from backgrounds import recheck_torrent_if_need
+	#import time
+	#from_time = time.time()
+
+	#from backgrounds import recheck_torrent_if_need
 
 	#run(settings)
 
-	recheck_torrent_if_need(from_time, settings)
+	#recheck_torrent_if_need(from_time, settings)
 
 	#search_generate(None, 'tt2948356', settings)
