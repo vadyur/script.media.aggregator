@@ -322,7 +322,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				self.fs_video = xbmcgui.Window(12005)
 
 				x = 20
-				y = 20
+				y = 120
 				w = self.fs_video.getWidth()
 				h = 100
 
@@ -350,7 +350,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					percent = float(info['downloaded']) * 100 / info['size'];
 					#debug(percent)
 					if percent >= 0:
-						heading = u"{} KB из {} KB - {}%\n".format(info['downloaded'], info['size'], int(percent))
+						heading = u"{} МB из {} МB - {}%\n".format(info['downloaded'], info['size'], int(percent))
 						if percent < 100:
 							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
 							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
