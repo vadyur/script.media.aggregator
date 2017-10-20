@@ -278,6 +278,10 @@ def seeds_peers(item):
 			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'elitehd', t_id + '.torrent')
 			return scrape_now(fn)
+		elif 'bluebird' in link:
+			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
+			fn = filesystem.join(settings.torrents_path(), 'bluebird', t_id + '.torrent')
+			return scrape_now(fn)
 		elif 'rutor' in link:
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'rutor', t_id + '.torrent')

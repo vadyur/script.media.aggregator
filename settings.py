@@ -31,6 +31,7 @@ class Settings:
 	             documentary_path	= u'Documentary',
 	             anime_path			= u'Anime',
 	             hdclub_passkey 		= '',
+	             bluebird_passkey 		= '',
 	             anidub_login = '', anidub_password = '', anidub_rss=True, anidub_favorite=True,
 	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 	             rutor_domain = 'rutor.info',
@@ -52,6 +53,7 @@ class Settings:
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
 		self.hdclub_passkey			= hdclub_passkey
+		self.bluebird_passkey		= bluebird_passkey
 		
 		self.__base_path			= filesystem.abspath(base_path)
 		self.__movies_path 			= movies_path

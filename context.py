@@ -36,6 +36,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[NNM-Club] '
 				elif 'hdclub' in link:
 					s += '[EliteHD] '
+				elif 'bluebird' in link:
+					s += '[BlueBird-HD] '
 				elif 'rutor' in link:
 					s += '[rutor] '
 				elif 'soap4' in link:

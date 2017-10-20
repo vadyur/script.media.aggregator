@@ -77,8 +77,14 @@
 		  <setting label="Получить Passkey можно перейдя на 'https://elitehd.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
       <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
     </category>
-  
-    <category label="nnm-club">
+
+  <category label="BLUEBIRD-HD">
+    <setting label="Использовать" type="bool" id="bluebird_enable" default="false"/>
+    <setting label="***" type="lsep"/>
+    <setting label="Passkey" type="text"   id="bluebird_passkey" enable="eq(-2,true)" option="hidden" default=""/>
+  </category>
+
+  <category label="nnm-club">
 		  <setting label="Использовать" type="bool" id="nnmclub_enable" default="false"/>
 		  <setting label="Учётные данные сайта nnm-club.me (необходима регистрация на сайте)" type="lsep"/>
       <setting label="Login" type="text"   id="nnmclub_login" enable="eq(-2,true)" default=""/>
