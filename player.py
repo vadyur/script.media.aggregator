@@ -44,6 +44,7 @@ def load_settings():
 	anime_path = getSetting('anime_path', 'Anime').decode('utf-8')
 
 	hdclub_passkey = getSetting('hdclub_passkey')
+	bluebird_passkey = getSetting('bluebird_passkey')
 	anidub_login = getSetting('anidub_login')
 	anidub_password = getSetting('anidub_password')
 	anidub_rss = getSetting('anidub_rss')
@@ -85,6 +86,7 @@ def load_settings():
 	                    animation_path=animation_path, documentary_path=documentary_path,
 	                    anime_path		=anime_path,
 	                    hdclub_passkey 		=hdclub_passkey,
+	                    bluebird_passkey 	=bluebird_passkey,
 	                    anidub_login 		=anidub_login,
 	                    anidub_password 	=anidub_password,
 	                    anidub_rss 	        =anidub_rss,
@@ -473,6 +475,7 @@ def play_torrent(settings, params):
 
 	anidub_enable = _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
+	bluebird_enable = _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
@@ -487,6 +490,8 @@ def play_torrent(settings, params):
 		if not anidub_enable and 'tr.anidub.com' in v['link']:
 			links_with_ranks.remove(v)
 		if not hdclub_enable and 'hdclub.org' in v['link']:
+			links_with_ranks.remove(v)
+		if not bluebird_enable and 'bluebird.org' in v['link']:
 			links_with_ranks.remove(v)
 		if not nnmclub_enable and 'nnm-club.me' in v['link']:
 			links_with_ranks.remove(v)
@@ -578,11 +583,12 @@ def dialog_action(action, settings, params=None):
 	if action == dialog_action_case.generate:
 		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
 		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
+		bluebird_enable = _addon.getSetting('bluebird_enable') == 'true'
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
 
-		if not (anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable):
+		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable):
 			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:

@@ -209,6 +209,8 @@ class Runner(object):
 			return 'nnmclub'
 		if 'hdclub' in self.torrent_source:
 			return 'elitehd'
+		if 'bluebird' in self.torrent_source:
+			return 'bluebird'
 		if 'rutor' in self.torrent_source:
 			return 'rutor'
 		if 'soap4' in self.torrent_source:
