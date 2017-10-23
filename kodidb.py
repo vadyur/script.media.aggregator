@@ -12,6 +12,7 @@ class AdvancedSettingsReader(object):
 	def __init__(self):
 		self.use_mysql = False
 		self.dict.clear()
+		root = []
 	
 		path = xbmc.translatePath('special://profile/advancedsettings.xml').decode('utf-8')
 		self.LOG(path)
