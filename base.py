@@ -621,12 +621,13 @@ def save_hashes(torrent_path):
 		tp = TorrentPlayer()
 		tp.AddTorrent(torrent_path)
 		td = tp.GetLastTorrentData()
-		info_hash = td['info_hash']
+		if td:
+			info_hash = td['info_hash']
 
-		if filesystem.exists(hashes_path):
-			with filesystem.fopen(hashes_path, 'r') as rf:
-				if info_hash in rf.read():
-					return
+			if filesystem.exists(hashes_path):
+				with filesystem.fopen(hashes_path, 'r') as rf:
+					if info_hash in rf.read():
+						return
 
-		with filesystem.fopen(hashes_path, 'a+') as wf:
-			wf.write(info_hash + '\n')
+			with filesystem.fopen(hashes_path, 'a+') as wf:
+				wf.write(info_hash + '\n')

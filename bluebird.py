@@ -1,4 +1,4 @@
-﻿# coding: utf-8
+# coding: utf-8
 
 import log
 from log import debug, print_tb
@@ -60,25 +60,27 @@ class DescriptionParser(DescriptionParserBase):
 			u'Видео:': u'video',
 			u'Выпущено:': u'country_studio'
 		}.get(x, u'')
-		
+
 	def parse(self):
 		#title - Название:
 		tag = u''
 
+		def get_actors(b):
+			div = b.find_next('div')
+			actors = []
+			for img in div.find_all('img'):
+				actors.append(img['title'])
+			return ', '.join(actors)
+
+		def get_other(b):
+			return unicode(b.next_sibling).strip()
+
 		for b in self.soup.find_all('b'):
 			tag = self.get_tag(b.get_text())
-			if tag:
-				if tag == 'actor':
-					actors = []
-					div = b.find_next('div')
-					for img in div.find_all('img'):
-						actors.append(img['title'])
-					val = ', '.join(actors)
-				else:
-					val = unicode(b.next_sibling).strip()
-				self.Dict()[tag] = val
-			else:
-				pass
+			if tag == 'actor':
+				self.Dict()[tag] = get_actors(b)
+			elif tag:
+				self.Dict()[tag] = get_other(b)
 
 		self.parse_country_studio()
 
@@ -97,7 +99,7 @@ class DescriptionParser(DescriptionParserBase):
 
 			except:
 				pass
-				
+
 		if count_id > 1:
 			return False
 
@@ -139,8 +141,9 @@ def write_movie(item, settings):
 		debug('filename: ' + filename.encode('utf-8'))
 		STRMWriter(origin_url(item.link)).write(filename, parser=parser, settings=settings)
 		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
-		from downloader import TorrentDownloader
-		TorrentDownloader(item.link, settings.torrents_path(), settings).download()
+		if settings.bluebird_preload_torrents:
+			from downloader import TorrentDownloader
+			TorrentDownloader(item.link, settings.torrents_path(), settings).download()
 	else:
 		skipped(item)
 		
@@ -178,6 +181,8 @@ def write_tvshow(item, settings):
 	del parser
 
 def write_tvshows(rss_url, path, settings):
+
+	return	# TODO: Later
 
 	with filesystem.save_make_chdir_context(path):
 		d = feedparser.parse(real_url(rss_url))
@@ -369,10 +374,12 @@ def download_torrent(url, path, settings):
 		url += '&passkey=' + settings.bluebird_passkey
 
 	try:
-		import shutil
 		response = urllib2.urlopen(real_url(url))
+		data = response.read()
+		if not data.startswith('d8:'):
+			return False
 		with filesystem.fopen(path, 'wb') as f:
-			shutil.copyfileobj(response, f)
+			f.write(data)
 		save_hashes(path)
 		return True
 	except BaseException as e:

@@ -13,6 +13,8 @@ class Downloader(object):
 			return 'nnmclub'
 		elif 'hdclub' in self.url:
 			return 'elitehd'
+		elif 'bluebird' in self.url:
+			return 'bluebird'
 		elif 'anidub' in self.url:
 			return 'anidub'
 		elif 'rutor' in self.url:
@@ -74,6 +76,8 @@ class TorrentDownloader(Downloader):
 				return re.search(r'\.php.+?t=(\d+)', self.url).group(1)
 			elif 'hdclub' in self.url:
 				return re.search(r'\.php.+?id=(\d+)', self.url).group(1)
+			elif 'bluebird' in self.url:
+				return re.search(r'\.php.+?id=(\d+)', self.url).group(1)
 			elif 'anidub' in self.url:
 				return re.search(r'/(\d+)-', self.url).group(1)
 			elif 'rutor' in self.url:
@@ -94,6 +98,9 @@ class TorrentDownloader(Downloader):
 		elif 'hdclub' in self.url:
 			import hdclub
 			return hdclub.download_torrent(self.url, self.get_filename(), self.settings)
+		elif 'bluebird' in self.url:
+			import bluebird
+			return bluebird.download_torrent(self.url, self.get_filename(), self.settings)
 		elif 'anidub' in self.url:
 			import anidub
 			return anidub.download_torrent(self.url, self.get_filename(), self.settings)
