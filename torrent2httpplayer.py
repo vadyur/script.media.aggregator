@@ -94,7 +94,9 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			connections_limit = None
 
 		use_random_port = self.debug_assignment( True if getSetting('use_random_port') == 'true' else False, 'use_random_port')
-		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 6881, "listen_port")
+		listen_port = self.debug_assignment( int(getSetting("listen_port")) if getSetting("listen_port") != "" else 62881, "listen_port")
+		if listen_port == 6881:
+			use_random_port = True
 
 		keep_files = getSetting('action_files').decode('utf-8') != u'удалить'
 		

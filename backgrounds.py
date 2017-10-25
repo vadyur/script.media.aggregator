@@ -68,12 +68,13 @@ def recheck_torrent_if_need(from_time, settings):
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
 
-	import anidub, hdclub, nnmclub, rutor, soap4me
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
 
 	from player import _addon
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
 	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	bluebird_enable		= _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
@@ -95,6 +96,9 @@ def update_service(show_progress=False):
 
 	if hdclub_enable:
 		hdclub.run(settings)
+
+	if bluebird_enable:
+		bluebird.run(settings)
 
 	if rutor_enable:
 		import rutor
@@ -128,7 +132,7 @@ def update_service(show_progress=False):
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable:
+	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
@@ -206,11 +210,12 @@ def add_media_process(title, imdb):
 	count = 0
 
 	from player import getSetting, load_settings
-	import anidub, hdclub, nnmclub, rutor, soap4me
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
 
 	settings = load_settings()
 
 	hdclub_enable		= getSetting('hdclub_enable') == 'true'
+	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
 	soap4me_enable		= getSetting('soap4me_enable') == 'true'
@@ -234,17 +239,21 @@ def add_media_process(title, imdb):
 	p = []
 
 	try:
-		if hdclub_enable:
-			c = hdclub.search_generate(title, imdb, settings, p)
-			count += c
-		if rutor_enable:
-			c = rutor.search_generate(title, imdb, settings, p)
-			count += c
-		if nnmclub_enable:
-			c = nnmclub.search_generate(title, imdb, settings, p)
-			count += c
-		if soap4me_enable:
-			count += soap4me.search_generate(title, imdb, settings)
+		if imdb.startswith('tt'):
+			if hdclub_enable:
+				c = hdclub.search_generate(title, imdb, settings, p)
+				count += c
+			if bluebird_enable:
+				c = bluebird.search_generate(title, imdb, settings, p)
+				count += c
+			if rutor_enable:
+				c = rutor.search_generate(title, imdb, settings, p)
+				count += c
+			if nnmclub_enable:
+				c = nnmclub.search_generate(title, imdb, settings, p)
+				count += c
+			if soap4me_enable:
+				count += soap4me.search_generate(title, imdb, settings)
 	except BaseException as e:
 		log.print_tb(e)
 
