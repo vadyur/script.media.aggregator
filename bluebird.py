@@ -220,41 +220,63 @@ def make_search_url(what, IDs, imdb, settings):
 	# https://bluebird-hd.org/browse.php?c1=1&search=&incldead=0&cat=0&dsearch=tt0800369&stype=or
 	url = u'https://bluebird-hd.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
 	url += '?c=' + str(IDs)
-	url += '&passkey=' + settings.bluebird_passkey
+	#url += '&passkey=' + settings.bluebird_passkey
 	if imdb is None:
 		url += '&search=' + urllib2.quote(what.encode('cp1251'))
 	url += '&dsearch=' + imdb
 	return url
 
+def create_session(settings):
+	session = requests.session()
+
+	data = { 'username': settings.bluebird_login, 'password': settings.bluebird_password  }
+
+	headers = {
+		'Host': 'bluebird-hd.org',
+		'Origin': real_url('https://bluebird-hd.org'),
+		'Referer': real_url('https://bluebird-hd.org/login.php'),
+		'Content-Type': 'application/x-www-form-urlencoded'
+	}
+
+	r = session.post(real_url('http://bluebird-hd.org/takelogin.php'), headers=headers, data=data)
+
+	#session.headers.update({'Cookie': settings.bluebird_cookies})
+	return session
+
+def get_cookies(settings):
+	s = settings.bluebird_cookies
+	ss = s.split('; ')
+	ss = [ i.split('=') for i in ss ]
+	return { i[0]:i[1] for i in ss }
 
 def search_generate(what, imdb, settings, path_out):
 
-	return 0	# TODO login with captcha
+	#return 0	# TODO login with captcha
 
 	count = 0
-	session = requests.session()
+	session = create_session(settings)
 
 	if settings.movies_save:
 		url = make_search_url(what, 1, imdb, settings)
-		result1 = search_results(imdb, session, settings, url, 71)
+		result1 = search_results(imdb, session, settings, url, 1)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie', path_out)
 
 	if settings.animation_save and count == 0:
 		url = make_search_url(what, 2, imdb, settings)
-		result2 = search_results(imdb, session, settings, url, 70)
+		result2 = search_results(imdb, session, settings, url, 2)
 		with filesystem.save_make_chdir_context(settings.animation_path()):
 			count += make_search_strms(result2, settings, 'movie', path_out)
 
 	if settings.documentary_save and count == 0:
 		url = make_search_url(what, 3, imdb, settings)
-		result3 = search_results(imdb, session, settings, url, 78)
+		result3 = search_results(imdb, session, settings, url, 3)
 		with filesystem.save_make_chdir_context(settings.documentary_path()):
 			count += make_search_strms(result3, settings, 'movie', path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, 6, imdb, settings)
-		result4 = search_results(imdb, session, settings, url, 64)
+		result4 = search_results(imdb, session, settings, url, 6)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow', path_out)
 
@@ -286,15 +308,16 @@ def make_search_strms(result, settings, type, path_out):
 class TrackerPostsEnumerator(object):
 	_items = []
 
-	def __init__(self, session):
+	def __init__(self, session, cookies=None):
 		self._s = session
 		self._items[:] = []
+		self.cookies = cookies
 
 	def items(self):
 		return self._items
 
 	def process_page(self, url):
-		request = self._s.get(real_url(url))
+		request = self._s.get(real_url(url), cookies=self.cookies)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -339,23 +362,25 @@ def search_results(imdb, session, settings, url, cat):
 
 		# full_title, content, link, settings
 
-		page = requests.get(real_url(make_full_url(post['a'])))
+		url = real_url(make_full_url(post['a']))
+		page = session.get(url, headers={'Referer': 'http://bluebird-hd.org/browse.php'})
 
 		soup = BeautifulSoup(page.text, "html.parser")
 
 		content = ''
-		tbl = soup.find('table', class_='heading_b')
+		tbl = soup.find('table', attrs={'id': 'highlighted'})
 
-		for td in tbl.find_all('td', class_='heading_r'):
-			content += td.prettify()
+		for td in tbl.find_all('td', class_='heading'):
+			tdn = td.next_sibling
+			content += unicode(tdn)
 
 		img = soup.find('img', attrs = {'title': "IMDB"})
 		if img:
-			content += img.parent.prettify()
+			content += unicode(img.parent)
 
 		img = soup.find('img', attrs = {'title': u"Кинопоиск"})
 		if img:
-			content += img.parent.prettify()
+			content += unicode(img.parent)
 
 		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings, imdb=imdb)
 		
@@ -386,4 +411,5 @@ def download_torrent(url, path, settings):
 		print_tb(e)
 		return False
 
-
+def login(user, passw, code):
+	pass
