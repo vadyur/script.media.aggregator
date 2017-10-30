@@ -80,8 +80,13 @@
 
   <category label="BLUEBIRD-HD">
     <setting label="Использовать" type="bool" id="bluebird_enable" default="false"/>
+    <!--
     <setting label="***" type="lsep"/>
     <setting label="Passkey" type="text"   id="bluebird_passkey" enable="eq(-2,true)" option="hidden" default=""/>
+    -->
+    <setting label="Учётные данные сайта bluebird-hd.org (необходима регистрация на сайте)" type="lsep"/>
+    <setting label="Login" type="text"   id="bluebird_login" enable="eq(-2,true)" default=""/>
+    <setting label="Password" type="text"   id="bluebird_password" enable="eq(-3,true)" option="hidden"  default=""/>
   </category>
 
   <category label="nnm-club">
