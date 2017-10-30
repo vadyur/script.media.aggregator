@@ -22,7 +22,7 @@ def real_url(url):
 	res = urlparse.urlparse(url)
 	res = urlparse.ParseResult('http', 'bluebird-hd.org', res.path, res.params, res.query, res.fragment)
 	res = urlparse.urlunparse(res)
-	debug('real_url(%s, ...) return %s' % (url, res))
+	#debug('real_url(%s, ...) return %s' % (url, res))
 	return res
 
 
@@ -31,7 +31,7 @@ def origin_url(url):
 	res = urlparse.urlparse(url)
 	res = urlparse.ParseResult('http', 'bluebird-hd.org', res.path, res.params, res.query, res.fragment)
 	res = urlparse.urlunparse(res)
-	debug('original_url(%s, ...) return %s' % (url, res))
+	#debug('original_url(%s, ...) return %s' % (url, res))
 	return res
 
 
@@ -84,14 +84,14 @@ class DescriptionParser(DescriptionParserBase):
 
 		self.parse_country_studio()
 
-		count_id = 0
+		from sets import Set
+		imdb_ids = Set()
 		for a in self.soup.select('a'):
 			try:
 				href = a['href']
 				components = href.split('/')
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
-					self._dict['imdb_id'] = components[4]
-					count_id += 1
+					imdb_ids.add(components[4])
 				
 				if self.settings:
 					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru' and 'film' in components:
@@ -100,10 +100,12 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 
-		if count_id > 1:
+		if len(imdb_ids) > 1:
 			return False
+		elif len(imdb_ids) == 1:
+			self._dict['imdb_id'] = imdb_ids.pop()
 
-		s = 'https://bluebird-hd.org/torrents/images/$id0.png'
+		s = origin_url('/torrents/images/$id0.png')
 		import re
 		res = re.search(r'id=(\d+)', self._link)
 		if res:
@@ -115,14 +117,7 @@ class DescriptionParser(DescriptionParserBase):
 				
 		return True
 
-def make_full_url(link):
-	import urlparse
-	res = urlparse.urlparse(link)
-	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', 'bluebird-hd.org', res.path, res.params, res.query, res.fragment)
-	res = urlparse.urlunparse(res)
 
-	return res
-		
 def write_movie(item, settings):
 	full_title = item.title
 	debug('full_title: ' + full_title.encode('utf-8'))
@@ -199,10 +194,59 @@ def write_tvshows(rss_url, path, settings):
 
 
 def get_rss_url(f_id, passkey):
-	return 'https://bluebird-hd.org/rss.php?cat=' + str(f_id) + '&passkey=' + passkey
+	return origin_url('/rss.php?cat=' + str(f_id) + '&passkey=' + passkey)
 
+def create_session(settings):
+	if create_session.session:
+		return create_session.session
+
+	session = requests.session()
+
+	data = { 'username': settings.bluebird_login, 'password': settings.bluebird_password  }
+
+	headers = {
+		'Host': 'bluebird-hd.org',
+		'Origin': real_url('/'),
+		'Referer': real_url('/login.php'),
+		'Content-Type': 'application/x-www-form-urlencoded'
+	}
+
+	r = session.post(real_url('/takelogin.php'), headers=headers, data=data)
+
+	if r.ok and 'signup.php' not in r.text:
+		create_session.session = session
+		return session
+
+	return None
+
+create_session.session = None
+
+
+def get_passkey(settings):
+
+	s = create_session(settings)
+	if not s:
+		return None
+
+	r = s.get(real_url('/my.php'))
+	if r.ok:
+		txt = r.text
+		indx = txt.index(u'Мой пасскей')
+		if indx >= 0:
+			txt = txt[indx:]
+			i1 = txt.index('<b>')
+			i2 = txt.index('</b>')
+			txt = txt[i1+3:i2]
+			return txt
+
+	return None
 
 def run(settings):
+	if not settings.bluebird_passkey:
+		settings.bluebird_passkey = get_passkey(settings)
+	if not settings.bluebird_passkey:
+		return
+
 	if settings.animation_save:
 		write_movies(get_rss_url(2, settings.bluebird_passkey), settings.animation_path(), settings)
 
@@ -217,31 +261,13 @@ def run(settings):
 
 
 def make_search_url(what, IDs, imdb, settings):
-	# https://bluebird-hd.org/browse.php?c1=1&search=&incldead=0&cat=0&dsearch=tt0800369&stype=or
-	url = u'https://bluebird-hd.org/browse.php'   # ?c71=1&webdl=0&3d=0&search=%D2%EE%F0&incldead=0&dsearch=&stype=or'
+	url = u'/browse.php'
 	url += '?c=' + str(IDs)
 	#url += '&passkey=' + settings.bluebird_passkey
 	if imdb is None:
 		url += '&search=' + urllib2.quote(what.encode('cp1251'))
 	url += '&dsearch=' + imdb
-	return url
-
-def create_session(settings):
-	session = requests.session()
-
-	data = { 'username': settings.bluebird_login, 'password': settings.bluebird_password  }
-
-	headers = {
-		'Host': 'bluebird-hd.org',
-		'Origin': real_url('https://bluebird-hd.org'),
-		'Referer': real_url('https://bluebird-hd.org/login.php'),
-		'Content-Type': 'application/x-www-form-urlencoded'
-	}
-
-	r = session.post(real_url('http://bluebird-hd.org/takelogin.php'), headers=headers, data=data)
-
-	#session.headers.update({'Cookie': settings.bluebird_cookies})
-	return session
+	return origin_url(url)
 
 def get_cookies(settings):
 	s = settings.bluebird_cookies
@@ -251,10 +277,11 @@ def get_cookies(settings):
 
 def search_generate(what, imdb, settings, path_out):
 
-	#return 0	# TODO login with captcha
-
 	count = 0
 	session = create_session(settings)
+
+	if not session:
+		return 0
 
 	if settings.movies_save:
 		url = make_search_url(what, 1, imdb, settings)
@@ -293,7 +320,7 @@ def make_search_strms(result, settings, type, path_out):
 
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True, download_torrent=False)
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':
@@ -362,8 +389,8 @@ def search_results(imdb, session, settings, url, cat):
 
 		# full_title, content, link, settings
 
-		url = real_url(make_full_url(post['a']))
-		page = session.get(url, headers={'Referer': 'http://bluebird-hd.org/browse.php'})
+		url = real_url(post['a'])
+		page = session.get(url, headers={'Referer': real_url('/browse.php')})
 
 		soup = BeautifulSoup(page.text, "html.parser")
 
@@ -382,11 +409,11 @@ def search_results(imdb, session, settings, url, cat):
 		if img:
 			content += unicode(img.parent)
 
-		parser = DescriptionParser(post['title'], content, make_full_url(post['a']), settings=settings, imdb=imdb)
+		parser = DescriptionParser(post['title'], content, origin_url(post['a']), settings=settings, imdb=imdb)
 		
 		debug(u'%s %s %s' % (post['title'], str(parser.parsed()), parser.get_value('imdb_id')))
 		if parser.parsed(): # and parser.get_value('imdb_id') == imdb:
-			result.append({'parser': parser, 'link': make_full_url(post['dl_link'])})
+			result.append({'parser': parser, 'link': origin_url(post['dl_link'])})
 
 	return result
 

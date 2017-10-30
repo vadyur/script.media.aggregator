@@ -44,7 +44,10 @@ def load_settings():
 	anime_path = getSetting('anime_path', 'Anime').decode('utf-8')
 
 	hdclub_passkey = getSetting('hdclub_passkey')
-	bluebird_passkey = getSetting('bluebird_passkey')
+
+	bluebird_login = getSetting('bluebird_login')
+	bluebird_password = getSetting('bluebird_password')
+
 	anidub_login = getSetting('anidub_login')
 	anidub_password = getSetting('anidub_password')
 	anidub_rss = getSetting('anidub_rss')
@@ -86,7 +89,8 @@ def load_settings():
 	                    animation_path=animation_path, documentary_path=documentary_path,
 	                    anime_path		=anime_path,
 	                    hdclub_passkey 		=hdclub_passkey,
-	                    bluebird_passkey 	=bluebird_passkey,
+	                    bluebird_login 		=bluebird_login,
+	                    bluebird_password	=bluebird_password,
 	                    anidub_login 		=anidub_login,
 	                    anidub_password 	=anidub_password,
 	                    anidub_rss 	        =anidub_rss,

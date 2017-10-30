@@ -8,7 +8,7 @@ import json, re, base, filesystem
 import urllib2, requests
 from bs4 import BeautifulSoup
 
-def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
+def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
@@ -22,8 +22,9 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		from nfowriter import NFOWriter
 		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename,skip_nfo_exists=skip_nfo_exists)
 
-		from downloader import TorrentDownloader
-		TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
+		if download_torrent:
+			from downloader import TorrentDownloader
+			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
 		return filesystem.relpath( filesystem.join(filesystem.getcwd(), base.make_fullpath(filename, '.strm')), start=settings.base_path())
 
