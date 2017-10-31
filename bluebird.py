@@ -43,23 +43,29 @@ class DescriptionParser(DescriptionParserBase):
 		if imdb:
 			self._dict['imdb_id'] = imdb
 
+	def need_skipped(self, full_title):
+		if self.settings.bluebird_nouhd and 'UHD' in full_title.split(' '):
+			return True
+
+		return DescriptionParserBase.need_skipped(self, full_title)
+
 	def link(self):
 		return origin_url(self._link)
 
 	def get_tag(self, x):
 		return {
-			u'Название:': u'title',
-			u'Оригинальное название:': u'originaltitle',
-			u'Год выхода:': u'year',
-			u'Жанр:': u'genre',
-			u'Режиссер:': u'director',
-			u'В ролях:': u'actor',
-			u'О фильме:': u'plot',
-			u'Продолжительность:': u'runtime',
-			u'Формат:': u'format',
-			u'Видео:': u'video',
-			u'Выпущено:': u'country_studio'
-		}.get(x, u'')
+			u'Название': u'title',
+			u'Оригинальное название': u'originaltitle',
+			u'Год выхода': u'year',
+			u'Жанр': u'genre',
+			u'Режиссер': u'director',
+			u'В ролях': u'actor',
+			u'О фильме': u'plot',
+			u'Продолжительность': u'runtime',
+			u'Формат': u'format',
+			u'Видео': u'video',
+			u'Выпущено': u'country_studio'
+		}.get(x.rstrip(':'), u'')
 
 	def parse(self):
 		#title - Название:
@@ -69,11 +75,20 @@ class DescriptionParser(DescriptionParserBase):
 			div = b.find_next('div')
 			actors = []
 			for img in div.find_all('img'):
-				actors.append(img['title'])
-			return ', '.join(actors)
+				if 'sm_actor' in img['src']:
+					actors.append(img['title'])
+			if actors:
+				return ', '.join(actors)
+
+			txt = b.next_sibling
+			from bs4 import NavigableString
+			if isinstance(txt, NavigableString):
+				txt = unicode(txt)
+				if ',' in txt:
+					return txt.lstrip(':').strip()
 
 		def get_other(b):
-			return unicode(b.next_sibling).strip()
+			return unicode(b.next_sibling).lstrip(':').strip()
 
 		for b in self.soup.find_all('b'):
 			tag = self.get_tag(b.get_text())
@@ -201,6 +216,9 @@ def create_session(settings):
 		return create_session.session
 
 	session = requests.session()
+
+	if not settings.bluebird_login or not settings.bluebird_password:
+		return None
 
 	data = { 'username': settings.bluebird_login, 'password': settings.bluebird_password  }
 
@@ -419,6 +437,11 @@ def search_results(imdb, session, settings, url, cat):
 
 
 def download_torrent(url, path, settings):
+	if not settings.bluebird_passkey:
+		settings.bluebird_passkey = get_passkey(settings)
+	if not settings.bluebird_passkey:
+		return False
+
 	from base import save_hashes
 	save_hashes(path)
 	url = url.replace('details.php', 'download.php')

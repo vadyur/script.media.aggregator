@@ -47,6 +47,7 @@ def load_settings():
 
 	bluebird_login = getSetting('bluebird_login')
 	bluebird_password = getSetting('bluebird_password')
+	bluebird_nouhd = getSetting('bluebird_nouhd')
 
 	anidub_login = getSetting('anidub_login')
 	anidub_password = getSetting('anidub_password')
@@ -85,38 +86,39 @@ def load_settings():
 
 	from settings import Settings
 	settings = Settings(base_path,
-	                    movies_path=movies_path,
-	                    animation_path=animation_path, documentary_path=documentary_path,
-	                    anime_path		=anime_path,
-	                    hdclub_passkey 		=hdclub_passkey,
-	                    bluebird_login 		=bluebird_login,
-	                    bluebird_password	=bluebird_password,
-	                    anidub_login 		=anidub_login,
-	                    anidub_password 	=anidub_password,
-	                    anidub_rss 	        =anidub_rss,
-	                    anidub_favorite 	=anidub_favorite,
-	                    nnmclub_pages 		=nnmclub_pages,
-	                    nnmclub_login 		=nnmclub_login,
-	                    nnmclub_password 	=nnmclub_password,
-	                    rutor_domain        =rutor_domain,
-	                    rutor_filter        =rutor_filter,
+						movies_path			=movies_path,
+						animation_path		=animation_path, documentary_path=documentary_path,
+						anime_path			=anime_path,
+						hdclub_passkey 		=hdclub_passkey,
+						bluebird_login 		=bluebird_login,
+						bluebird_password	=bluebird_password,
+						bluebird_nouhd		=bluebird_nouhd,
+						anidub_login 		=anidub_login,
+						anidub_password 	=anidub_password,
+						anidub_rss 	        =anidub_rss,
+						anidub_favorite 	=anidub_favorite,
+						nnmclub_pages 		=nnmclub_pages,
+						nnmclub_login 		=nnmclub_login,
+						nnmclub_password 	=nnmclub_password,
+						rutor_domain        =rutor_domain,
+						rutor_filter        =rutor_filter,
 						rutor_nosd			=rutor_nosd,
-	                    soap4me_login		=soap4me_login,
-	                    soap4me_password	=soap4me_password,
+						soap4me_login		=soap4me_login,
+						soap4me_password	=soap4me_password,
 						soap4me_rss			=soap4me_rss,
-	                    preffered_bitrate 	=preffered_bitrate,
-	                    preffered_type 		=preffered_type,
-	                    preffered_codec     =preffered_codec,
-	                    torrent_player 		=torrent_player,
-	                    storage_path		=storage_path,
-	                    movies_save 		=movies_save,
-	                    animation_save 		=animation_save,
-	                    documentary_save 	=documentary_save,
-	                    anime_save 			=anime_save,
-	                    tvshows_save 		=tvshows_save,
-	                    animation_tvshows_save =animation_tvshows_save,
-	                    torrent_path        =torrent_path,
-						kp_googlecache		= kp_googlecache)
+						preffered_bitrate 	=preffered_bitrate,
+						preffered_type 		=preffered_type,
+						preffered_codec     =preffered_codec,
+						torrent_player 		=torrent_player,
+						storage_path		=storage_path,
+						movies_save 		=movies_save,
+						animation_save 		=animation_save,
+						documentary_save 	=documentary_save,
+						anime_save 			=anime_save,
+						tvshows_save 		=tvshows_save,
+						animation_tvshows_save =animation_tvshows_save,
+						torrent_path        =torrent_path,
+						kp_googlecache		=kp_googlecache)
 
 	settings.addon_data_path		= _addondir
 	if getSetting('data_path'):
