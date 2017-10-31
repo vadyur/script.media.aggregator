@@ -31,7 +31,7 @@ class Settings:
 	             documentary_path	= u'Documentary',
 	             anime_path			= u'Anime',
 	             hdclub_passkey 		= '',
-	             bluebird_passkey 		= None, bluebird_preload_torrents = False, bluebird_login = '', bluebird_password = '',
+	             bluebird_passkey 		= None, bluebird_preload_torrents = False, bluebird_login = '', bluebird_password = '', bluebird_nouhd = True,
 	             anidub_login = '', anidub_password = '', anidub_rss=True, anidub_favorite=True,
 	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
 	             rutor_domain = 'rutor.info',
@@ -57,6 +57,7 @@ class Settings:
 		self.bluebird_login			= bluebird_login, 
 		self.bluebird_password		= bluebird_password,
 		self.bluebird_preload_torrents = bluebird_preload_torrents
+		self.bluebird_nouhd			= bluebird_nouhd
 		
 		self.__base_path			= filesystem.abspath(base_path)
 		self.__movies_path 			= movies_path
