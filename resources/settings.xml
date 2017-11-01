@@ -88,7 +88,7 @@
     <setting label="Login" type="text"   id="bluebird_login" enable="eq(-2,true)" default=""/>
     <setting label="Password" type="text"   id="bluebird_password" enable="eq(-3,true)" option="hidden"  default=""/>
 
-    <settings label="Исключать UHD-контент" type="bool" id="bluebird_nouhd" default="true"/>
+    <setting label="Исключать UHD-контент" type="bool" id="bluebird_nouhd" default="true"/>
 
   </category>
 
@@ -104,7 +104,7 @@
       <setting label="Домен" type="text" id="rutor_domain" default="rutor.info"/>
       <setting label="Фильтр" type="text" id="rutor_filter" default="CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP"/>
     
-      <settings label="Исключать SD-контент" type="bool" id="rutor_nosd" default="true"/>
+      <setting label="Исключать SD-контент" type="bool" id="rutor_nosd" default="true"/>
     </category>
     <!--
     <category label="soap4.me">
