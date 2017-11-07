@@ -508,6 +508,7 @@ def play_torrent(settings, params):
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
 
+	play_torrent_variant_result = None
 	if len(links_with_ranks) == 0 or onlythis:
 		torrent_source = params['torrent']
 		path_or_url_and_episode = get_path_or_url_and_episode(settings, params, torrent_source)
@@ -552,9 +553,12 @@ def play_torrent(settings, params):
 	info_dialog.update(0, '', '')
 	info_dialog.close()
 
-	if play_torrent_variant_result == play_torrent_variant.resultTryNext and not onlythis:
-		# Open in torrenter
-		openInTorrenter(nfoReader)
+	try:
+		if play_torrent_variant_result == play_torrent_variant.resultTryNext and not onlythis:
+			# Open in torrenter
+			openInTorrenter(nfoReader)
+	except:
+		pass
 
 
 restart_msg = u'Чтобы изменения вступили в силу, нужно перезапустить KODI. Перезапустить?'
@@ -581,7 +585,8 @@ class dialog_action_case:
 	settings = 2
 	search = 3
 	catalog = 4
-	exit = 5
+	medialibrary = 5
+	exit = 6
 
 
 def dialog_action(action, settings, params=None):
@@ -665,6 +670,41 @@ def dialog_action(action, settings, params=None):
 
 		xbmcplugin.endOfDirectory(addon_handle)
 
+	if action == dialog_action_case.medialibrary:
+		addon_handle = int(sys.argv[1])
+		xbmcplugin.setContent(addon_handle, 'movies')
+
+		listing = [
+
+			('anime_top', u'Аниме: популярное'),
+			('anime_recomended', u'Аниме: текущее'),
+			('anime_last_episodes', u'Аниме: последнее'),
+
+			('animation_top', u'Мультфильмы: популярное'),
+			('animation_recomended', u'Мультфильмы: текущее'),
+			('animation_last', u'Мультфильмы: последнее'),
+
+			('documentary_top', u'Документальные фильмы: популярное'),
+			('documentary_recomended', u'Документальные фильмы: текущее'),
+			('documentary_last', u'Документальные фильмы: последнее'),
+
+			('movie_top', u'Художественные фильмы: популярное'),
+			('movie_recomended', u'Художественные фильмы: текущее'),
+			('movie_last', u'Художественные фильмы: последнее'),
+
+		]
+
+		for l in listing:
+			li = xbmcgui.ListItem(l[1])
+			li.setProperty("folder", "true")
+			li.setProperty('IsPlayable', 'false')
+
+			url = 'plugin://script.media.aggregator/?action=show_library&category=' + l[0]
+			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+
+		xbmcplugin.endOfDirectory(addon_handle)
+
+
 	if action > dialog_action_case.settings or action < dialog_action_case.generate:
 		return True
 
@@ -708,14 +748,16 @@ menu_items = [u'Генерировать .strm и .nfo файлы',
 				u'Создать источники',
 				u'Настройки',
 				u'Поиск',
-				u'Каталог'
+				u'Каталог',
+				u'Медиатека'
 ]
 
 menu_actions = ['generate',
 		        'sources',
 				'settings',
 				'search',
-				'catalog'
+				'catalog',
+				'medialibrary'
 ]
 
 
@@ -798,6 +840,201 @@ def action_show_category(params):
 		show_list(MovieAPI.popular_tv())
 	if params.get('category') == 'top_rated_tv':
 		show_list(MovieAPI.top_rated_tv())
+	if params.get('category') == 'anime':
+		uri = 'plugin://plugin.video.shikimori.2/'
+		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+
+def action_show_library(params):
+	addon_handle = int(sys.argv[1])
+
+	def _get_cast(castData):
+		listCast = []
+		listCastAndRole = []
+		for castmember in castData:
+			listCast.append(castmember["name"])
+			listCastAndRole.append((castmember["name"], castmember["role"]))
+		return [listCast, listCastAndRole]
+
+
+	def _get_first_item(item):
+		if len(item) > 0:
+			item = item[0]
+		else:
+			item = ""
+		return item
+
+
+	def _get_joined_items(item):
+		if len(item) > 0:
+			item = " / ".join(item)
+		else:
+			item = ""
+		return item
+
+
+	class query:
+		fields = ["title", "originaltitle", "year", "file", "imdbnumber", 'cast', 
+					'country', 'genre', 'plot', 'plotoutline', 'tagline', 'rating',
+					'votes', 'mpaa', 'trailer', 'playcount',
+					"resume", "art",
+				]
+
+		def method(self):
+			return "VideoLibrary.GetMovies"
+
+
+		def skip(self, item, type='movie', imdbs = []):
+
+			if item['imdbnumber'] in imdbs:
+				return True
+			imdbs.append(item['imdbnumber'])
+
+			if type == 'movie' and 'episode' in item['file']:
+				return True
+
+			if 'anime' in self.category:
+				return 'Anime' not in item['file']
+
+			if 'animation' in self.category:
+				return 'Animation' not in item['file']
+
+			if 'movie' in self.category:
+				return 'Movies' not in item['file']
+
+			if 'documentary' in self.category:
+				return 'Documentary' not in item['file']
+
+			if 'tvshows' in self.category:
+				return 'TVShows' not in item['file']
+
+
+			return True
+
+		def listing(self):
+			result = self.req()['result']
+			plot_enable = True
+	
+			ll = result.get('movies', []) 
+			if not ll:
+				ll = result.get('files', [])
+
+			imdbs = []
+
+			for movie in ll:
+				if self.skip(movie):
+					continue
+
+				if "cast" in movie:
+					cast = _get_cast(movie['cast'])
+				else:
+					cast = [None, None]
+
+				li = xbmcgui.ListItem(movie['title'])
+				url = movie['file']
+				li.setInfo(type="Video", infoLabels={"Title": movie['title'],
+														"OriginalTitle": movie['originaltitle'],
+														"Year": movie['year'],
+														"Genre": _get_joined_items(movie.get('genre', "")),
+														"Studio": _get_first_item(movie.get('studio', "")),
+														"Country": _get_first_item(movie.get('country', "")),
+														"Plot": movie['plot'],
+														"PlotOutline": movie['plotoutline'],
+														"Tagline": movie['tagline'],
+														"Rating": str(float(movie['rating'])),
+														"Votes": movie['votes'],
+														"MPAA": movie['mpaa'],
+														"Director": _get_joined_items(movie.get('director', "")),
+														"Writer": _get_joined_items(movie.get('writer', "")),
+														"Cast": cast[0],
+														"CastAndRole": cast[1],
+														"mediatype": "movie",
+														"Trailer": movie['trailer'],
+														"Playcount": movie['playcount']})
+ 
+				li.setProperty("resumetime", str(movie['resume']['position']))
+				li.setProperty("totaltime", str(movie['resume']['total']))
+				#li.setProperty("type", ADDON_LANGUAGE(list_type))
+				
+				if 'movieid' in movie:
+					li.setProperty("dbid", str(movie['movieid']))
+				li.setProperty("imdbnumber", str(movie['imdbnumber']))
+				li.setProperty("fanart_image", movie['art'].get('fanart', ''))
+				li.setArt(movie['art'])
+				li.setThumbnailImage(movie['art'].get('poster', ''))
+				li.setIconImage('DefaultVideoCover.png')
+
+				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=False)
+
+			xbmcplugin.endOfDirectory(addon_handle)
+
+
+		def req(self, sort=None, filter=None, limits=None):
+			_r = {"jsonrpc": "2.0", "method": self.method(), "params": {"properties": self.fields}, "id": "53257"}
+
+			if sort:
+				_r['params']['sort'] = sort
+
+			if filter:
+				_r['params']['filter'] = filter
+
+			if limits:
+				_r['params']['limits'] = limits
+
+			import xbmc, json
+			jsn = json.loads(xbmc.executeJSONRPC(json.dumps(_r)))
+
+			return jsn
+
+		def req_ldp(self, type):
+			import xbmc, json
+			cmd = 'plugin://service.library.data.provider/?type=' + type
+			return json.loads(xbmc.executeJSONRPC(json.dumps(
+					{"jsonrpc": "2.0", 
+					"method": "Files.GetDirectory", "params": {"properties": self.fields, "directory": cmd, "media":"files"}, "id": "1"}
+				)))
+
+	class recentmovies(query):
+		items = ['animation_last', 'documentary_last', 'movie_last']
+
+		#def method(self):
+		#	return 'VideoLibrary.GetRecentlyAddedMovies'
+
+		def req(self):
+			return self.req_ldp('recentmovies')
+
+	class recommendedmovies(query):
+		items = ['animation_recomended', 'documentary_recomended', 'movie_recomended']
+
+		def req(self):
+			return self.req_ldp('recommendedmovies')
+
+
+	class recommendedepisodes(query):
+		items = ['anime_recomended']
+
+	class topmovies(query):
+		items = ['movie_top', 'documentary_top', 'animation_top']
+
+		def req(self):
+			import vsdbg
+			vsdbg._bp()
+
+			return query.req(self, 
+									sort={ "order": "descending", "method": "rating", "ignorearticle": True },
+									limits={ "start" : 0, "end": 250 })
+
+	ldp_query = {
+		'recentmovies': recentmovies(),
+		'recommendedmovies': recommendedmovies(),
+		'recommendedepisodes': recommendedepisodes(),
+		'topmovies': topmovies()
+	}
+
+	for q, l in ldp_query.iteritems():
+		if params.get('category') in l.items:
+			l.category = params.get('category')
+			l.listing()
+		
 
 def action_search_context(params):
 	from movieapi import MovieAPI

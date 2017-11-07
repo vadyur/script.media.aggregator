@@ -61,6 +61,10 @@ def dispatch():
 	elif params.get('action') == 'show_category':
 		from player import action_show_category
 		action_show_category(params)
+
+	elif params.get('action') == 'show_library':
+		from player import action_show_library
+		action_show_library(params)
 	
 	elif params.get('action') == 'show_similar':
 		from player import action_show_similar
