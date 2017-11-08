@@ -678,7 +678,7 @@ def dialog_action(action, settings, params=None):
 
 			('anime_top', u'Аниме: популярное'),
 			('anime_recomended', u'Аниме: текущее'),
-			('anime_last_episodes', u'Аниме: последнее'),
+			('anime_last', u'Аниме: последнее'),
 
 			('animation_top', u'Мультфильмы: популярное'),
 			('animation_recomended', u'Мультфильмы: текущее'),
@@ -885,9 +885,11 @@ def action_show_library(params):
 
 		def skip(self, item, type='movie', imdbs = []):
 
-			if item['imdbnumber'] in imdbs:
+			if item['imdbnumber'] and item['imdbnumber'] in imdbs:
 				return True
-			imdbs.append(item['imdbnumber'])
+
+			if item['imdbnumber']:
+				imdbs.append(item['imdbnumber'])
 
 			if type == 'movie' and 'episode' in item['file']:
 				return True
@@ -914,9 +916,14 @@ def action_show_library(params):
 			result = self.req()['result']
 			plot_enable = True
 	
+			isFolder = False
 			ll = result.get('movies', []) 
 			if not ll:
 				ll = result.get('files', [])
+			if not ll:
+				ll = result.get('tvshows', [])
+				if ll:
+					isFolder = True
 
 			imdbs = []
 
@@ -931,28 +938,30 @@ def action_show_library(params):
 
 				li = xbmcgui.ListItem(movie['title'])
 				url = movie['file']
-				li.setInfo(type="Video", infoLabels={"Title": movie['title'],
-														"OriginalTitle": movie['originaltitle'],
-														"Year": movie['year'],
-														"Genre": _get_joined_items(movie.get('genre', "")),
-														"Studio": _get_first_item(movie.get('studio', "")),
-														"Country": _get_first_item(movie.get('country', "")),
-														"Plot": movie['plot'],
-														"PlotOutline": movie['plotoutline'],
-														"Tagline": movie['tagline'],
-														"Rating": str(float(movie['rating'])),
-														"Votes": movie['votes'],
-														"MPAA": movie['mpaa'],
-														"Director": _get_joined_items(movie.get('director', "")),
-														"Writer": _get_joined_items(movie.get('writer', "")),
-														"Cast": cast[0],
-														"CastAndRole": cast[1],
-														"mediatype": "movie",
-														"Trailer": movie['trailer'],
-														"Playcount": movie['playcount']})
+				li.setInfo(type="Video", infoLabels={
+					"Title": movie['title'],
+					"OriginalTitle": movie['originaltitle'],
+					"Year": movie['year'],
+					"Genre": _get_joined_items(movie.get('genre', "")),
+					"Studio": _get_first_item(movie.get('studio', "")),
+					"Country": _get_first_item(movie.get('country', "")),
+					"Plot": movie['plot'],
+					"PlotOutline": movie.get('plotoutline', ''),
+					"Tagline": movie.get('tagline', ''),
+					"Rating": str(float(movie['rating'])),
+					"Votes": movie['votes'],
+					"MPAA": movie['mpaa'],
+					"Director": _get_joined_items(movie.get('director', "")),
+					"Writer": _get_joined_items(movie.get('writer', "")),
+					"Cast": cast[0],
+					"CastAndRole": cast[1],
+					"mediatype": "movie",
+					"Trailer": movie.get('trailer', ''),
+					"Playcount": movie['playcount']})
  
-				li.setProperty("resumetime", str(movie['resume']['position']))
-				li.setProperty("totaltime", str(movie['resume']['total']))
+				if 'resume' in movie:	
+					li.setProperty("resumetime", str(movie['resume']['position']))
+					li.setProperty("totaltime", str(movie['resume']['total']))
 				#li.setProperty("type", ADDON_LANGUAGE(list_type))
 				
 				if 'movieid' in movie:
@@ -963,7 +972,7 @@ def action_show_library(params):
 				li.setThumbnailImage(movie['art'].get('poster', ''))
 				li.setIconImage('DefaultVideoCover.png')
 
-				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=False)
+				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=isFolder)
 
 			xbmcplugin.endOfDirectory(addon_handle)
 
@@ -988,10 +997,115 @@ def action_show_library(params):
 		def req_ldp(self, type):
 			import xbmc, json
 			cmd = 'plugin://service.library.data.provider/?type=' + type
-			return json.loads(xbmc.executeJSONRPC(json.dumps(
+			jsn = json.loads(xbmc.executeJSONRPC(json.dumps(
 					{"jsonrpc": "2.0", 
 					"method": "Files.GetDirectory", "params": {"properties": self.fields, "directory": cmd, "media":"files"}, "id": "1"}
 				)))
+			return jsn
+
+	class query_tv(query):
+		def __init__(self):
+			self.fields.remove('country')
+			self.fields.remove('plotoutline')
+			self.fields.remove('tagline')
+			self.fields.remove('trailer')
+			self.fields.remove('resume')
+
+		def method(self):
+			return "VideoLibrary.GetTVShows"
+
+
+	class query_tv_ep(query_tv):
+		def __init__(self):
+			self.fields = ["title", "plot", "votes", "rating", "writer", "firstaired", "playcount", "runtime", "director",
+							"productioncode", "season", "episode", "originaltitle", "showtitle", "cast", "streamdetails",
+							"lastplayed", "fanart", "thumbnail", "file", "resume", "tvshowid", "dateadded", "uniqueid", "art",
+							"specialsortseason", "specialsortepisode", "userrating", "seasonid", "ratings"]
+
+		def method(self):
+			return "VideoLibrary.GetEpisodes"
+
+		def req_ldp(self, type):
+			import xbmc, json
+			cmd = 'plugin://service.library.data.provider/?type=' + type
+
+			props = [ "imdbnumber", "title", "episode", "season", "firstaired", "plot", "showtitle", "rating", "mpaa", 
+					'playcount', "cast", 'resume', "art"
+					#"title", "artist", "albumartist", "genre", "year", "rating", "album", "track", "duration", "comment",
+					#"lyrics", "musicbrainztrackid", "musicbrainzartistid", "musicbrainzalbumid", "musicbrainzalbumartistid",
+					#"playcount", "fanart", "director", "trailer", "tagline", "plot", "plotoutline", "originaltitle", "lastplayed",
+					#"writer", "studio", "mpaa", "cast", "country", "imdbnumber", "premiered", "productioncode", "runtime", "set",
+					#"showlink", "streamdetails", "top250", "votes", "firstaired", "season", "episode", "showtitle", "thumbnail",
+					#"file", "resume", "artistid", "albumid", "tvshowid", "setid", "watchedepisodes", "disc", "tag", "art",
+					#"genreid", "displayartist", "albumartistid", "description", "theme", "mood", "style", "albumlabel", "sorttitle",
+					#"episodeguide", "uniqueid", "dateadded", "size", "lastmodified", "mimetype", "specialsortseason", "specialsortepisode"
+					]
+
+			jsn = json.loads(xbmc.executeJSONRPC(json.dumps(
+					{"jsonrpc": "2.0", 
+					"method": "Files.GetDirectory", 
+					"params": {"properties": props, "directory": cmd, "media":"video"}, "id": "1"}
+				)))
+
+
+			return jsn
+
+
+		def listing(self):
+			result = self.req()['result']
+			plot_enable = True
+	
+			ll = result.get('episodes', []) 
+			if not ll:
+				ll = result.get('files', [])
+
+
+			for episode in ll:
+				if self.skip(episode, type='episode'):
+					continue
+
+				if "cast" in episode:
+					cast = _get_cast(episode['cast'])
+				else:
+					cast = [None, None]
+
+				nEpisode = "%.2d" % float(episode['episode'])
+				nSeason = "%.2d" % float(episode['season'])
+				fEpisode = "s%se%s" % (nSeason, nEpisode)
+
+				li = xbmcgui.ListItem(episode['title'])
+				url = episode['file']
+
+				li.setInfo(type="Video", infoLabels={
+					"Title": episode['title'],
+					"Episode": episode['episode'],
+					"Season": episode['season'],
+					"Studio": _get_first_item(episode.get('studio', "")),
+					"Premiered": episode['firstaired'],
+					"Plot": episode['plot'],
+					"TVshowTitle": episode['showtitle'],
+					"Rating": str(float(episode['rating'])),
+					"MPAA": episode['mpaa'],
+					"Playcount": episode['playcount'],
+					"Director": _get_joined_items(episode.get('director', "")),
+					"Writer": _get_joined_items(episode.get('writer', "")),
+					"Cast": cast[0],
+					"CastAndRole": cast[1],
+					"mediatype": "episode"})
+				li.setProperty("episodeno", fEpisode)
+				li.setProperty("resumetime", str(episode['resume']['position']))
+				li.setProperty("totaltime", str(episode['resume']['total']))
+				#li.setProperty("type", ADDON_LANGUAGE(list_type))
+				li.setProperty("fanart_image", episode['art'].get('tvshow.fanart', ''))
+				#li.setProperty("dbid", str(episode['episodeid']))
+				li.setArt(episode['art'])
+				li.setThumbnailImage(episode['art'].get('tvshow.poster', ''))
+				li.setIconImage('DefaultTVShows.png')
+
+				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=False)
+
+			xbmcplugin.endOfDirectory(addon_handle)
+
 
 	class recentmovies(query):
 		items = ['animation_last', 'documentary_last', 'movie_last']
@@ -1008,18 +1122,24 @@ def action_show_library(params):
 		def req(self):
 			return self.req_ldp('recommendedmovies')
 
-
-	class recommendedepisodes(query):
+	class recommendedepisodes(query_tv_ep):
 		items = ['anime_recomended']
+
+		def req(self):
+			return self.req_ldp('recommendedepisodes')
 
 	class topmovies(query):
 		items = ['movie_top', 'documentary_top', 'animation_top']
 
 		def req(self):
-			import vsdbg
-			vsdbg._bp()
-
 			return query.req(self, 
+									sort={ "order": "descending", "method": "rating", "ignorearticle": True },
+									limits={ "start" : 0, "end": 250 })
+
+	class toptvshows(query_tv):
+		items = ['anime_top']
+		def req(self):
+			return query_tv.req(self, 
 									sort={ "order": "descending", "method": "rating", "ignorearticle": True },
 									limits={ "start" : 0, "end": 250 })
 
@@ -1027,8 +1147,12 @@ def action_show_library(params):
 		'recentmovies': recentmovies(),
 		'recommendedmovies': recommendedmovies(),
 		'recommendedepisodes': recommendedepisodes(),
-		'topmovies': topmovies()
+		'topmovies': topmovies(),
+		'toptvshows': toptvshows()
 	}
+
+	import vsdbg
+	vsdbg._bp()
 
 	for q, l in ldp_query.iteritems():
 		if params.get('category') in l.items:
