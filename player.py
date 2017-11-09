@@ -687,6 +687,10 @@ def dialog_action(action, settings, params=None):
 			('animation_recomended', u'Мультфильмы: текущее'),
 			('animation_last', u'Мультфильмы: последнее'),
 
+			('animtv_top', u'Мультсериалы: популярное'),
+			('animtv_recomended', u'Мультсериалы: текущее'),
+			('animtv_last', u'Мультсериалы: последнее'),
+
 			('documentary_top', u'Документальные фильмы: популярное'),
 			('documentary_recomended', u'Документальные фильмы: текущее'),
 			('documentary_last', u'Документальные фильмы: последнее'),
@@ -694,6 +698,10 @@ def dialog_action(action, settings, params=None):
 			('movie_top', u'Художественные фильмы: популярное'),
 			('movie_recomended', u'Художественные фильмы: текущее'),
 			('movie_last', u'Художественные фильмы: последнее'),
+
+			('tvshow_top', u'Сериалы: популярное'),
+			('tvshow_recomended', u'Сериалы: текущее'),
+			('tvshow_last', u'Сериалы: последнее'),
 
 		]
 
@@ -893,6 +901,7 @@ def action_show_library(params):
 					'votes', 'mpaa', 'trailer', 'playcount',
 					"resume", "art",
 				]
+		content = 'movies'
 
 		def method(self):
 			return "VideoLibrary.GetMovies"
@@ -921,13 +930,25 @@ def action_show_library(params):
 			if 'documentary' in self.category:
 				return 'Documentary' not in item['file']
 
-			if 'tvshows' in self.category:
-				return 'TVShows' not in item['file']
+			if 'tvshow' in self.category:
+				if 'Animation' not in item['file']:
+					return 'TVShows' not in item['file']
 
+			if 'animtv' in self.category:
+				return 'Animation TVShows' not in item['file']
 
 			return True
 
+		def full_listing(self):
+			xbmcplugin.setContent(addon_handle, self.content)
+			xbmcplugin.addSortMethod(addon_handle, xbmcplugin.SORT_METHOD_NONE, "%R")
+
+			self.listing()
+			xbmcplugin.endOfDirectory(addon_handle)
+
+
 		def listing(self):
+
 			result = self.req()['result']
 			plot_enable = True
 	
@@ -951,10 +972,12 @@ def action_show_library(params):
 				else:
 					cast = [None, None]
 
-				li = xbmcgui.ListItem(movie['title'])
+				full_title = u"{} ({})".format(movie['title'], movie['year']) if movie['year'] and self.content == 'movies' else movie['title']
+
+				li = xbmcgui.ListItem(full_title)
 				url = movie['file']
 				li.setInfo(type="Video", infoLabels={
-					"Title": movie['title'],
+					"Title": full_title,
 					"OriginalTitle": movie['originaltitle'],
 					"Year": movie['year'],
 					"Genre": _get_joined_items(movie.get('genre', "")),
@@ -989,9 +1012,6 @@ def action_show_library(params):
 
 				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=isFolder)
 
-			xbmcplugin.endOfDirectory(addon_handle)
-
-
 		def req(self, sort=None, filter=None, limits=None):
 			_r = {"jsonrpc": "2.0", "method": self.method(), "params": {"properties": self.fields}, "id": "53257"}
 
@@ -1020,14 +1040,21 @@ def action_show_library(params):
 
 	class query_tv(query):
 		def __init__(self):
-			self.fields.remove('country')
-			self.fields.remove('plotoutline')
-			self.fields.remove('tagline')
-			self.fields.remove('trailer')
-			self.fields.remove('resume')
+			
+			self.fields = ["title", "originaltitle", "year", "file", "imdbnumber", 'cast', 
+					 'genre', 'plot', 'rating',
+					'votes', 'mpaa', 'playcount',
+					 "art",
+				]
+			self.content = 'tvshows'
 
 		def method(self):
 			return "VideoLibrary.GetTVShows"
+
+		def listing(self):
+			#xbmcplugin.addSortMethod(addon_handle, xbmcplugin.SORT_METHOD_NONE, "%R")
+			
+			query.listing(self)
 
 
 	class query_tv_ep(query_tv):
@@ -1036,6 +1063,8 @@ def action_show_library(params):
 							"productioncode", "season", "episode", "originaltitle", "showtitle", "cast", "streamdetails",
 							"lastplayed", "fanart", "thumbnail", "file", "resume", "tvshowid", "dateadded", "uniqueid", "art",
 							"specialsortseason", "specialsortepisode", "userrating", "seasonid", "ratings"]
+
+			self.content = 'episodes'
 
 		def method(self):
 			return "VideoLibrary.GetEpisodes"
@@ -1046,14 +1075,6 @@ def action_show_library(params):
 
 			props = [ "imdbnumber", "title", "episode", "season", "firstaired", "plot", "showtitle", "rating", "mpaa", 
 					'playcount', "cast", 'resume', "art"
-					#"title", "artist", "albumartist", "genre", "year", "rating", "album", "track", "duration", "comment",
-					#"lyrics", "musicbrainztrackid", "musicbrainzartistid", "musicbrainzalbumid", "musicbrainzalbumartistid",
-					#"playcount", "fanart", "director", "trailer", "tagline", "plot", "plotoutline", "originaltitle", "lastplayed",
-					#"writer", "studio", "mpaa", "cast", "country", "imdbnumber", "premiered", "productioncode", "runtime", "set",
-					#"showlink", "streamdetails", "top250", "votes", "firstaired", "season", "episode", "showtitle", "thumbnail",
-					#"file", "resume", "artistid", "albumid", "tvshowid", "setid", "watchedepisodes", "disc", "tag", "art",
-					#"genreid", "displayartist", "albumartistid", "description", "theme", "mood", "style", "albumlabel", "sorttitle",
-					#"episodeguide", "uniqueid", "dateadded", "size", "lastmodified", "mimetype", "specialsortseason", "specialsortepisode"
 					]
 
 			jsn = json.loads(xbmc.executeJSONRPC(json.dumps(
@@ -1067,6 +1088,9 @@ def action_show_library(params):
 
 
 		def listing(self):
+
+			xbmcplugin.addSortMethod(addon_handle, xbmcplugin.SORT_METHOD_NONE, "%J")
+
 			result = self.req()['result']
 			plot_enable = True
 	
@@ -1088,11 +1112,12 @@ def action_show_library(params):
 				nSeason = "%.2d" % float(episode['season'])
 				fEpisode = "s%se%s" % (nSeason, nEpisode)
 
-				li = xbmcgui.ListItem(episode['title'])
+				full_title = u'{} - {}x{} {}'.format(episode['showtitle'], episode['episode'], episode['season'], episode['title'])
+				li = xbmcgui.ListItem(full_title)
 				url = episode['file']
 
 				li.setInfo(type="Video", infoLabels={
-					"Title": episode['title'],
+					"Title": full_title,
 					"Episode": episode['episode'],
 					"Season": episode['season'],
 					"Studio": _get_first_item(episode.get('studio', "")),
@@ -1119,17 +1144,19 @@ def action_show_library(params):
 
 				xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=False)
 
-			xbmcplugin.endOfDirectory(addon_handle)
-
-
 	class recentmovies(query):
 		items = ['animation_last', 'documentary_last', 'movie_last']
 
-		#def method(self):
-		#	return 'VideoLibrary.GetRecentlyAddedMovies'
-
 		def req(self):
 			return self.req_ldp('recentmovies')
+
+	class recenttvshows(query_tv):
+		items = ['anime_last', 'tvshow_last', 'animtv_last']
+
+		def req(self):
+			return query_tv.req(self, 
+									sort={ "order": "descending", "method": "dateadded", "ignorearticle": True },
+									limits={ "start" : 0, "end": 250 })
 
 	class recommendedmovies(query):
 		items = ['animation_recomended', 'documentary_recomended', 'movie_recomended']
@@ -1138,7 +1165,7 @@ def action_show_library(params):
 			return self.req_ldp('recommendedmovies')
 
 	class recommendedepisodes(query_tv_ep):
-		items = ['anime_recomended']
+		items = ['anime_recomended', 'tvshow_recomended', 'animtv_recomended']
 
 		def req(self):
 			return self.req_ldp('recommendedepisodes')
@@ -1152,7 +1179,7 @@ def action_show_library(params):
 									limits={ "start" : 0, "end": 250 })
 
 	class toptvshows(query_tv):
-		items = ['anime_top']
+		items = ['anime_top', 'tvshow_top', 'animtv_top']
 		def req(self):
 			return query_tv.req(self, 
 									sort={ "order": "descending", "method": "rating", "ignorearticle": True },
@@ -1163,7 +1190,8 @@ def action_show_library(params):
 		'recommendedmovies': recommendedmovies(),
 		'recommendedepisodes': recommendedepisodes(),
 		'topmovies': topmovies(),
-		'toptvshows': toptvshows()
+		'toptvshows': toptvshows(),
+		'recenttvshows': recenttvshows()
 	}
 
 	import vsdbg
@@ -1172,7 +1200,7 @@ def action_show_library(params):
 	for q, l in ldp_query.iteritems():
 		if params.get('category') in l.items:
 			l.category = params.get('category')
-			l.listing()
+			l.full_listing()
 		
 
 def action_search_context(params):
