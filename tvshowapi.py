@@ -6,7 +6,7 @@ import urllib2
 from contextlib import closing
 from zipfile import ZipFile, BadZipfile, LargeZipFile
 import xml.etree.ElementTree as ET
-from movieapi import KinopoiskAPI2 as KinopoiskAPI
+from movieapi import KinopoiskAPI as KinopoiskAPI
 
 import io
 
