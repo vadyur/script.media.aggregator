@@ -267,7 +267,7 @@ class KinopoiskAPI(object):
 		self.makeSoup()
 		if self.soup:
 			for a in self.soup.find_all('a'):
-				if '/lists/m_act%5Byear%5D/' in a['href']:
+				if '/lists/m_act%5Byear%5D/' in a.get('href', ''):
 					return a.get_text()
 		return None
 
@@ -507,7 +507,7 @@ class KinopoiskAPI2(KinopoiskAPI):
 	def Poster(self):
 		return 'https://st.kp.yandex.net/images/film_big/{}.jpg'.format(self.kp_id)
 
-class MovieAPI(KinopoiskAPI2):
+class MovieAPI(KinopoiskAPI):
 	api_url		= 'https://api.themoviedb.org/3'
 	tmdb_api_key = get_tmdb_api_key()
 
@@ -650,7 +650,7 @@ class MovieAPI(KinopoiskAPI2):
 				_year = year
 				imdb_id = MovieAPI.imdb_by_omdb_request(orig, year)
 				if not imdb_id and kinopoisk_url is not None:
-					kp = KinopoiskAPI2(kinopoisk_url, force_googlecache=kp_googlecache)
+					kp = KinopoiskAPI(kinopoisk_url, force_googlecache=kp_googlecache)
 					orig = kp.getOriginalTitle()
 					if not orig:
 						orig = kp.getTitle()
@@ -681,7 +681,7 @@ class MovieAPI(KinopoiskAPI2):
 		return api, imdb_id
 
 	def __init__(self, imdb_id = None, kinopoisk = None, kp_googlecache=False):
-		KinopoiskAPI2.__init__(self, kinopoisk, force_googlecache=kp_googlecache)
+		KinopoiskAPI.__init__(self, kinopoisk, force_googlecache=kp_googlecache)
 
 		if imdb_id:
 			url_ = MovieAPI.url_imdb_id(imdb_id)
@@ -706,7 +706,7 @@ class MovieAPI(KinopoiskAPI2):
 		if self.actors is not None:
 			return self.actors
 
-		kp_actors = KinopoiskAPI2.Actors(self)
+		kp_actors = KinopoiskAPI.Actors(self)
 		try:
 			cast = self.tmdb_data['credits']['cast']
 		except:
@@ -732,7 +732,7 @@ class MovieAPI(KinopoiskAPI2):
 	def Year(self):
 		try:
 			return self.omdbapi['Year']
-			kp_year = KinopoiskAPI2.getYear(self)
+			kp_year = KinopoiskAPI.getYear(self)
 			if kp_year:
 				return kp_year
 		except: pass
@@ -749,7 +749,7 @@ class MovieAPI(KinopoiskAPI2):
 		return self.omdbapi.get(u'Rated', u'')
 
 	def Poster(self):
-		kp_poster = KinopoiskAPI2.Poster(self)
+		kp_poster = KinopoiskAPI.Poster(self)
 		if kp_poster:
 			return kp_poster
 
@@ -767,7 +767,7 @@ class MovieAPI(KinopoiskAPI2):
 		return u''
 
 	def Plot(self):
-		return KinopoiskAPI2.getPlot(self)
+		return KinopoiskAPI.getPlot(self)
 		
 	def Tags(self):
 		tags = []
