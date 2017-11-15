@@ -650,6 +650,8 @@ class MyShowsAPI(object):
 					d = datetime.datetime.strptime(s, '%b/%d/%Y')
 				except TypeError:
 					d = datetime.datetime(*(time.strptime(s, '%b/%d/%Y')[0:6]))
+				except:
+					d = None
 				if d:
 					return d.strftime('%Y-%m-%d')
 		return None

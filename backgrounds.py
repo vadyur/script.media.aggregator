@@ -106,7 +106,7 @@ def update_service(show_progress=False):
 
 	if nnmclub_enable:
 		from service import Addon
-		addon = Addon('settings2.xml')
+		addon = Addon('settings3.xml')
 
 		try:
 			import math
@@ -118,6 +118,9 @@ def update_service(show_progress=False):
 
 		if settings.nnmclub_hours > 168:
 			settings.nnmclub_hours = 168
+
+		if settings.nnmclub_hours < 8:
+			settings.nnmclub_hours = 8
 
 		log.debug('NNM hours: ' + str(settings.nnmclub_hours))
 
