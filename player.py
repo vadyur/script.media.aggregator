@@ -57,6 +57,7 @@ def load_settings():
 	nnmclub_pages = 3
 	nnmclub_login = getSetting('nnmclub_login')
 	nnmclub_password = getSetting('nnmclub_password')
+	nnmclub_domain = getSetting('nnmclub_domain')
 
 	rutor_domain = getSetting('rutor_domain')
 	rutor_filter = getSetting('rutor_filter')
@@ -100,6 +101,7 @@ def load_settings():
 						nnmclub_pages 		=nnmclub_pages,
 						nnmclub_login 		=nnmclub_login,
 						nnmclub_password 	=nnmclub_password,
+						nnmclub_domain		=nnmclub_domain,
 						rutor_domain        =rutor_domain,
 						rutor_filter        =rutor_filter,
 						rutor_nosd			=rutor_nosd,
@@ -625,11 +627,13 @@ def dialog_action(action, settings, params=None):
 		_addon.openSettings()
 		settings = load_settings()
 
+		"""
 		if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
 			from nnmclub import get_passkey
 			passkey = get_passkey(settings=settings)
 			_addon.setSetting('nnmclub_passkey', passkey)
 			settings.nnmclub_passkey = passkey
+		"""
 
 	if action == dialog_action_case.search:
 		if not 'keyword' in params:

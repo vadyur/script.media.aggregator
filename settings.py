@@ -33,7 +33,7 @@ class Settings:
 	             hdclub_passkey 		= '',
 	             bluebird_passkey 		= None, bluebird_preload_torrents = False, bluebird_login = '', bluebird_password = '', bluebird_nouhd = True,
 	             anidub_login = '', anidub_password = '', anidub_rss=True, anidub_favorite=True,
-	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168,
+	             nnmclub_login = '', nnmclub_password = '', nnmclub_pages = 1, nnmclub_hours=168, nnmclub_domain='nnm-club.name',
 	             rutor_domain = 'rutor.info',
 	             rutor_filter = 'CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP',
 	             soap4me_login = '', soap4me_password = '', soap4me_rss='',
@@ -71,6 +71,7 @@ class Settings:
 		self.anidub_rss 			= anidub_rss
 		self.anidub_favorite 		= anidub_favorite
 
+		self.nnmclub_domain			= nnmclub_domain
 		self.nnmclub_login 			= nnmclub_login
 		self.nnmclub_password 		= nnmclub_password
 		self.nnmclub_pages			= nnmclub_pages

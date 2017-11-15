@@ -75,6 +75,7 @@ def dispatch():
 		action_add_media(params, load_settings())
 
 	elif params.get('action') == 'update_service':
+		vsdbg._bp()
 		from backgrounds import update_service
 		update_service(show_progress=params.get('show_progress'))
 
