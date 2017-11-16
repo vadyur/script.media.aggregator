@@ -34,11 +34,9 @@ _NEXT_PAGE_SUFFIX = '&start='
 #_mirror = 'nnm-club.name'
 
 def real_url(url, settings):
-	
-
 	import urlparse
 	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult('http', settings.nnmclub_domain, res.path, res.params, res.query, res.fragment)
+	res = urlparse.ParseResult('https', '{}:443'.format(settings.nnmclub_domain), res.path, res.params, res.query, res.fragment)
 	res = urlparse.urlunparse(res)
 	debug(res)
 	return res
