@@ -58,6 +58,7 @@ def load_settings():
 	nnmclub_login = getSetting('nnmclub_login')
 	nnmclub_password = getSetting('nnmclub_password')
 	nnmclub_domain = getSetting('nnmclub_domain')
+	nnmclub_use_ssl = getSetting('nnmclub_use_ssl')
 
 	rutor_domain = getSetting('rutor_domain')
 	rutor_filter = getSetting('rutor_filter')
@@ -102,6 +103,7 @@ def load_settings():
 						nnmclub_login 		=nnmclub_login,
 						nnmclub_password 	=nnmclub_password,
 						nnmclub_domain		=nnmclub_domain,
+						nnmclub_use_ssl		=nnmclub_use_ssl,
 						rutor_domain        =rutor_domain,
 						rutor_filter        =rutor_filter,
 						rutor_nosd			=rutor_nosd,

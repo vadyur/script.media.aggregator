@@ -95,9 +95,10 @@
   <category label="nnm-club">
 		  <setting label="Использовать" type="bool" id="nnmclub_enable" default="false"/>
       <setting label="Домен" type="text"   id="nnmclub_domain" enable="eq(-1,true)" default="nnm-club.name"/>
+		  <setting label="Использовать защищённое соединение (SSL)" type="bool" id="nnmclub_use_ssl" enable="eq(-2,true)" default="false"/>
 		  <setting label="Учётные данные сайта nnm-club.me (необходима регистрация на сайте)" type="lsep"/>
-      <setting label="Login" type="text"   id="nnmclub_login" enable="eq(-3,true)" default=""/>
-      <setting label="Password" type="text"   id="nnmclub_password" enable="eq(-4,true)" option="hidden"  default=""/>
+      <setting label="Login" type="text"   id="nnmclub_login" enable="eq(-4,true)" default=""/>
+      <setting label="Password" type="text"   id="nnmclub_password" enable="eq(-5,true)" option="hidden"  default=""/>
     </category>
   
     <category label="Rutor">
