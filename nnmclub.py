@@ -34,9 +34,14 @@ _NEXT_PAGE_SUFFIX = '&start='
 #_mirror = 'nnm-club.name'
 
 def real_url(url, settings):
+
+	protocol = 'http'
+	if settings.nnmclub_use_ssl:
+		protocol = 'https'
+
 	import urlparse
 	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult('https', '{}:443'.format(settings.nnmclub_domain), res.path, res.params, res.query, res.fragment)
+	res = urlparse.ParseResult(protocol, settings.nnmclub_domain, res.path, res.params, res.query, res.fragment)
 	res = urlparse.urlunparse(res)
 	debug(res)
 	return res
@@ -146,7 +151,7 @@ class DescriptionParser(DescriptionParserBase):
 				debug('Already exists')
 				return False
 
-			r = requests.get(real_url(self._link, self.settings), verify=False)
+			r = self.settings.session.get(self._link)
 			if r.status_code == requests.codes.ok:
 				return self.parse_description(r.text)
 
@@ -276,13 +281,14 @@ class PostsEnumerator(object):
 	# ==============================================================================================
 	_items = []
 
-	def __init__(self):
-		self._s = requests.Session()
+	def __init__(self, session):
+		self._s = session
+
 		self._items[:] = []
 		self.settings = None
 
 	def process_page(self, url):
-		request = self._s.get(real_url(url, self.settings), verify=False)
+		request = self._s.get(url)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -298,7 +304,7 @@ class TrackerPostsEnumerator(PostsEnumerator):
 		self._items[:] = []
 
 	def process_page(self, url):
-		request = self._s.get(real_url(url, self.settings), verify=False)
+		request = self._s.get(url)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -422,7 +428,7 @@ def write_tvshows(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
 	with filesystem.save_make_chdir_context(path):
-		r = settings.session.get(real_url(rss_url, settings), verify=False)
+		r = settings.session.get(rss_url)
 		if not r.ok:
 			return
 
@@ -451,7 +457,7 @@ def write_movies_rss(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
 	with filesystem.save_make_chdir_context(path):
-		r = settings.session.get(real_url(rss_url, settings), verify=False)
+		r = settings.session.get(rss_url)
 		if not r.ok:
 			return
 
@@ -479,7 +485,7 @@ def get_uid(settings, session=None):
 	if session is None:
 		session = create_session(settings)
 	try:
-		page = session.get(real_url('http://nnm-club.me/', settings), verify=False)
+		page = session.get('http://nnm-club.me/')
 		if page.status_code == requests.codes.ok:
 			soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 			'''
@@ -547,12 +553,14 @@ def run(settings):
 
 
 def get_magnet_link(url):
+	'''
 	r = requests.get(real_url(url), verify=False)
 	if r.status_code == requests.codes.ok:
 		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
 			debug(a['href'])
 			return a['href']
+	'''
 	return None
 
 
@@ -561,6 +569,10 @@ def create_session(settings):
 		return settings.session
 	except AttributeError:
 		s = requests.Session()
+
+		cookies = None
+		if settings.nnmclub_use_ssl:
+			cookies = dict( ssl='enable_ssl' )
 
 		r = s.get(real_url("http://nnm-club.me/forum/login.php", settings), verify=False)
 
@@ -573,9 +585,27 @@ def create_session(settings):
 
 		data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password,
 				"autologin": "on", "code": code, "redirect": "", "login": ""}
-		login = s.post(real_url("http://nnm-club.me/forum/login.php", settings), data=data, verify=False,
+		login = s.post(real_url("http://nnm-club.me/forum/login.php", settings), data=data, verify=False, cookies=cookies,
 					   headers={'Referer': real_url("http://nnm-club.me/forum/login.php", settings)})
 		debug('Login status: %d' % login.status_code)
+
+
+		class MySession():
+			def __init__(self, session, settings):
+				self.session = session
+				self.settings = settings
+			def _prepare(self, kwargs):
+				if settings.nnmclub_use_ssl:
+					kwargs['verify'] = False
+				kwargs['cookies'] = cookies
+			def get(self, url, **kwargs):
+				self._prepare(kwargs)
+				return self.session.get(real_url(url, self.settings), **kwargs)
+			def post(self, url, **kwargs):
+				self._prepare(kwargs)
+				return self.session.post(real_url(url, self.settings), **kwargs)
+
+		s = MySession(s, settings)
 
 		settings.session = s
 
@@ -589,7 +619,7 @@ def get_passkey(settings=None, session=None):
 	if session is None:
 		session = create_session(settings)
 
-	page = session.get(real_url('http://nnm-club.me/forum/profile.php?mode=editprofile', settings), verify=False)
+	page = session.get('http://nnm-club.me/forum/profile.php?mode=editprofile')
 
 	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 
@@ -625,14 +655,13 @@ def download_torrent(url, path, settings):
 	link = None # find_direct_link(url, settings)
 	if link is None:
 		s = create_session(settings)
-		page = s.get(real_url(url, settings), verify=False)
+		page = s.get(url)
 		# debug(page.text.encode('cp1251'))
 
 		soup = BeautifulSoup(clean_html(page.text), 'html.parser')
 		a = soup.select('td.gensmall > span.genmed > b > a')
 		if len(a) > 0:
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
-		debug(s.headers)
 	else:
 		href = linkd
 		response = urllib2.urlopen(real_url(link, settings))
@@ -652,7 +681,7 @@ def download_torrent(url, path, settings):
 			if link:
 				return requests.get(real_url(link, settings), verify=False)
 			else:
-				return s.get(real_url(href, settings), headers={'Referer': real_url(url, settings)}, verify=False)
+				return s.get(href, headers={'Referer': real_url(url, settings)})
 			
 		try:
 			r = make_req()
