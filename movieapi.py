@@ -172,6 +172,8 @@ class KinopoiskAPI(object):
 			if resp['url'] == url:
 				return resp['response']
 
+		r = requests.Response()
+
 		if self.session is None:
 			self.session = requests.session()
 
@@ -233,7 +235,7 @@ class KinopoiskAPI(object):
 		except BaseException as e:
 			debug(str(e))
 	
-		return None
+		return requests.Response()
 
 	def makeSoup(self):
 		if self.kinopoisk_url and self.soup is None:
