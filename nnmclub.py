@@ -196,18 +196,19 @@ class DescriptionParser(DescriptionParserBase):
 		if count_id > 1:
 			return False
 
-		for img in self.soup.select('var.postImg'):  # ('img.postImg'):
+		img = self.soup.find('var', class_='postImg')
+		if  img:
 			try:
-				self._dict['thumbnail'] = img['title']
+				self._dict['thumbnail'] = img['title'].split('?link=')[-1]
 				debug('!!!!!!!!!!!!!!thumbnail: ' + self._dict['thumbnail'])
-				break
 			except:
 				pass
 
 		if 'thumbnail' not in self._dict:
 			imgs = self.soup.select('span.postbody > img')
 			try:
-				self._dict['thumbnail'] = imgs[0]['src'].split('?link=')[1]
+				self._dict['thumbnail'] = imgs[0]['src'].split('?link=')[-1]
+				debug('!!!!!!!!!!!!!!thumbnail: ' + self._dict['thumbnail'])
 			except BaseException as e:
 				pass
 
