@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import log
 from log import debug, print_tb
@@ -56,6 +56,256 @@ def get_tmdb_api_key():
 		debug('get_tmdb_api_key: ' + str(e))
 
 	return {'host': host, 'key': key }
+
+def attr_text(s):
+	return s.get_text()
+
+def attr_split_slash(s):
+	itms = s.get_text().split('/')
+	return [i.strip() for i in itms]
+
+def attr_year(s):
+	import re
+	m = re.search(r'(\d\d\d\d)', s.get_text())
+	if m:
+		return m.group(1)
+
+def attr_genre(s):
+	return [ a.get_text() for a in s.find_all('a') ]
+
+class IDs(object):
+	kp_by_imdb = {}
+	imdb_by_kp = {}
+
+	@staticmethod
+	def id_by_kp_url(url):
+		import re
+		m = re.search(r"(\d\d+)", url)
+		if m:
+			return m.group(1)
+		
+		return None
+
+	@staticmethod
+	def get_by_kp(kp_url):
+		return IDs.imdb_by_kp.get(IDs.id_by_kp_url(kp_url))
+
+	@staticmethod
+	def get_by_imdb(imdb_id):
+		return IDs.kp_by_imdb.get(imdb_id)
+
+	@staticmethod
+	def set(imdb_id, kp_url):
+		if imdb_id and kp_url:
+			kp_id = IDs.id_by_kp_url(kp_url)
+			IDs.imdb_by_kp[kp_id] = imdb_id
+			IDs.kp_by_imdb[imdb_id] = kp_id
+
+	@staticmethod
+	def has_imdb(imdb_id):
+		return imdb_id in IDs.kp_by_imdb
+
+	@staticmethod
+	def has_kp(kp_url):
+		kp_id = IDs.id_by_kp_url(kp_url)
+		return kp_id in IDs.imdb_by_kp
+
+class soup_base(object):
+	def __init__(self, url):
+		self.url = url
+		self._soup = None
+		self._request = None
+
+	@property
+	def soup(self):
+		if not self._soup:
+			r = requests.get(self.url)
+			self._soup = BeautifulSoup(r.content, 'html.parser')
+			self._request = r
+		return self._soup
+
+class world_art_actors(soup_base):
+	def __init__(self, url):
+		soup_base.__init__(self, url)
+		self._actors = []
+
+	@property
+	def actors(self):
+		if not self._actors:
+			def append_actor(tr):
+				a = tr.find('a')
+				act = {}
+				if a:
+					id = a['href'].split('?id=')[-1]
+					if tr.find('img', attrs={'src': "../img/photo.gif"}):
+						act['photo'] = 'http://www.world-art.ru/img/people/10000/{}.jpg'.format(int(id))
+
+					parts = attr_split_slash(a.parent)
+					if len(parts) == 2:
+						act['ru_name'] = parts[0]
+						act['en_name'] = parts[1]
+						self._actors.append(act)
+
+			for b in self.soup.find_all('b'):
+				if b.get_text() == u'В ролях:':
+					tr = b.find_parent('tr')
+					if tr:
+						for tr_next in tr.find_next_siblings('tr'):
+							append_actor(tr_next)
+
+		return self._actors
+
+	def __getitem__(self, i):
+		if isinstance(i, int):
+			return self.actors[i]
+		elif isinstance(i, str) or isinstance(i, unicode):
+			for act in self.actors:
+				if act['ru_name'] == i:
+					return act
+				if act['en_name'] == i:
+					return act
+		raise KeyError
+
+class world_art_info(soup_base):
+	Request_URL = "http://www.world-art.ru/%s"
+
+	attrs = {
+		(u'Названия', 'knowns', attr_split_slash),
+		(u'Производство', 'country', attr_text),
+		(u'Хронометраж', 'runtime', attr_text),
+		(u'Жанр', 'genre', attr_genre),
+		(u'Первый показ', 'year', attr_year),
+		(u'Режиссёр', 'director', attr_text),
+	}
+
+	def __init__(self, url):
+		soup_base.__init__(self, self.Request_URL % url)
+		self._info_data = dict()
+		self._actors = None
+
+	@property
+	def actors(self):
+		if not self._actors:
+			self._actors = world_art_actors(self.url.replace('cinema.php', 'cinema_full_cast.php'))
+		return self._actors
+
+	@property
+	def data(self):
+		def next_td(td, fn):
+			return fn(td.next_sibling.next_sibling)
+
+		if not self._info_data:
+			data = {}
+			for td in self.soup.find_all('td', class_='review'):
+				td_text = td.get_text()
+				find = [item for item in self.attrs if td_text in item]
+				if find:
+					item = find[0]
+					data[item[1]] = next_td(td, item[2])
+			self._info_data = data.copy()
+
+		return self._info_data
+
+	def __getattr__(self, name):
+		names = [i[1] for i in self.attrs]
+
+		if name in names:
+			return self.data[name]
+		raise AttributeError
+
+	@property
+	def imdb(self):
+		a = self.soup.select('a[href*=imdb.com]')
+		for part in a[0]['href'].split('/'):
+			if part.startswith('tt'):
+				return part
+
+	@property
+	def kp_url(self):
+		a = self.soup.select('a[href*=kinopoisk.ru]')
+		return a[0]['href']
+
+	@property
+	def plot(self):
+		p = self.soup.find('p', attrs ={'class':'review', 'align': 'justify'})
+		if p:
+			return p.get_text()
+
+
+class world_art(soup_base):
+	Request_URL = "http://www.world-art.ru/search.php?public_search=%s&global_sector=cinema"
+
+	def __init__(self, title, year=None, imdbid=None, kp_url=None):
+		import urllib
+		url = self.Request_URL % urllib.quote_plus(title.encode('cp1251'))
+		soup_base.__init__(self, url)
+
+		self._title = title
+		self._year = year
+		self._imdbid = imdbid
+		self._kp_url = kp_url
+
+		self._info = None
+
+	@property
+	def info(self):
+		if not self._info:
+			results = self.search_by_title(self._title)
+
+			#filter by year
+			if self._year:
+				results = [ item for item in results if item.year == self._year ]
+
+			if self._imdbid:
+				results = [ item for item in results if item.imdb == self._imdbid ]
+				if results:
+					self._info = results[0]
+					return	self._info
+
+			if self._kp_url:
+				results = [ item for item in results if IDs.id_by_kp_url(item.kp_url) == IDs.id_by_kp_url(self._kp_url) ]
+				if results:
+					self._info = results[0]
+					return	self._info
+
+			# filter by title
+			for item in results:
+				if self._title in item.knowns:
+					self._info = item
+					return	self._info
+
+		#for info in results:
+		#	imdb = info.imdb
+
+		return self._info
+
+	def search_by_title(self, title):
+		result = []
+		
+		for meta in self.soup.find_all('meta'):
+			# 	meta	<meta content="0; url=/cinema/cinema.php?id=68477" http-equiv="Refresh"/>	Tag
+			if meta.get('http-equiv') == "Refresh" and 'url=/cinema/cinema.php?id=' in meta.get('content'):
+				url = meta.get('content').split('url=/')[-1]
+				info = world_art_info(url)
+				info.year		= self._year
+				#info.knowns		= [ self._title ]
+
+			result.append( info )
+
+		for a in self.soup.find_all('a', class_="estimation"):
+
+			info = world_art_info(a['href'])
+
+			tr = a
+			while tr.name != 'tr':
+				tr = tr.parent
+			info.year = tr.find('td').get_text()
+
+			td = a.parent
+			info.knowns = [ i.get_text() for i in td.find_all('i') ]
+
+			result.append( info )
+		return result
 
 
 class tmdb_movie_item(object):
@@ -369,6 +619,26 @@ class KinopoiskAPI(object):
 					return self.__trailer(a)
 		return None
 
+
+class imdb_cast(soup_base):
+	def __init__(self, url):
+		soup_base(self, url + '/fullcredits')
+		self._actors = []
+
+	@property
+	def actors(self):
+		if not self._actors:
+			tbl = self.soup.find('table', class_='cast_list')
+			if tbl:
+				for tr in tbl.find('tr'):
+					if 'class' in tr:
+						act = {}
+						# https://images-na.ssl-images-amazon.com/images/M/MV5BMTkxMzk2MDkwOV5BMl5BanBnXkFtZTcwMDAxODQwMg@@._V1_UX32_CR0,0,32,44_AL_.jpg
+						# https://images-na.ssl-images-amazon.com/images/M/MV5BMjExNzA4MDYxN15BMl5BanBnXkFtZTcwOTI1MDAxOQ@@._V1_SY1000_CR0,0,721,1000_AL_.jpg
+						# https://images-na.ssl-images-amazon.com/images/M/MV5BMjExNzA4MDYxN15BMl5BanBnXkFtZTcwOTI1MDAxOQ@@._V1_UY317_CR7,0,214,317_AL_.jpg
+						#img = tr.find('img')
+
+
 class ImdbAPI(object):
 	def __init__(self, imdb_id):
 		resp = requests.get('http://www.imdb.com/title/' + imdb_id + '/')
@@ -410,43 +680,6 @@ class ImdbAPI(object):
 			return self.__getitem__(key)
 		except AttributeError:
 			return default
-
-class IDs(object):
-	kp_by_imdb = {}
-	imdb_by_kp = {}
-
-	@staticmethod
-	def id_by_kp_url(url):
-		import re
-		m = re.search(r"(\d\d+)", url)
-		if m:
-			return m.group(1)
-		
-		return None
-
-	@staticmethod
-	def get_by_kp(kp_url):
-		return IDs.imdb_by_kp.get(IDs.id_by_kp_url(kp_url))
-
-	@staticmethod
-	def get_by_imdb(imdb_id):
-		return IDs.kp_by_imdb.get(imdb_id)
-
-	@staticmethod
-	def set(imdb_id, kp_url):
-		if imdb_id and kp_url:
-			kp_id = IDs.id_by_kp_url(kp_url)
-			IDs.imdb_by_kp[kp_id] = imdb_id
-			IDs.kp_by_imdb[imdb_id] = kp_id
-
-	@staticmethod
-	def has_imdb(imdb_id):
-		return imdb_id in IDs.kp_by_imdb
-
-	@staticmethod
-	def has_kp(kp_url):
-		kp_id = IDs.id_by_kp_url(kp_url)
-		return kp_id in IDs.imdb_by_kp
 
 class KinopoiskAPI2(KinopoiskAPI):
 
@@ -800,4 +1033,14 @@ if __name__ == '__main__':
 	#	'http://api.themoviedb.org/3/movie/tt4589186?api_key=f7f51775877e0bb6703520952b3c7840&language=ru')
 
 	#api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/894027/')
-	api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/257774/')
+	#api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/257774/')
+	#api = world_art(title=u"Команда Тора")
+
+	api = world_art(u'The Fate of the Furious', year='2017', kp_url='https://www.kinopoisk.ru/film/894027/')
+	info = api.info
+	knowns = info.knowns
+	plot = info.plot
+
+	actors = [act for act in info.actors]
+
+	pass
