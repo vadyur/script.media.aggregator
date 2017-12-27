@@ -85,6 +85,11 @@ def dispatch():
 		from backgrounds import scrape_nnm
 		scrape_nnm()
 
+	elif params.get('action') == 'select_source':
+		from context import main
+		vsdbg._bp()
+		main()
+
 	elif params.get('action') == 'add_media_process':
 		vsdbg._bp()
 
