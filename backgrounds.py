@@ -73,7 +73,7 @@ def update_service(show_progress=False):
 	from player import _addon
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	hdclub_enable		= False
 	bluebird_enable		= _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
@@ -94,8 +94,8 @@ def update_service(show_progress=False):
 	if anidub_enable:
 		anidub.run(settings)
 
-	if hdclub_enable:
-		hdclub.run(settings)
+	#if hdclub_enable:
+	#	hdclub.run(settings)
 
 	if bluebird_enable:
 		bluebird.run(settings)
@@ -135,7 +135,7 @@ def update_service(show_progress=False):
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
+	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
@@ -218,7 +218,7 @@ def add_media_process(title, imdb):
 	settings = load_settings()
 
 	anidub_enable		= getSetting('anidub_enable') == 'true'
-	hdclub_enable		= getSetting('hdclub_enable') == 'true'
+	hdclub_enable		= False
 	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
@@ -242,15 +242,16 @@ def add_media_process(title, imdb):
 
 	p = []
 
-	try:
+	#try:
+	if True:
 		if anidub_enable and imdb.startswith('sm'):
 			c = anidub.search_generate(title, settings, p)
 			count += c
 
 		if imdb.startswith('tt'):
-			if hdclub_enable:
-				c = hdclub.search_generate(title, imdb, settings, p)
-				count += c
+			#if hdclub_enable:
+			#	c = hdclub.search_generate(title, imdb, settings, p)
+			#	count += c
 			if bluebird_enable:
 				c = bluebird.search_generate(title, imdb, settings, p)
 				count += c
@@ -262,8 +263,8 @@ def add_media_process(title, imdb):
 				count += c
 			if soap4me_enable:
 				count += soap4me.search_generate(title, imdb, settings)
-	except BaseException as e:
-		log.print_tb(e)
+	#except BaseException as e:
+	#	log.print_tb(e)
 
 	if p:
 		path = filesystem.join(addon_data_path(), imdb + '.strm_path')

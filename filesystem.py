@@ -74,7 +74,7 @@ def xbmcvfs_path(path):
 
 def exists(path):
 	try:
-		if '://' in path:
+		if '://' in path or ( not _is_abs_path(path) and '://' in _cwd ):
 			import stat
 			if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
 				return True
@@ -205,7 +205,7 @@ def fopen(path, mode):
 				buf = ''
 
 				self.filename = xbmcvfs_path(filename)
-				if 'r' in opt or 'a+' in opt:
+				if 'r' in opt or 'a' in opt:
 					exst = exists(filename)
 					if not exst and 'r' in opt:
 						from errno import ENOENT
@@ -219,7 +219,7 @@ def fopen(path, mode):
 
 				StringIO.__init__(self, buf)
 
-				if '+' in opt or 'a' in opt:
+				if 'a' in opt:
 					self.seek(0, mode=2)
 
 			def write(self, s):

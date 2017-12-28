@@ -105,6 +105,8 @@ class Settings:
 
 		self.kp_googlecache			= kp_googlecache
 		self.rutor_nosd				= rutor_nosd
+
+		self.using_worldart			= True
 		
 		self.progress_dialog		= FakeProgressDlg()
 		

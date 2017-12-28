@@ -76,6 +76,17 @@ def detect_h265(str_detect):
 	except:
 		return False
 
+def is_torrent_remembed(parser, settings):
+	from downloader import TorrentDownloader
+	import urllib
+	link = parser.get('link').split('torrent=')[-1]
+	if link:
+		torr_downloader = TorrentDownloader(urllib.unquote(link), None, settings)
+		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
+		return filesystem.exists(path)
+
+	return False
+
 
 def get_rank(full_title, parser, settings):
 
@@ -233,9 +244,15 @@ def get_rank(full_title, parser, settings):
 		conditions += 1
 
 	if conditions != 0:
-		return rank / conditions
+		rank /= conditions
 	else:
-		return 1
+		rank = 1
+
+	if is_torrent_remembed(parser, settings):
+		return rank / 1000
+	
+	return rank
+
 
 def make_utf8(s):
 	if isinstance(s, unicode):
@@ -281,6 +298,9 @@ def seeds_peers(item):
 		elif 'bluebird' in link:
 			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'bluebird', t_id + '.torrent')
+			if not filesystem.exists(fn):
+				import bluebird
+				bluebird.download_torrent(link, fn, settings)
 			return scrape_now(fn)
 		elif 'rutor' in link:
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
@@ -379,7 +399,7 @@ class Informer(object):
 	def __init__(self):
 		self.__movie_api = None
 
-	def make_movie_api(self, imdb_id, kp_id, kp_googlecache=False):
+	def make_movie_api(self, imdb_id, kp_id, settings):
 		orig=None
 		year=None
 		#imdbRaiting=None
@@ -390,7 +410,7 @@ class Informer(object):
 			if u'year' in self.Dict():
 				year = self.Dict()['year']
 
-		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id, kp_id, orig, year, kp_googlecache=kp_googlecache)
+		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, kinopoisk_url=kp_id, orig=orig, year=year, settings=settings)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id
 

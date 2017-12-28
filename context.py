@@ -13,21 +13,9 @@ from base import STRMWriterBase, seeds_peers
 
 class MyWindow(pyxbmct.AddonDialogWindow):
 
-	def __init__(self, title, settings, links = []):
-		# Вызываем конструктор базового класса.
-		super(MyWindow, self).__init__(title)
-		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
-		self.setGeometry(850, 550, 1, 1)
-
-		self.settings = settings
-
-		self.files = None
-		self.left_menu = None
-		self.list = pyxbmct.List('font14', _itemHeight=120)
-		self.placeControl(self.list, 0, 0)
-
-		for item in links:
-			s = ''
+	def fill_list(self):
+		for item in self.make_links():
+			s = '' if item.get('rank', 1) >= 1 else '* '
 			try:
 				link = item['link']
 				if 'anidub' in link:
@@ -63,14 +51,28 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			except BaseException as e:
 				debug(str(e))
 				pass
-
+		
 			if s != '':
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)
 				self.list.addItem(li)
-			#list.addItem('Item 1\nNew line')
-			#list.addItem('Item 2\nNew line')
-			#list.addItem('Item 3\nNew line\nAdd line')
+
+	def __init__(self, title, settings, links):
+		# Вызываем конструктор базового класса.
+		super(MyWindow, self).__init__(title)
+		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
+		self.setGeometry(850, 600, 1, 1)
+
+		self.settings = settings
+
+		self.files = None
+		self.left_menu = None
+		self.list = pyxbmct.List('font14', _itemHeight=120)
+		self.placeControl(self.list, 0, 0)
+
+		self.make_links = links
+
+		self.fill_list()
 
 		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
@@ -131,7 +133,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.list.setVisible(False)
 
 		path = self.download_torrent(link)
-		choice_path = torrent_path.replace('.torrent', '.choice')
+		choice_path = path.replace('.torrent', '.choice')
 
 		# +++
 
@@ -180,8 +182,13 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		with filesystem.fopen(choice_path, 'w'):
 			pass
 
+		self.list.reset()
+		self.fill_list()
+
 	def cancel_choice(self, choice_path):
 		filesystem.remove(choice_path)
+		self.list.reset()
+		self.fill_list()
 
 	def show_list(self):
 		self.list.setVisible(True)
@@ -276,6 +283,10 @@ def debug_info_label(s):
 def get_path_name():
 	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
 	name = xbmc.getInfoLabel('ListItem.FileName')
+
+	if path and name:
+		return path, name
+
 	dbpath = sys.listitem.getfilename()
 	
 	if not path or not name:
@@ -296,11 +307,11 @@ def get_path_name():
 	
 			import json
 			path = None
-			if dbtype == 'movies':
+			if 'movies' in dbtype:
 				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
 				path = result[u'result'][u'moviedetails'][u'file']
-			if dbtype == 'tvshows' or dbtype == 'inprogresstvshows':
+			if 'tvshows' in dbtype:
 				if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
 					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
 					res_type = 'episodedetails'
@@ -321,7 +332,7 @@ def get_path_name():
 
 def main():
 	import vsdbg
-	vsdbg._bp()
+	#vsdbg._bp()
 
 	path, name = get_path_name()
 		
@@ -338,7 +349,8 @@ def main():
 	else:
 		return
 
-	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
+	def	links():
+		return STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
 	window = MyWindow(settings.addon_name, settings=settings, links=links)
 	window.doModal()
@@ -407,4 +419,6 @@ def main():
 		xbmcvfs.delete(path + '.alternative')
 
 if __name__ == '__main__':
+	import vsdbg
+	vsdbg._bp()
 	main()
