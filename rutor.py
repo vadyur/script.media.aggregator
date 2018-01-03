@@ -277,10 +277,8 @@ class DescriptionParser(DescriptionParserBase):
 					except:
 						pass
 
-		if self.settings:
-			if self.settings.use_kinopoisk:
-				for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
-					self._dict['kp_id'] = kp_id['href']
+		for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
+			self._dict['kp_id'] = kp_id['href']
 
 		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 
@@ -644,16 +642,18 @@ if __name__ == '__main__':
 	settings.rutor_domain = 'rutor.info'
 	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
 	settings.torrent_player = 'torrent2http'
+	settings.kp_googlecache = True
+	settings.use_kinopoisk = False
 
 	path_out = []
-	search_generate(u'Ольга', 'tt6481562', settings, path_out)
+	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
 
 	#import time
 	#from_time = time.time()
 
 	#from backgrounds import recheck_torrent_if_need
 
-	#run(settings)
+	run(settings)
 
 	#recheck_torrent_if_need(from_time, settings)
 

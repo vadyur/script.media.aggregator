@@ -47,8 +47,8 @@ def show_similar():
 		type='tv'
 
 	if imdb_id:
-		from movieapi import MovieAPI
-		res = MovieAPI.tmdb_by_imdb(imdb_id, type)
+		from movieapi import TMDB_API
+		res = TMDB_API.tmdb_by_imdb(imdb_id, type)
 		debug(res)
 		if res and len(res) > 0:
 			tmdb_id = res[0].tmdb_id()

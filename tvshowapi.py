@@ -6,7 +6,7 @@ import urllib2
 from contextlib import closing
 from zipfile import ZipFile, BadZipfile, LargeZipFile
 import xml.etree.ElementTree as ET
-from movieapi import KinopoiskAPI as KinopoiskAPI
+#from movieapi import KinopoiskAPI as KinopoiskAPI
 
 import io
 
@@ -331,7 +331,9 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		kp_id = parser.get('kp_id', None)
 		tvshow_api = TVShowAPI.get_by(originaltitle, title, imdb_id, kp_id)
 
-		api_title = tvshow_api.Title()
+		api_title = parser.movie_api().get('title')
+		if not api_title:
+			api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
 		debug(tvshow_path.encode('utf-8'))
 
@@ -673,7 +675,7 @@ class MyShowsAPI(object):
 
 		return sorted(episodes__, key=lambda k: k['episode'])
 
-class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
+class TVShowAPI(TheTVDBAPI, MyShowsAPI):
 	imdb_api	= {}
 
 	@staticmethod
@@ -691,14 +693,10 @@ class TVShowAPI(TheTVDBAPI, MyShowsAPI, KinopoiskAPI):
 	def __init__(self, title, ruTitle, imdbId=None, kinopoiskId=None):
 		TheTVDBAPI.__init__(self, imdbId)
 		MyShowsAPI.__init__(self, title, ruTitle, imdbId, kinopoiskId)
-		KinopoiskAPI.__init__(self, kinopoiskId)
+		#KinopoiskAPI.__init__(self, kinopoiskId)
 
 
 	def Title(self):
-		title = KinopoiskAPI.getTitle(self)
-		if title is not None:
-			return title
-
 		title = TheTVDBAPI.getTitle(self)
 		if title is not None:
 			return title

@@ -435,8 +435,8 @@ class Informer(object):
 	def make_filename_imdb(self):
 		if self.__movie_api:
 			title 			= self.__movie_api['title']
-			originaltitle	= self.__movie_api['original_title']
-			year			= self.__movie_api.Year()
+			originaltitle	= self.__movie_api['originaltitle']
+			year			= self.__movie_api['year']
 
 			return self.filename_with(title, originaltitle, year)
 

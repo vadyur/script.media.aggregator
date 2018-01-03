@@ -651,10 +651,10 @@ def dialog_action(action, settings, params=None):
 
 		s = urllib.unquote(params.get('keyword'))
 		if s:
-			from movieapi import MovieAPI
+			from movieapi import TMDB_API
 
 			debug('Keyword is: ' + s)
-			show_list(MovieAPI.search(s.decode('utf-8')))
+			show_list(TMDB_API.search(s.decode('utf-8')))
 
 	if action == dialog_action_case.catalog:
 		addon_handle = int(sys.argv[1])
@@ -857,21 +857,21 @@ def action_add_media(params, settings):
 			add_media(title, imdb, settings)
 
 def action_show_similar(params):
-	from movieapi import MovieAPI
-	listing = MovieAPI.show_similar(params.get('tmdb'))
+	from movieapi import TMDB_API
+	listing = TMDB_API.show_similar(params.get('tmdb'))
 	debug(listing)
 	show_list(listing)
 
 def action_show_category(params):
-	from movieapi import MovieAPI
+	from movieapi import TMDB_API
 	if params.get('category') == 'popular':
-		show_list(MovieAPI.popular())
+		show_list(TMDB_API.popular())
 	if params.get('category') == 'top_rated':
-		show_list(MovieAPI.top_rated())
+		show_list(TMDB_API.top_rated())
 	if params.get('category') == 'popular_tv':
-		show_list(MovieAPI.popular_tv())
+		show_list(TMDB_API.popular_tv())
 	if params.get('category') == 'top_rated_tv':
-		show_list(MovieAPI.top_rated_tv())
+		show_list(TMDB_API.top_rated_tv())
 	if params.get('category') == 'anime':
 		uri = 'plugin://plugin.video.shikimori.2/'
 		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
@@ -1213,9 +1213,9 @@ def action_show_library(params):
 		
 
 def action_search_context(params):
-	from movieapi import MovieAPI
+	from movieapi import TMDB_API
 	s = params.get('s')
-	show_list(MovieAPI.search(s.decode('utf-8')))
+	show_list(TMDB_API.search(s.decode('utf-8')))
 
 def action_anidub_add_favorites(settings):
 	debug('anidub-add-favorites')
