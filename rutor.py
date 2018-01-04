@@ -644,6 +644,7 @@ if __name__ == '__main__':
 	settings.torrent_player = 'torrent2http'
 	settings.kp_googlecache = True
 	settings.use_kinopoisk = False
+	settings.use_worldart = True
 
 	path_out = []
 	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
@@ -653,7 +654,9 @@ if __name__ == '__main__':
 
 	#from backgrounds import recheck_torrent_if_need
 
-	run(settings)
+	from log import dump_context
+	with dump_context('rutor'):
+		run(settings)
 
 	#recheck_torrent_if_need(from_time, settings)
 

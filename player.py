@@ -38,105 +38,77 @@ def load_settings():
 	if base_path == u'Videos':
 		base_path = filesystem.join(_addondir, base_path)
 
-	movies_path = getSetting('movies_path', 'Movies').decode('utf-8')
-	animation_path = getSetting('animation_path', 'Animation').decode('utf-8')
-	documentary_path = getSetting('documentary_path', 'Documentary').decode('utf-8')
-	anime_path = getSetting('anime_path', 'Anime').decode('utf-8')
-
-	hdclub_passkey = getSetting('hdclub_passkey')
-
-	bluebird_login = getSetting('bluebird_login')
-	bluebird_password = getSetting('bluebird_password')
-	bluebird_nouhd = getSetting('bluebird_nouhd')
-
-	anidub_login = getSetting('anidub_login')
-	anidub_password = getSetting('anidub_password')
-	anidub_rss = getSetting('anidub_rss')
-	anidub_favorite = getSetting('anidub_favorite')
-
-	nnmclub_pages = 3
-	nnmclub_login = getSetting('nnmclub_login')
-	nnmclub_password = getSetting('nnmclub_password')
-	nnmclub_domain = getSetting('nnmclub_domain')
-	nnmclub_use_ssl = getSetting('nnmclub_use_ssl') == 'true'
-
-	rutor_domain = getSetting('rutor_domain')
-	rutor_filter = getSetting('rutor_filter')
-
-	soap4me_login = getSetting('soap4me_login')
-	soap4me_password = getSetting('soap4me_password')
-	soap4me_rss = getSetting('soap4me_rss')
-
-	preffered_bitrate = int(getSetting('preffered_bitrate'))
-	preffered_type = getSetting('preffered_type')
-	preffered_codec = getSetting('preffered_codec')
-
-	torrent_player = getSetting('torrent_player')
-	storage_path = getSetting('storage_path')
-
-	movies_save = getSetting('movies_save') == 'true'
-	animation_save = getSetting('animation_save') == 'true'
-	documentary_save = getSetting('documentary_save') == 'true'
-	anime_save = getSetting('anime_save') == 'true'
-	tvshows_save = getSetting('tvshows_save') == 'true'
-	animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
-
-	torrent_path = getSetting('torrent_path')
-
-	kp_googlecache = getSetting('kp_googlecache') == 'true'
-	rutor_nosd = getSetting('rutor_nosd') == 'true'
+	movies_path				= getSetting('movies_path', 'Movies').decode('utf-8')
+	animation_path			= getSetting('animation_path', 'Animation').decode('utf-8')
+	documentary_path		= getSetting('documentary_path', 'Documentary').decode('utf-8')
+	anime_path				= getSetting('anime_path', 'Anime').decode('utf-8')
 
 	from settings import Settings
 	settings = Settings(base_path,
-						movies_path			=movies_path,
-						animation_path		=animation_path, documentary_path=documentary_path,
-						anime_path			=anime_path,
-						hdclub_passkey 		=hdclub_passkey,
-						bluebird_login 		=bluebird_login,
-						bluebird_password	=bluebird_password,
-						bluebird_nouhd		=bluebird_nouhd,
-						anidub_login 		=anidub_login,
-						anidub_password 	=anidub_password,
-						anidub_rss 	        =anidub_rss,
-						anidub_favorite 	=anidub_favorite,
-						nnmclub_pages 		=nnmclub_pages,
-						nnmclub_login 		=nnmclub_login,
-						nnmclub_password 	=nnmclub_password,
-						nnmclub_domain		=nnmclub_domain,
-						nnmclub_use_ssl		=nnmclub_use_ssl,
-						rutor_domain        =rutor_domain,
-						rutor_filter        =rutor_filter,
-						rutor_nosd			=rutor_nosd,
-						soap4me_login		=soap4me_login,
-						soap4me_password	=soap4me_password,
-						soap4me_rss			=soap4me_rss,
-						preffered_bitrate 	=preffered_bitrate,
-						preffered_type 		=preffered_type,
-						preffered_codec     =preffered_codec,
-						torrent_player 		=torrent_player,
-						storage_path		=storage_path,
-						movies_save 		=movies_save,
-						animation_save 		=animation_save,
-						documentary_save 	=documentary_save,
-						anime_save 			=anime_save,
-						tvshows_save 		=tvshows_save,
-						animation_tvshows_save =animation_tvshows_save,
-						torrent_path        =torrent_path,
-						kp_googlecache		=kp_googlecache)
+						movies_path				= movies_path,
+						animation_path			= animation_path,
+						documentary_path		= documentary_path,
+						anime_path				= anime_path
+						)
 
+	settings.hdclub_passkey			= getSetting('hdclub_passkey')
+
+	settings.bluebird_login			= getSetting('bluebird_login')
+	settings.bluebird_password		= getSetting('bluebird_password')
+	settings.bluebird_nouhd			= getSetting('bluebird_nouhd')
+
+	settings.anidub_login			= getSetting('anidub_login')
+	settings.anidub_password		= getSetting('anidub_password')
+	settings.anidub_rss				= getSetting('anidub_rss')
+	settings.anidub_favorite		= getSetting('anidub_favorite')
+
+	settings.nnmclub_pages			= 3
+	settings.nnmclub_login			= getSetting('nnmclub_login')
+	settings.nnmclub_password		= getSetting('nnmclub_password')
+	settings.nnmclub_domain			= getSetting('nnmclub_domain')
+	settings.nnmclub_use_ssl		= getSetting('nnmclub_use_ssl') == 'true'
+
+	settings.rutor_domain			= getSetting('rutor_domain')
+	settings.rutor_filter			= getSetting('rutor_filter')
+
+	settings.soap4me_login			= getSetting('soap4me_login')
+	settings.soap4me_password		= getSetting('soap4me_password')
+	settings.soap4me_rss			= getSetting('soap4me_rss')
+
+	settings.preffered_bitrate		= int(getSetting('preffered_bitrate'))
+	settings.preffered_type			= getSetting('preffered_type')
+	settings.preffered_codec		= getSetting('preffered_codec')
+
+	settings.torrent_player			= getSetting('torrent_player')
+	settings.storage_path			= getSetting('storage_path')
+
+	settings.movies_save			= getSetting('movies_save') == 'true'
+	settings.animation_save			= getSetting('animation_save') == 'true'
+	settings.documentary_save		= getSetting('documentary_save') == 'true'
+	settings.anime_save				= getSetting('anime_save') == 'true'
+	settings.tvshows_save			= getSetting('tvshows_save') == 'true'
+	settings.animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
+
+	settings.torrent_path			= getSetting('torrent_path')
+
+	settings.rutor_nosd				= getSetting('rutor_nosd') == 'true'
 	settings.addon_data_path		= _addondir
 	if getSetting('data_path'):
-		settings.addon_data_path    = getSetting('data_path')
+		settings.addon_data_path	= getSetting('data_path')
 
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
-	settings.move_video             = getSetting('action_files').decode('utf-8') == u'переместить'
-	settings.remove_files           = getSetting('action_files').decode('utf-8') == u'удалить'
-	settings.copy_video_path        = getSetting('copy_video_path').decode('utf-8')
+	settings.move_video				= getSetting('action_files').decode('utf-8') == u'переместить'
+	settings.remove_files			= getSetting('action_files').decode('utf-8') == u'удалить'
+	settings.copy_video_path		= getSetting('copy_video_path').decode('utf-8')
 
-	settings.copy_torrent           = getSetting('copy_torrent') == 'true'
-	settings.copy_torrent_path      = getSetting('copy_torrent_path').decode('utf-8')
+	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
+	settings.copy_torrent_path		= getSetting('copy_torrent_path').decode('utf-8')
+
+	settings.use_kinopoisk			= getSetting('use_kinopoisk') == 'true'
+	settings.use_worldart			= getSetting('use_worldart') == 'true'
+	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
 
 	return settings
 

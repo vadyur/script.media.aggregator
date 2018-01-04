@@ -4,6 +4,7 @@ import os, filesystem
 class QulityType:
 	Q720p = '720p'
 	Q1080 = '1080'
+	Q2160 = '2160'
 
 class CodecType:
 	MPGSD = 'MPEG2/MPEG4 ASP'
@@ -79,6 +80,7 @@ class Settings:
 		self.nnmclub_pages			= nnmclub_pages
 		self.nnmclub_hours			= nnmclub_hours
 		self.use_kinopoisk			= True
+		self.use_worldart			= True
 
 		self.rutor_domain           = rutor_domain
 		self.rutor_filter           = rutor_filter
@@ -106,8 +108,6 @@ class Settings:
 		self.kp_googlecache			= kp_googlecache
 		self.rutor_nosd				= rutor_nosd
 
-		self.using_worldart			= True
-		
 		self.progress_dialog		= FakeProgressDlg()
 		
 	def __repr__(self):

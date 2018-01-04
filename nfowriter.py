@@ -160,20 +160,25 @@ class NFOWriter:
 	def add_actors(self, root):
 		index = 0
 		actors = []
-		if self.movie_api is not None:
+		if self.movie_api:
 			actors = self.movie_api.actors()
-		elif self.tvshow_api is not None:
+		if not actors and self.tvshow_api is not None:
 			actors = self.tvshow_api.Actors()
 
 		if actors:
 			for actorInfo in actors:
 				if 'ru_name' in actorInfo and actorInfo['ru_name'] in self.parser.get_value('actor'):
 					actor = ET.SubElement(root, 'actor')
-					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
-					if 'role' in actorInfo:
-						ET.SubElement(actor, 'role').text = actorInfo['role']
+
+					def setup(dst_name, src_name):
+						try:
+							ET.SubElement(actor, dst_name).text = actorInfo[src_name]
+						except: pass
+
+					setup('name','ru_name')
+					setup('role','role')
 					ET.SubElement(actor, 'order').text = str(index)
-					ET.SubElement(actor, 'thumb').text = actorInfo['photo']
+					setup('thumb', 'photo')
 					index += 1
 		else:
 			for name in self.parser.get_value('actor').split(', '):

@@ -51,3 +51,47 @@ def print_tb(e=None):
 def lineno():
 	"""Returns the current line number in our program."""
 	return inspect.currentframe().f_back.f_lineno
+
+def fprint_tb(filename):
+	import sys, filesystem
+	exc_type, exc_val, exc_tb = sys.exc_info()
+	import traceback
+
+	with filesystem.fopen(filename, 'w') as out:
+		traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=out)
+
+
+class dump_context:
+	def __init__(self, module, use_timestamp=True):
+		self.module			= module
+		self.use_timestamp	= use_timestamp
+
+	def timestamp(self):
+		if self.use_timestamp:
+			import time
+			return time.strftime('%Y%m%d_%H%M%S')
+		else:
+			return ''
+
+	def filename(self):
+		import filesystem
+		name = self.module + self.timestamp() + '.log'
+		try:
+			from xbmc import translatePath
+			_filename = translatePath('special://logpath/' + name)
+		except ImportError:
+			_filename = filesystem.abspath(filesystem.join( __file__ ,'../../..', name))
+		return _filename
+
+	def __enter__(self):
+		fn = self.filename()
+
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		if exc_type:
+			import filesystem
+			with filesystem.fopen(self.filename(), 'w') as out:
+				import traceback
+				traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=out)
+			return True

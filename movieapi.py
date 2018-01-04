@@ -940,8 +940,12 @@ class TMDB_API(object):
 		return self.tmdb_data['overview']
 
 	def actors(self):
+		try:
+			cast = self.tmdb_data['credits']['cast']
+		except AttributeError:
+			return []
+
 		result = []
-		cast = self.tmdb_data['credits']['cast']
 		for actor in cast:
 			res = {}
 			res['en_name'] = actor['name']
@@ -1021,11 +1025,14 @@ class MovieAPI(object):
 				self.providers.append(self.kinopoiskapi)
 
 		if imdb_id or kinopoisk:
-			if not orig:
-				orig = self.originaltitle()
-
-			self.worldartapi = world_art(orig, imdbid=imdb_id, kp_url=kinopoisk)
-			self.providers.append(self.worldartapi)
+			if not settings or settings.use_worldart:
+				if not orig:
+					orig = self.originaltitle()
+				try:
+					self.worldartapi = world_art(orig, imdbid=imdb_id, kp_url=kinopoisk)
+					self.providers.append(self.worldartapi)
+				except: 
+					pass
 			
 	def actors(self):
 		if self._actors is not None:
@@ -1040,12 +1047,14 @@ class MovieAPI(object):
 
 		if len(actors) > 0:
 			self._actors = [ actor.copy() for actor in actors[0] ]
+		else:
+			self._actors = []
 
-		for base in self._actors:
+		for act in self._actors:
 			for variant in actors[1:]:
 				for add in variant:
-					if base['en_name'] == add['en_name']:
-						base.update(add)
+					if act['en_name'] == add['en_name']:
+						act.update(add)
 				
 		return self._actors
 

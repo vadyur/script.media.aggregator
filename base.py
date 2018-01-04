@@ -90,13 +90,13 @@ def is_torrent_remembed(parser, settings):
 
 def get_rank(full_title, parser, settings):
 
-	preffered_size = 7 * GB
-	#preffered_resolution_h = 1920
-	preffered_resolution_v = 1080 if settings.preffered_type == QulityType.Q1080 else 720
-	preffered_bitrate	= settings.preffered_bitrate
+	preffered_resolution_v = 1080 
+	if settings.preffered_type == QulityType.Q720:
+		preffered_resolution_v = 720
+	elif settings.preffered_type == QulityType.Q2160:
+		preffered_resolution_v = 2160
 
-	#debug('preffered_type: %s' % settings.preffered_type)
-	#debug('preffered_bitrate: %d' % preffered_bitrate)
+	preffered_bitrate	= settings.preffered_bitrate
 
 	rank = 0.0
 	conditions = 0
@@ -118,8 +118,6 @@ def get_rank(full_title, parser, settings):
 		rank += 1.1
 		conditions += 1
 
-		#parser = dict(parser, **info)
-
 	if parser.get('gold', 'False') == 'True':
 		rank += 0.8
 		conditions += 1
@@ -128,18 +126,8 @@ def get_rank(full_title, parser, settings):
 	if '720p' in full_title:
 		res_v = 720
 
-	if '2160p' in full_title:
+	if '2160' in full_title:
 		res_v = 2160
-
-	'''
-	size = parser.get('size', '')
-	if size != '':
-		if int(size) > preffered_size:
-			rank += int(size) / preffered_size
-		else:
-			rank += preffered_size / int(size)
-		conditions += 1
-	'''
 
 	video = parser.get('video', '')
 	parts = video.split(', ')
@@ -186,6 +174,8 @@ def get_rank(full_title, parser, settings):
 				conditions += 1
 				debug('bitrate: not parsed')
 
+		if '3840x' in part or 'x2160' in part:
+			res_v = 2160
 		if '1920x' in part or 'x1080' in part:
 			res_v = 1080
 		if '1280x' in part or 'x720' in part:
@@ -234,10 +224,6 @@ def get_rank(full_title, parser, settings):
 		if settings.preffered_codec != detect_codec:
 			rank += 2
 			conditions += 1
-
-	if parser.get('format', '') == 'MKV':
-		rank += 0.6
-		conditions += 1
 
 	if 'ISO' in parser.get('format', ''):
 		rank += 100
