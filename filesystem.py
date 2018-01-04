@@ -90,7 +90,10 @@ def getcwd():
 	if '://' in _cwd:
 		return _cwd
 	else:
-		return ensure_unicode(os.getcwd(), get_filesystem_encoding())
+		try:
+			return ensure_unicode(os.getcwd(), get_filesystem_encoding())
+		except OSError:
+			return _cwd
 
 
 def makedirs(path):
