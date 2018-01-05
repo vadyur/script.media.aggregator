@@ -91,36 +91,36 @@ def is_torrent_remembed(parser, settings):
 def get_rank(full_title, parser, settings):
 
 	preffered_resolution_v = 1080 
-	if settings.preffered_type == QulityType.Q720:
-		preffered_resolution_v = 720
-	elif settings.preffered_type == QulityType.Q2160:
-		preffered_resolution_v = 2160
+	try:
+		if settings.preffered_type == QulityType.Q720:
+			preffered_resolution_v = 720
+		elif settings.preffered_type == QulityType.Q2160:
+			preffered_resolution_v = 2160
+	except BaseException as e:
+		log.print_tb(e)
 
 	preffered_bitrate	= settings.preffered_bitrate
 
 	rank = 0.0
 	conditions = 0
+	mults = []
 
 	if '[ad]' in full_title.lower():
-		rank += 2
-		conditions += 1
+		mults.append(1.1)
 
 	if 'seeds' in parser:
 		seeds = parser['seeds']
 		if seeds == 0:
-			rank += 1000
-		elif seeds < 5:
-			rank += 1 + 3.0 / seeds
+			mults.append(10)
 		else:
-			rank += 1 + 1.0 / seeds
-		conditions += 1
+			v = 1.0 + 0.25 / seeds
+			mults.append(v)
 	else:
-		rank += 1.1
-		conditions += 1
+		mults.append(1.25)
 
-	if parser.get('gold', 'False') == 'True':
-		rank += 0.8
-		conditions += 1
+	#if parser.get('gold', 'False') == 'True':
+	#	rank += 0.8
+	#	conditions += 1
 
 	res_v = 1080
 	if '720p' in full_title:
@@ -130,11 +130,14 @@ def get_rank(full_title, parser, settings):
 		res_v = 2160
 
 	video = parser.get('video', '')
-	parts = video.split(', ')
+	if video:
+		parts = video.split(', ')
+	else:
+		parts = []
 
-	if len(parts) == 0:
-		rank += 2
-		conditions += 1
+	#if len(parts) == 0:
+	#	rank += 2
+	#	conditions += 1
 
 	for part in parts:
 		multiplier = 0
@@ -143,8 +146,7 @@ def get_rank(full_title, parser, settings):
 			or 'Kbps' in part \
 			or u'Кбит/сек' in part \
 			or u'Кбит/с' in part \
-			or 'Kb/s' in part \
-			or '~' in part:
+			or 'Kb/s' in part:
 				multiplier = 1
 		if 'mbps' in part \
 			or 'mbs' in part \
@@ -166,12 +168,10 @@ def get_rank(full_title, parser, settings):
 						rank += preffered_bitrate / float(bitrate) * multiplier
 					conditions += 1
 				else:
-					rank += 10
-					conditions += 1
+					mults.append(1.5)
 					debug('bitrate: not parsed')
 			except:
-				rank += 10
-				conditions += 1
+				mults.append(1.5)
 				debug('bitrate: not parsed')
 
 		if '3840x' in part or 'x2160' in part:
@@ -200,7 +200,7 @@ def get_rank(full_title, parser, settings):
 		detect_codec = CodecType.MPGSD
 
 	if detect_codec is None:
-		for part in video.split(', '):
+		for part in parts:
 			if detect_h264(part):
 				detect_codec = CodecType.MPGHD
 			elif detect_h265(part):
@@ -220,10 +220,10 @@ def get_rank(full_title, parser, settings):
 			if detect_codec == CodecType.MPGSD:
 				rank += 2
 				conditions += 1
-	elif settings.preffered_codec == CodecType.MPGUHD:
-		if settings.preffered_codec != detect_codec:
-			rank += 2
-			conditions += 1
+		elif settings.preffered_codec == CodecType.MPGUHD:
+			if settings.preffered_codec != detect_codec:
+				rank += 2
+				conditions += 1
 
 	if 'ISO' in parser.get('format', ''):
 		rank += 100
@@ -232,10 +232,13 @@ def get_rank(full_title, parser, settings):
 	if conditions != 0:
 		rank /= conditions
 	else:
-		rank = 1
+		rank = 1.0
+
+	for m in mults:
+		rank *= m
 
 	if is_torrent_remembed(parser, settings):
-		return rank / 1000
+		rank /= 1000
 	
 	return rank
 
@@ -263,11 +266,14 @@ def scrape_now(fn):
 
 
 def seeds_peers(item):
-	import player
 	res = {}
 	try:
 		link = urllib.unquote(item['link'])
-		settings = player.load_settings()
+		try:
+			import player
+			settings = player.load_settings()
+		except:
+			settings = Settings.current_settings
 		if 'nnm-club' in link:
 			debug('seeds_peers: ' + link)
 			t_id = re.search(r't=(\d+)', link).group(1)
@@ -339,15 +345,17 @@ class STRMWriterBase(object):
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif line.startswith('plugin://script.media.aggregator'):
 						try:
+							saved_dict['link'] = line.strip(u'\r\n\t ')
 							if use_scrape_info:
-								saved_dict['link'] = line.strip(u'\r\n\t ')
 								sp = seeds_peers(saved_dict)
 								saved_dict = dict(saved_dict, **sp)
 							if 'rank' in saved_dict:
 								curr_rank = float(saved_dict['rank'])
 							else:
 								curr_rank = get_rank(saved_dict.get('full_title', ''), saved_dict, settings)
-						except:
+						except BaseException as e:
+							import log
+							log.print_tb(e)
 							curr_rank = 1
 
 						item = {'rank': curr_rank, 'link': line.strip(u'\r\n\t ')}

@@ -16,6 +16,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 	def fill_list(self):
 		for item in self.make_links():
 			s = '' if item.get('rank', 1) >= 1 else '* '
+			#s += str(item.get('rank', '')) + ' '
 			try:
 				link = item['link']
 				if 'anidub' in link:
@@ -49,7 +50,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				#info = seeds_peers(item)
 				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
 			except BaseException as e:
-				debug(str(e))
+				#debug(str(e))
 				pass
 		
 			if s != '':
@@ -331,7 +332,7 @@ def get_path_name():
 	return path, name
 
 def main():
-	import vsdbg
+	#import vsdbg
 	#vsdbg._bp()
 
 	path, name = get_path_name()
@@ -419,6 +420,4 @@ def main():
 		xbmcvfs.delete(path + '.alternative')
 
 if __name__ == '__main__':
-	import vsdbg
-	vsdbg._bp()
 	main()
