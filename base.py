@@ -154,7 +154,8 @@ def get_rank(full_title, parser, settings):
 			or u'Мбит/сек' in part \
 			or u'Mбит/с' in part \
 			or u'Мбит/с' in part \
-			or 'Mb/s' in part:
+			or 'Mb/s' in part \
+			or 'mb/s' in part:
 				multiplier = 1000
 		if multiplier != 0:
 			find = re.findall('[\d\.,]', part.split('(')[0])
@@ -163,9 +164,9 @@ def get_rank(full_title, parser, settings):
 				if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
 					debug('bitrate: %d kbps' % int(float(bitrate) * multiplier))
 					if float(bitrate) * multiplier > preffered_bitrate:
-						rank += float(bitrate) * multiplier / preffered_bitrate
+						rank += (float(bitrate) * multiplier) / preffered_bitrate
 					else:
-						rank += preffered_bitrate / float(bitrate) * multiplier
+						rank += preffered_bitrate / (float(bitrate) * multiplier)
 					conditions += 1
 				else:
 					mults.append(1.5)
@@ -327,6 +328,9 @@ class STRMWriterBase(object):
 
 	@staticmethod
 	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
+		#import vsdbg
+		#vsdbg._bp()
+
 		strmFilename_alt = strmFilename + '.alternative'
 		items = []
 		saved_dict = {}

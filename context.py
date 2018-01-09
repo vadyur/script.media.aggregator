@@ -133,15 +133,20 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 		self.list.setVisible(False)
 
-		path = self.download_torrent(link)
-		choice_path = path.replace('.torrent', '.choice')
+		#path = self.download_torrent(link)
+		#choice_path = path.replace('.torrent', '.choice')
+		from downloader import TorrentDownloader
+		import urllib
+		torr_downloader = TorrentDownloader(urllib.unquote(link), None, self.settings)
+		choice_path = filesystem.join(self.settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
+
 
 		# +++
 
 		if self.settings.copy_torrent_path:
 			li = xbmcgui.ListItem(u'Копировать торрент')
 			li.setProperty('link', link)
-			li.setProperty('path', path)
+			#li.setProperty('path', path)
 			li.setProperty('action', 'copy_torrent')
 			self.left_menu.addItem(li)
 
@@ -166,7 +171,16 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		cursel = self.left_menu.getSelectedItem()
 		action = cursel.getProperty('action')
 		if action == 'copy_torrent':
-			self.copy_torrent(cursel.getProperty('path'))
+			link = cursel.getProperty('link')
+			def go_copy_torrent():
+				path = self.download_torrent(link)
+				debug(path)
+				self.copy_torrent(path)
+
+			import threading
+			self.thread = threading.Thread(target=go_copy_torrent)
+			self.thread.start()
+			
 		elif action == 'remember_choice':
 			self.remember_choice(cursel.getProperty('path'))
 		elif action == 'cancel_choice':
@@ -332,9 +346,6 @@ def get_path_name():
 	return path, name
 
 def main():
-	#import vsdbg
-	#vsdbg._bp()
-
 	path, name = get_path_name()
 		
 	import player
