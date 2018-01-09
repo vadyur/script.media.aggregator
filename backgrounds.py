@@ -73,7 +73,7 @@ def update_service(show_progress=False):
 	from player import _addon
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable		= _addon.getSetting('hdclub_enable') == 'true'
+	hdclub_enable		= False
 	bluebird_enable		= _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
@@ -91,18 +91,25 @@ def update_service(show_progress=False):
 		info_dialog.create(settings.addon_name)
 		settings.progress_dialog = info_dialog
 	
-	if anidub_enable:
-		anidub.run(settings)
+	from log import dump_context
 
-	if hdclub_enable:
-		hdclub.run(settings)
+	if anidub_enable:
+		with dump_context('anidub.run'):
+			anidub.run(settings)
+
+	#if hdclub_enable:
+	#	hdclub.run(settings)
+
+	if bluebird_enable:
+		with dump_context('bluebird.run'):
+			bluebird.run(settings)
 
 	if bluebird_enable:
 		bluebird.run(settings)
 
 	if rutor_enable:
-		import rutor
-		rutor.run(settings)
+		with dump_context('rutor.run'):
+			rutor.run(settings)
 
 	if nnmclub_enable:
 		from service import Addon
@@ -125,17 +132,19 @@ def update_service(show_progress=False):
 		log.debug('NNM hours: ' + str(settings.nnmclub_hours))
 
 		addon.setSetting('nnm_last_generate', str(time()))
-		nnmclub.run(settings)
+		
+		with dump_context('nnmclub.run'):
+			nnmclub.run(settings)
 
-	if soap4me_enable:
-		import soap4me
-		soap4me.run(settings)
+	#if soap4me_enable:
+	#	import soap4me
+	#	soap4me.run(settings)
 
 	if show_progress:
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or hdclub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
+	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
@@ -217,7 +226,8 @@ def add_media_process(title, imdb):
 
 	settings = load_settings()
 
-	hdclub_enable		= getSetting('hdclub_enable') == 'true'
+	anidub_enable		= getSetting('anidub_enable') == 'true'
+	hdclub_enable		= False
 	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
@@ -241,24 +251,34 @@ def add_media_process(title, imdb):
 
 	p = []
 
-	try:
+	from log import dump_context
+	#try:
+	if True:
+		if anidub_enable and imdb.startswith('sm'):
+			with dump_context('anidub.search_generate'):
+				c = anidub.search_generate(title, settings, p)
+				count += c
+
 		if imdb.startswith('tt'):
-			if hdclub_enable:
-				c = hdclub.search_generate(title, imdb, settings, p)
-				count += c
+			#if hdclub_enable:
+			#	c = hdclub.search_generate(title, imdb, settings, p)
+			#	count += c
 			if bluebird_enable:
-				c = bluebird.search_generate(title, imdb, settings, p)
-				count += c
+				with dump_context('bluebird.search_generate'):
+					c = bluebird.search_generate(title, imdb, settings, p)
+					count += c
 			if rutor_enable:
-				c = rutor.search_generate(title, imdb, settings, p)
-				count += c
+				with dump_context('rutor.search_generate'):
+					c = rutor.search_generate(title, imdb, settings, p)
+					count += c
 			if nnmclub_enable:
-				c = nnmclub.search_generate(title, imdb, settings, p)
-				count += c
-			if soap4me_enable:
-				count += soap4me.search_generate(title, imdb, settings)
-	except BaseException as e:
-		log.print_tb(e)
+				with dump_context('nnmclub.search_generate'):
+					c = nnmclub.search_generate(title, imdb, settings, p)
+					count += c
+			#if soap4me_enable:
+			#	count += soap4me.search_generate(title, imdb, settings)
+	#except BaseException as e:
+	#	log.print_tb(e)
 
 	if p:
 		path = filesystem.join(addon_data_path(), imdb + '.strm_path')

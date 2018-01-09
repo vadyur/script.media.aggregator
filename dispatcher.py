@@ -71,6 +71,8 @@ def dispatch():
 		action_show_similar(params)
 	
 	elif params.get('action') == 'add_media':
+		vsdbg._bp()
+
 		from player import action_add_media
 		action_add_media(params, load_settings())
 
@@ -83,15 +85,20 @@ def dispatch():
 		from backgrounds import scrape_nnm
 		scrape_nnm()
 
+	elif params.get('action') == 'select_source':
+		from context import main
+		vsdbg._bp()
+		main()
+
 	elif params.get('action') == 'add_media_process':
+		vsdbg._bp()
+
 		from backgrounds import add_media_process
 		title = params.get('title')
 		import urllib
 		title = urllib.unquote_plus(title)
 		title = title.decode('utf-8')
 	
-		vsdbg._bp()
-
 		add_media_process(title, params.get('imdb'))
 	
 	else:

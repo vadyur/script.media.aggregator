@@ -13,21 +13,10 @@ from base import STRMWriterBase, seeds_peers
 
 class MyWindow(pyxbmct.AddonDialogWindow):
 
-	def __init__(self, title, settings, links = []):
-		# Вызываем конструктор базового класса.
-		super(MyWindow, self).__init__(title)
-		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
-		self.setGeometry(850, 550, 1, 1)
-
-		self.settings = settings
-
-		self.files = None
-		self.left_menu = None
-		self.list = pyxbmct.List('font14', _itemHeight=120)
-		self.placeControl(self.list, 0, 0)
-
-		for item in links:
-			s = ''
+	def fill_list(self):
+		for item in self.make_links():
+			s = '' if item.get('rank', 1) >= 1 else '* '
+			#s += str(item.get('rank', '')) + ' '
 			try:
 				link = item['link']
 				if 'anidub' in link:
@@ -61,16 +50,30 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				#info = seeds_peers(item)
 				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
 			except BaseException as e:
-				debug(str(e))
+				#debug(str(e))
 				pass
-
+		
 			if s != '':
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)
 				self.list.addItem(li)
-			#list.addItem('Item 1\nNew line')
-			#list.addItem('Item 2\nNew line')
-			#list.addItem('Item 3\nNew line\nAdd line')
+
+	def __init__(self, title, settings, links):
+		# Вызываем конструктор базового класса.
+		super(MyWindow, self).__init__(title)
+		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
+		self.setGeometry(850, 600, 1, 1)
+
+		self.settings = settings
+
+		self.files = None
+		self.left_menu = None
+		self.list = pyxbmct.List('font14', _itemHeight=120)
+		self.placeControl(self.list, 0, 0)
+
+		self.make_links = links
+
+		self.fill_list()
 
 		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
@@ -130,16 +133,34 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 		self.list.setVisible(False)
 
-		path = self.download_torrent(link)
+		#path = self.download_torrent(link)
+		#choice_path = path.replace('.torrent', '.choice')
+		from downloader import TorrentDownloader
+		import urllib
+		torr_downloader = TorrentDownloader(urllib.unquote(link), None, self.settings)
+		choice_path = filesystem.join(self.settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
+
 
 		# +++
 
 		if self.settings.copy_torrent_path:
 			li = xbmcgui.ListItem(u'Копировать торрент')
 			li.setProperty('link', link)
-			li.setProperty('path', path)
+			#li.setProperty('path', path)
 			li.setProperty('action', 'copy_torrent')
 			self.left_menu.addItem(li)
+
+		if filesystem.exists(choice_path):
+			li = xbmcgui.ListItem(u'Отменить выбор')
+			li.setProperty('link', link)
+			li.setProperty('path', choice_path)
+			li.setProperty('action', 'cancel_choice')
+		else:
+			li = xbmcgui.ListItem(u'Запомнить выбор')
+			li.setProperty('link', link)
+			li.setProperty('path', choice_path)
+			li.setProperty('action', 'remember_choice')
+		self.left_menu.addItem(li)
 
 		# +++
 
@@ -150,7 +171,20 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		cursel = self.left_menu.getSelectedItem()
 		action = cursel.getProperty('action')
 		if action == 'copy_torrent':
-			self.copy_torrent(cursel.getProperty('path'))
+			link = cursel.getProperty('link')
+			def go_copy_torrent():
+				path = self.download_torrent(link)
+				debug(path)
+				self.copy_torrent(path)
+
+			import threading
+			self.thread = threading.Thread(target=go_copy_torrent)
+			self.thread.start()
+			
+		elif action == 'remember_choice':
+			self.remember_choice(cursel.getProperty('path'))
+		elif action == 'cancel_choice':
+			self.cancel_choice(cursel.getProperty('path'))
 		self.show_list()
 
 	def copy_torrent(self, torrent_path):
@@ -158,6 +192,18 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		if settings.copy_torrent_path and filesystem.exists(settings.copy_torrent_path):
 			dest_path = filesystem.join(self.settings.copy_torrent_path, filesystem.basename(torrent_path))
 			filesystem.copyfile(torrent_path, dest_path)
+
+	def remember_choice(self, choice_path):
+		with filesystem.fopen(choice_path, 'w'):
+			pass
+
+		self.list.reset()
+		self.fill_list()
+
+	def cancel_choice(self, choice_path):
+		filesystem.remove(choice_path)
+		self.list.reset()
+		self.fill_list()
 
 	def show_list(self):
 		self.list.setVisible(True)
@@ -249,48 +295,58 @@ def debug_info_label(s):
 	debug('%s: ' % s + xbmc.getInfoLabel(s))
 	debug('%s: ' % s + sys.listitem.getProperty(s.split('.')[-1]))
 
-def main():
-	import vsdbg
-	vsdbg._bp()
-
+def get_path_name():
 	path = xbmc.getInfoLabel('ListItem.FileNameAndPath')
 	name = xbmc.getInfoLabel('ListItem.FileName')
-	dbpath = sys.listitem.getfilename()
 
+	if path and name:
+		return path, name
+
+	dbpath = sys.listitem.getfilename()
+	
 	if not path or not name:
 		if not dbpath.startswith('videodb://') and dbpath.endswith('.strm'):
 			path = dbpath
-
+	
 	if path and not name:
 		name = path.replace('\\', '/').split('/')[-1]
-
+	
 	if not path or not name:
 		if dbpath.startswith('videodb://'):
 			dbpath = dbpath.split('://')[-1]
 			dbpath = dbpath.split('?')[0]
+			dbpath = dbpath.rstrip('/')
 			parts = dbpath.split('/')
 			dbtype = parts[0]
 			dbid = int(parts[-1])
-
+	
 			import json
 			path = None
-			if dbtype == 'movies':
+			if 'movies' in dbtype:
 				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
 				path = result[u'result'][u'moviedetails'][u'file']
-			if dbtype == 'tvshows':
-				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+			if 'tvshows' in dbtype:
+				if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
+					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
+					res_type = 'episodedetails'
+				else:
+					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": { "properties": ["file"], "tvshowid": dbid }, "id": 13}
+					res_type = 'tvshowdetails'
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-				path = result[u'result'][u'episodedetails'][u'file']
-
+				path = result[u'result'][res_type][u'file']
+	
 			try:
 				if path:
 					path = path.encode('utf-8')
 			except UnicodeDecodeError:
 				pass
-
+	
 			name = path.replace('\\', '/').split('/')[-1]
+	return path, name
 
+def main():
+	path, name = get_path_name()
 		
 	import player
 	settings = player.load_settings()
@@ -305,7 +361,8 @@ def main():
 	else:
 		return
 
-	links = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
+	def	links():
+		return STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
 
 	window = MyWindow(settings.addon_name, settings=settings, links=links)
 	window.doModal()

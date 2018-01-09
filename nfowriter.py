@@ -158,23 +158,27 @@ class NFOWriter:
 		write_tree(fn, root)
 
 	def add_actors(self, root):
-		kp_id = self.parser.get_value('kp_id')
-		if kp_id != '':
-			index = 0
-			actors = []
-			if self.movie_api is not None:
-				actors = self.movie_api.Actors()
-			elif self.tvshow_api is not None:
-				actors = self.tvshow_api.Actors()
+		index = 0
+		actors = []
+		if self.movie_api:
+			actors = self.movie_api.actors()
+		if not actors and self.tvshow_api is not None:
+			actors = self.tvshow_api.Actors()
 
+		if actors:
 			for actorInfo in actors:
-				if actorInfo['ru_name'] in self.parser.get_value('actor'):
+				if 'ru_name' in actorInfo and actorInfo['ru_name'] in self.parser.get_value('actor'):
 					actor = ET.SubElement(root, 'actor')
-					ET.SubElement(actor, 'name').text = actorInfo['ru_name']
-					if 'role' in actorInfo:
-						ET.SubElement(actor, 'role').text = actorInfo['role']
+
+					def setup(dst_name, src_name):
+						try:
+							ET.SubElement(actor, dst_name).text = actorInfo[src_name]
+						except: pass
+
+					setup('name','ru_name')
+					setup('role','role')
 					ET.SubElement(actor, 'order').text = str(index)
-					ET.SubElement(actor, 'thumb').text = actorInfo['photo']
+					setup('thumb', 'photo')
 					index += 1
 		else:
 			for name in self.parser.get_value('actor').split(', '):
@@ -183,11 +187,11 @@ class NFOWriter:
 					ET.SubElement(actor, 'name').text = unicode(name)
 
 	def add_trailer(self, root):
-		kp_id = self.parser.get_value('kp_id')
-		if kp_id != '':
-			trailer = self.movie_api.Trailer()
-			if trailer:
-				ET.SubElement(root, 'trailer').text = trailer
+		try:
+			trailer = self.movie_api['trailer']
+			ET.SubElement(root, 'trailer').text = trailer
+		except AttributeError:
+			pass
 
 	def write_title(self, root):
 		if self.tvshow_api:
@@ -206,8 +210,9 @@ class NFOWriter:
 
 	def write_set(self, root):
 		try:
-			debug('Collection: ' + self.movie_api.Collection().encode('utf-8'))
-			ET.SubElement(root, 'set').text = self.movie_api.Collection()
+			res = self.movie_api['set']
+			debug(u'Collection: ' + res)
+			ET.SubElement(root, 'set').text = res
 		except:
 			pass
 
@@ -217,8 +222,8 @@ class NFOWriter:
 			return
 
 		try:
-			debug(self.movie_api.imdbRating())
-			ET.SubElement(root, 'rating').text = str(self.movie_api.imdbRating())
+			res = self.movie_api['rating']
+			ET.SubElement(root, 'rating').text = str(res)
 		except:
 			pass
 
@@ -245,7 +250,10 @@ class NFOWriter:
 		plot = self.stripHtml(self.parser.get_value('plot'))
 
 		if not plot and self.movie_api:
-			plot = self.movie_api.Plot()
+			try:
+				plot = self.movie_api.ru('plot')
+			except AttributeError:
+				pass
 
 		if plot:
 			self.add_element_value(root, 'plot', plot)
@@ -255,24 +263,19 @@ class NFOWriter:
 
 	def write_runtime(self, root):
 		try:
-			debug(self.movie_api.Runtime())
-			ET.SubElement(root, 'runtime').text = str(self.movie_api.Runtime())
+			rt = self.movie_api['runtime']
+			debug(rt)
+			ET.SubElement(root, 'runtime').text = str(rt)
 		except:
 			pass
 
 	def write_thumb(self, root):
 		thumbs = []
-		try:
-			thumbs.append({'preview': 'http://image.tmdb.org/t/p/w500' + self.movie_api[u'poster_path'],
-						   'original': u'http://image.tmdb.org/t/p/original' + self.movie_api[u'poster_path']})
-		except:
-			pass
 
 		if self.movie_api is not None:
 			try:
-				poster = self.movie_api.Poster()
-				if poster != '':
-					thumbs.append({'original': poster})
+				poster = self.movie_api['poster']
+				thumbs.append({'original': poster})
 			except:
 				pass
 
@@ -296,7 +299,7 @@ class NFOWriter:
 	def write_fanart(self, root):
 		fanarts = []
 		try:
-			fanarts.append(u'http://image.tmdb.org/t/p/original' + self.movie_api[u'backdrop_path'])
+			fanarts.append( self.movie_api['fanart'] )
 		except:
 			pass
 
@@ -316,9 +319,8 @@ class NFOWriter:
 
 	def write_mpaa(self, root):
 		try:
-			if self.movie_api.Rated():
-				debug('Rated: ' + str(self.movie_api.Rated()))
-				ET.SubElement(root, 'mpaa').text = str(self.movie_api.Rated())
+			mpaa = self.movie_api['mpaa']
+			ET.SubElement(root, 'mpaa').text = str(mpaa)
 		except:
 			pass
 

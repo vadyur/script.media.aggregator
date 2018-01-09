@@ -8,6 +8,11 @@ import os
 import xml.etree.ElementTree as ET
 import requests, filesystem
 
+def ensure_utf8(string):
+	if isinstance(string, unicode):
+		string = string.encode('utf-8')
+	return string
+
 class NFOReader(object):
 	def __init__(self, path, temp_path):
 		self.__root = None
@@ -72,7 +77,7 @@ class NFOReader(object):
 			try:
 				#debug(child.tag, child.text)
 				if child.tag in string_items and child.text:
-					info[child.tag] = child.text
+					info[child.tag] = ensure_utf8(child.text)
 				if child.tag in integer_items and child.text:
 					info[child.tag] = int(child.text)
 				if child.tag in float_items and child.text:
@@ -82,9 +87,9 @@ class NFOReader(object):
 						name = ''
 						role = ''
 						if 'name' in item.tag:
-							name = item.text
+							name = ensure_utf8( item.text )
 						if 'role' in item.tag:
-							role = item.text
+							role = ensure_utf8( item.text )
 						cast.append(name)
 						castandrole.append((name, role))
 			except:
@@ -94,7 +99,9 @@ class NFOReader(object):
 			info['cast'] = cast
 		if len(castandrole) > 0:
 			info['castandrole'] = castandrole
-				
+
+		if not info.get('plotoutline'):
+			info['plotoutline'] = info.get('plot', '')
 				
 		debug(info)
 		return info
@@ -178,6 +185,9 @@ class NFOReader(object):
 		return art
 
 	def make_list_item(self, playable_url):
+		import vsdbg
+		vsdbg._bp()
+
 		import xbmcgui
 		list_item = xbmcgui.ListItem(path=playable_url)
 		list_item.setInfo('video', self.try_join_tvshow_info())

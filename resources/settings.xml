@@ -22,7 +22,9 @@
 
       <setting label="Общая папка с данными... (по-умолчанию папка плагина)" type="folder" id="data_path" default="" visible="!eq(-6,одиночный)"/>
       <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default="" visible="!eq(-7,одиночный)"/>
-      <setting label="Использовать Google cache для доступа к Кинопоиску"	type="bool" id="kp_googlecache" default="false" visible="!eq(-8,клиент)"/>
+      <setting label="Использовать Кинопоиск"	type="bool" id="use_kinopoisk" default="true" visible="!eq(-8,клиент)"/>
+      <setting label="Использовать Google cache для доступа к Кинопоиску"	type="bool" id="kp_googlecache" default="false" visible="!eq(-9,клиент)" enable="eq(-1,true)"/>
+      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-10,клиент)"/>
     </category>
 
     <category label="Действия">
@@ -44,7 +46,7 @@
 
     <category label="Предпочтения">
 		  <setting label="Битрейт (кбит/сек)" type="number" id="preffered_bitrate" default="10000"/>
-		  <setting label="Качество" id="preffered_type" type="select" values="720p|1080" default="1080" />
+		  <setting label="Качество" id="preffered_type" type="select" values="720p|1080|2160" default="1080" />
       <setting label="Кодек" id="preffered_codec" type="select" values="MPEG2/MPEG4 ASP|H264/AVC|H265/HEVC" default="H264/AVC"/>
     </category>
 
@@ -59,7 +61,10 @@
       <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
       <setting id="pre_buffer_bytes"  type="slider"   label="Загружаемый объем файла до начала просмотра, Мб" default="25"      visible="eq(-8,torrent2http)"  range="5,5,50" option="int"/>
       <setting id="add_tracker"       type="text"     label="Дополнительный трекер" default="" visible="eq(-9,torrent2http)"/>
-		  <setting id="start_play_max_time" type="number"   label="Таймаут начала воспроизведения (секунды)" default="60"/>
+      <setting type="lsep"/>
+      <setting id="show_dnl_progress" type="bool"     label="Показывать прогресc загрузки" default="true"/>
+      <setting id="dnl_progress_offset" type="number" label="Смещение по вертикали прогресcа загрузки" default="120" visible="eq(-1,true)"/>
+		  <setting id="start_play_max_time" type="number" label="Таймаут начала воспроизведения (секунды)" default="60"/>
 		  <setting id="search_seed_max_time" type="number"  label="Таймаут поиска сидов (секунды)" default="15"/>
 	  </category>
 	
@@ -72,11 +77,13 @@
 		  <setting label="Избранное" type="bool" id="anidub_favorite" enable="eq(-5,true)+!eq(-2,'')" default="true"/>
     </category>
   
+    <!--
     <category label="EliteHD(HDClub)">
 		  <setting label="Использовать" type="bool" id="hdclub_enable" default="false"/>
 		  <setting label="Получить Passkey можно перейдя на 'https://elitehd.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
       <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
     </category>
+    -->
 
   <category label="BLUEBIRD-HD">
     <setting label="Использовать" type="bool" id="bluebird_enable" default="false"/>

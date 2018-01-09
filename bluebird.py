@@ -108,9 +108,8 @@ class DescriptionParser(DescriptionParserBase):
 				if components[2] == u'www.imdb.com' and components[3] == u'title':
 					imdb_ids.add(components[4])
 				
-				if self.settings:
-					if self.settings.use_kinopoisk and components[2] == u'www.kinopoisk.ru' and 'film' in components:
-						self._dict['kp_id'] = href
+				if components[2] == u'www.kinopoisk.ru' and 'film' in components:
+					self._dict['kp_id'] = href
 
 			except:
 				pass
@@ -128,7 +127,7 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['thumbnail'] = s
 			debug(self._dict['thumbnail'])
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), kp_googlecache=self.settings.kp_googlecache)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 				
 		return True
 

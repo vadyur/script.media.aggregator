@@ -2,8 +2,9 @@
 import os, filesystem
 
 class QulityType:
-	Q720p = '720p'
+	Q720 = '720p'
 	Q1080 = '1080'
+	Q2160 = '2160'
 
 class CodecType:
 	MPGSD = 'MPEG2/MPEG4 ASP'
@@ -24,6 +25,8 @@ class Settings:
 	# feed=dl&
 	
 	base_url 			= 'http://hdclub.org/rss.php'
+
+	current_settings = None
 	
 	def __init__(self, base_path,
 	             movies_path			= u'Movies',
@@ -49,6 +52,8 @@ class Settings:
 				 addon_data_path	 = '',
 				 kp_googlecache     =False,
 				 rutor_nosd			= True):
+		#--------------------------------------------------------------------------------
+		Settings.current_settings	= self
 		#--------------------------------------------------------------------------------
 		self.movies_url 			= self.base_url + '?cat=71&passkey=' + hdclub_passkey
 		self.animation_url 			= self.base_url + '?cat=70&passkey=' + hdclub_passkey
@@ -79,6 +84,7 @@ class Settings:
 		self.nnmclub_pages			= nnmclub_pages
 		self.nnmclub_hours			= nnmclub_hours
 		self.use_kinopoisk			= True
+		self.use_worldart			= True
 
 		self.rutor_domain           = rutor_domain
 		self.rutor_filter           = rutor_filter
@@ -105,7 +111,7 @@ class Settings:
 
 		self.kp_googlecache			= kp_googlecache
 		self.rutor_nosd				= rutor_nosd
-		
+
 		self.progress_dialog		= FakeProgressDlg()
 		
 	def __repr__(self):

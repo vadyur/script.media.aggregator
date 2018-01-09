@@ -234,7 +234,7 @@ def write_tvshow(content, path, settings):
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'anidub', path)
 
 
-def write_tvshow_item(item, path, settings):
+def write_tvshow_item(item, path, settings, path_out=[]):
 	debug('-------------------------------------------------------------------------')
 	debug(item.link)
 	parser = DescriptionParser(item.link)
@@ -252,6 +252,8 @@ def write_tvshow_item(item, path, settings):
 
 		tvshow_path = make_fullpath(title, '')
 		debug(tvshow_path.encode('utf-8'))
+
+		path_out.append(filesystem.join(path, tvshow_path))
 
 		with filesystem.save_make_chdir_context(tvshow_path):
 			tvshow_api = TVShowAPI.get_by(originaltitle, title)
@@ -346,43 +348,80 @@ def download_torrent(url, path, settings):
 
 	return False
 
-def write_favorites(path, settings):
+def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = None, path_out=[]):
 	s = get_session(settings)
-	page = s.get('http://tr.anidub.com/favorites/')
-	soup = BeautifulSoup(page.text, 'html.parser')
+	if params:
+		page = s.post(url, data=params)
+	else:
+		page = s.get(url)
+	soup = BeautifulSoup(page.content, 'html.parser')
 	page_no = 1
 
+	cnt = 0
+	
 	class Item:
 		def __init__(self, link, title):
 			self.link = link
 			self.title = title
-
+	
 	with filesystem.save_make_chdir_context(path):
 		while True:
-			selector = soup.select('article.story > div.story_h > div.lcol > h2 > a')
+			if params:
+				selector = soup.select('div.search_post > div.text > h2 > a')
+			else:
+				selector = soup.select('article.story > div.story_h > div.lcol > h2 > a')
+
 			if not selector:
 				break
-
-			cnt = 0
-			settings.progress_dialog.update(0, 'anidub favorites', path)
-
+	
+			settings.progress_dialog.update(0, dialog_title, path)
+	
 			for a in selector:
 				log.debug(a['href'])
 				link = a['href']
 				title = a.get_text()
-				write_tvshow_item(Item(link, title), path, settings)
+				if filter_fn and filter_fn(title):
+					continue
 
+				write_tvshow_item(Item(link, title), path, settings, path_out)
+	
 				cnt += 1
-				settings.progress_dialog.update(cnt * 100 / len(selector), 'anidub favorites', path)
+				settings.progress_dialog.update(cnt * 100 / len(selector), dialog_title, path)
 
+			if not 'favorites' in url:
+				break
+	
 			page_no += 1
-			page = s.get('http://tr.anidub.com/favorites/page/%d/' % page_no)
-
+			page = s.get(url + 'page/%d/' % page_no)
+	
 			if page.status_code == requests.codes.ok:
 				soup = BeautifulSoup(page.text, 'html.parser')
 			else:
 				break
 
+	return cnt
+
+
+def write_favorites(path, settings):
+	write_pages('http://tr.anidub.com/favorites/', path, settings, dialog_title=u'Избранное AniDUB')
+
+
+def search_generate(what, settings, path_out):
+	def filter(title):
+		if what not in title:
+			return True
+
+		return False
+
+	write_tvshow_nfo.favorites = False
+	return write_pages('http://tr.anidub.com/index.php?do=search', 
+				settings.anime_tvshow_path(), settings, 
+				{'do': 'search',
+				'subaction': 'search',
+				'story': what.encode('utf-8')}, filter,
+				dialog_title=u'Поиск AniDUB',
+				path_out=path_out)
+	
 
 ###################################################################################################
 def run(settings):

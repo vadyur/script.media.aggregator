@@ -38,105 +38,77 @@ def load_settings():
 	if base_path == u'Videos':
 		base_path = filesystem.join(_addondir, base_path)
 
-	movies_path = getSetting('movies_path', 'Movies').decode('utf-8')
-	animation_path = getSetting('animation_path', 'Animation').decode('utf-8')
-	documentary_path = getSetting('documentary_path', 'Documentary').decode('utf-8')
-	anime_path = getSetting('anime_path', 'Anime').decode('utf-8')
-
-	hdclub_passkey = getSetting('hdclub_passkey')
-
-	bluebird_login = getSetting('bluebird_login')
-	bluebird_password = getSetting('bluebird_password')
-	bluebird_nouhd = getSetting('bluebird_nouhd')
-
-	anidub_login = getSetting('anidub_login')
-	anidub_password = getSetting('anidub_password')
-	anidub_rss = getSetting('anidub_rss')
-	anidub_favorite = getSetting('anidub_favorite')
-
-	nnmclub_pages = 3
-	nnmclub_login = getSetting('nnmclub_login')
-	nnmclub_password = getSetting('nnmclub_password')
-	nnmclub_domain = getSetting('nnmclub_domain')
-	nnmclub_use_ssl = getSetting('nnmclub_use_ssl') == 'true'
-
-	rutor_domain = getSetting('rutor_domain')
-	rutor_filter = getSetting('rutor_filter')
-
-	soap4me_login = getSetting('soap4me_login')
-	soap4me_password = getSetting('soap4me_password')
-	soap4me_rss = getSetting('soap4me_rss')
-
-	preffered_bitrate = int(getSetting('preffered_bitrate'))
-	preffered_type = getSetting('preffered_type')
-	preffered_codec = getSetting('preffered_codec')
-
-	torrent_player = getSetting('torrent_player')
-	storage_path = getSetting('storage_path')
-
-	movies_save = getSetting('movies_save') == 'true'
-	animation_save = getSetting('animation_save') == 'true'
-	documentary_save = getSetting('documentary_save') == 'true'
-	anime_save = getSetting('anime_save') == 'true'
-	tvshows_save = getSetting('tvshows_save') == 'true'
-	animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
-
-	torrent_path = getSetting('torrent_path')
-
-	kp_googlecache = getSetting('kp_googlecache') == 'true'
-	rutor_nosd = getSetting('rutor_nosd') == 'true'
+	movies_path				= getSetting('movies_path', 'Movies').decode('utf-8')
+	animation_path			= getSetting('animation_path', 'Animation').decode('utf-8')
+	documentary_path		= getSetting('documentary_path', 'Documentary').decode('utf-8')
+	anime_path				= getSetting('anime_path', 'Anime').decode('utf-8')
 
 	from settings import Settings
 	settings = Settings(base_path,
-						movies_path			=movies_path,
-						animation_path		=animation_path, documentary_path=documentary_path,
-						anime_path			=anime_path,
-						hdclub_passkey 		=hdclub_passkey,
-						bluebird_login 		=bluebird_login,
-						bluebird_password	=bluebird_password,
-						bluebird_nouhd		=bluebird_nouhd,
-						anidub_login 		=anidub_login,
-						anidub_password 	=anidub_password,
-						anidub_rss 	        =anidub_rss,
-						anidub_favorite 	=anidub_favorite,
-						nnmclub_pages 		=nnmclub_pages,
-						nnmclub_login 		=nnmclub_login,
-						nnmclub_password 	=nnmclub_password,
-						nnmclub_domain		=nnmclub_domain,
-						nnmclub_use_ssl		=nnmclub_use_ssl,
-						rutor_domain        =rutor_domain,
-						rutor_filter        =rutor_filter,
-						rutor_nosd			=rutor_nosd,
-						soap4me_login		=soap4me_login,
-						soap4me_password	=soap4me_password,
-						soap4me_rss			=soap4me_rss,
-						preffered_bitrate 	=preffered_bitrate,
-						preffered_type 		=preffered_type,
-						preffered_codec     =preffered_codec,
-						torrent_player 		=torrent_player,
-						storage_path		=storage_path,
-						movies_save 		=movies_save,
-						animation_save 		=animation_save,
-						documentary_save 	=documentary_save,
-						anime_save 			=anime_save,
-						tvshows_save 		=tvshows_save,
-						animation_tvshows_save =animation_tvshows_save,
-						torrent_path        =torrent_path,
-						kp_googlecache		=kp_googlecache)
+						movies_path				= movies_path,
+						animation_path			= animation_path,
+						documentary_path		= documentary_path,
+						anime_path				= anime_path
+						)
 
+	settings.hdclub_passkey			= getSetting('hdclub_passkey')
+
+	settings.bluebird_login			= getSetting('bluebird_login')
+	settings.bluebird_password		= getSetting('bluebird_password')
+	settings.bluebird_nouhd			= getSetting('bluebird_nouhd')
+
+	settings.anidub_login			= getSetting('anidub_login')
+	settings.anidub_password		= getSetting('anidub_password')
+	settings.anidub_rss				= getSetting('anidub_rss')
+	settings.anidub_favorite		= getSetting('anidub_favorite')
+
+	settings.nnmclub_pages			= 3
+	settings.nnmclub_login			= getSetting('nnmclub_login')
+	settings.nnmclub_password		= getSetting('nnmclub_password')
+	settings.nnmclub_domain			= getSetting('nnmclub_domain')
+	settings.nnmclub_use_ssl		= getSetting('nnmclub_use_ssl') == 'true'
+
+	settings.rutor_domain			= getSetting('rutor_domain')
+	settings.rutor_filter			= getSetting('rutor_filter')
+
+	settings.soap4me_login			= getSetting('soap4me_login')
+	settings.soap4me_password		= getSetting('soap4me_password')
+	settings.soap4me_rss			= getSetting('soap4me_rss')
+
+	settings.preffered_bitrate		= int(getSetting('preffered_bitrate'))
+	settings.preffered_type			= getSetting('preffered_type')
+	settings.preffered_codec		= getSetting('preffered_codec')
+
+	settings.torrent_player			= getSetting('torrent_player')
+	settings.storage_path			= getSetting('storage_path')
+
+	settings.movies_save			= getSetting('movies_save') == 'true'
+	settings.animation_save			= getSetting('animation_save') == 'true'
+	settings.documentary_save		= getSetting('documentary_save') == 'true'
+	settings.anime_save				= getSetting('anime_save') == 'true'
+	settings.tvshows_save			= getSetting('tvshows_save') == 'true'
+	settings.animation_tvshows_save = getSetting('animation_tvshows_save') == 'true'
+
+	settings.torrent_path			= getSetting('torrent_path')
+
+	settings.rutor_nosd				= getSetting('rutor_nosd') == 'true'
 	settings.addon_data_path		= _addondir
 	if getSetting('data_path'):
-		settings.addon_data_path    = getSetting('data_path')
+		settings.addon_data_path	= getSetting('data_path')
 
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
-	settings.move_video             = getSetting('action_files').decode('utf-8') == u'переместить'
-	settings.remove_files           = getSetting('action_files').decode('utf-8') == u'удалить'
-	settings.copy_video_path        = getSetting('copy_video_path').decode('utf-8')
+	settings.move_video				= getSetting('action_files').decode('utf-8') == u'переместить'
+	settings.remove_files			= getSetting('action_files').decode('utf-8') == u'удалить'
+	settings.copy_video_path		= getSetting('copy_video_path').decode('utf-8')
 
-	settings.copy_torrent           = getSetting('copy_torrent') == 'true'
-	settings.copy_torrent_path      = getSetting('copy_torrent_path').decode('utf-8')
+	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
+	settings.copy_torrent_path		= getSetting('copy_torrent_path').decode('utf-8')
+
+	settings.use_kinopoisk			= getSetting('use_kinopoisk') == 'true'
+	settings.use_worldart			= getSetting('use_worldart') == 'true'
+	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
 
 	return settings
 
@@ -334,7 +306,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				self.fs_video = xbmcgui.Window(12005)
 
 				x = 20
-				y = 120
+				y = int(getSetting('dnl_progress_offset', 120))
 				w = self.fs_video.getWidth()
 				h = 100
 
@@ -343,6 +315,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 			def _show_progress(self):
 				if settings.torrent_player == 'Ace Stream':
+					return
+
+				if getSetting('show_dnl_progress', 'true') != 'true':
 					return
 
 				if not self.show_overlay:
@@ -362,7 +337,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					percent = float(info['downloaded']) * 100 / info['size'];
 					#debug(percent)
 					if percent >= 0:
-						heading = u"{} МB из {} МB - {}%\n".format(info['downloaded'], info['size'], int(percent))
+						heading = u"{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + '%\n'
 						if percent < 100:
 							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
 							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
@@ -484,7 +459,7 @@ def play_torrent(settings, params):
 	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
 
 	anidub_enable = _addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
+	hdclub_enable = False
 	bluebird_enable = _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
@@ -597,7 +572,7 @@ def dialog_action(action, settings, params=None):
 
 	if action == dialog_action_case.generate:
 		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
-		hdclub_enable = _addon.getSetting('hdclub_enable') == 'true'
+		hdclub_enable = False
 		bluebird_enable = _addon.getSetting('bluebird_enable') == 'true'
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
@@ -648,29 +623,32 @@ def dialog_action(action, settings, params=None):
 
 		s = urllib.unquote(params.get('keyword'))
 		if s:
-			from movieapi import MovieAPI
+			from movieapi import TMDB_API
 
 			debug('Keyword is: ' + s)
-			show_list(MovieAPI.search(s.decode('utf-8')))
+			show_list(TMDB_API.search(s.decode('utf-8')))
 
 	if action == dialog_action_case.catalog:
 		addon_handle = int(sys.argv[1])
 		xbmcplugin.setContent(addon_handle, 'movies')
 
-		listing = {
+		listing = [
 
-			'popular': u'Популярные',
-			'top_rated': u'Рейтинговые',
-			'popular_tv': u'Популярные сериалы',
-			'top_rated_tv': u'Рейтинговые сериалы'
-		}
+			('popular', u'Популярные'),
+			('top_rated', u'Рейтинговые'),
+			('popular_tv', u'Популярные сериалы'),
+			('top_rated_tv', u'Рейтинговые сериалы')
+		]
+
+		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
+			listing.append(('anime', u'Аниме (Shikimori.org)' ), )
 
 		for l in listing:
-			li = xbmcgui.ListItem(listing[l])
+			li = xbmcgui.ListItem(l[1])
 			li.setProperty("folder", "true")
 			li.setProperty('IsPlayable', 'false')
 
-			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l
+			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l[0]
 			debug(url)
 			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 
@@ -802,16 +780,28 @@ def action_add_media(params, settings):
 	
 	import json
 	found = None
+
+	if imdb.startswith('sm') and title:
+		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
+		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		try:
+			for r in result['result']['tvshows']:
+				if r['originaltitle'] == title:
+					found = 'tvshow'
+					break
+		except KeyError:
+			debug('KeyError: Animes not found')
 	
-	req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-	result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
-	try:
-		for r in result['result']['movies']:
-			if r['imdbnumber'] == imdb:
-				found = 'movie'
-				break
-	except KeyError:
-		debug('KeyError: Movies not found')
+	if not found:
+		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
+		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		try:
+			for r in result['result']['movies']:
+				if r['imdbnumber'] == imdb:
+					found = 'movie'
+					break
+		except KeyError:
+			debug('KeyError: Movies not found')
 	
 	if not found:
 		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
@@ -839,21 +829,21 @@ def action_add_media(params, settings):
 			add_media(title, imdb, settings)
 
 def action_show_similar(params):
-	from movieapi import MovieAPI
-	listing = MovieAPI.show_similar(params.get('tmdb'))
+	from movieapi import TMDB_API
+	listing = TMDB_API.show_similar(params.get('tmdb'))
 	debug(listing)
 	show_list(listing)
 
 def action_show_category(params):
-	from movieapi import MovieAPI
+	from movieapi import TMDB_API
 	if params.get('category') == 'popular':
-		show_list(MovieAPI.popular())
+		show_list(TMDB_API.popular())
 	if params.get('category') == 'top_rated':
-		show_list(MovieAPI.top_rated())
+		show_list(TMDB_API.top_rated())
 	if params.get('category') == 'popular_tv':
-		show_list(MovieAPI.popular_tv())
+		show_list(TMDB_API.popular_tv())
 	if params.get('category') == 'top_rated_tv':
-		show_list(MovieAPI.top_rated_tv())
+		show_list(TMDB_API.top_rated_tv())
 	if params.get('category') == 'anime':
 		uri = 'plugin://plugin.video.shikimori.2/'
 		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
@@ -1195,9 +1185,9 @@ def action_show_library(params):
 		
 
 def action_search_context(params):
-	from movieapi import MovieAPI
+	from movieapi import TMDB_API
 	s = params.get('s')
-	show_list(MovieAPI.search(s.decode('utf-8')))
+	show_list(TMDB_API.search(s.decode('utf-8')))
 
 def action_anidub_add_favorites(settings):
 	debug('anidub-add-favorites')
@@ -1217,4 +1207,6 @@ def main():
 
 
 if __name__ == '__main__':
+	#import vsdbg
+	#vsdbg._bp()
 	main()

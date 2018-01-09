@@ -109,7 +109,7 @@ class DescriptionParser(DescriptionParserBase):
 			except:
 				pass
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), kp_googlecache=self.settings.kp_googlecache)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 				
 		return True
 

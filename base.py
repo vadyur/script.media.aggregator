@@ -4,7 +4,6 @@ from log import debug
 
 
 import os, re, filesystem
-from bs4 import BeautifulSoup
 from settings import *
 import urllib
 from movieapi import *
@@ -77,66 +76,68 @@ def detect_h265(str_detect):
 	except:
 		return False
 
+def is_torrent_remembed(parser, settings):
+	from downloader import TorrentDownloader
+	import urllib
+	link = parser.get('link').split('torrent=')[-1]
+	if link:
+		torr_downloader = TorrentDownloader(urllib.unquote(link), None, settings)
+		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
+		return filesystem.exists(path)
+
+	return False
+
 
 def get_rank(full_title, parser, settings):
 
-	preffered_size = 7 * GB
-	#preffered_resolution_h = 1920
-	preffered_resolution_v = 1080 if settings.preffered_type == QulityType.Q1080 else 720
-	preffered_bitrate	= settings.preffered_bitrate
+	preffered_resolution_v = 1080 
+	try:
+		if settings.preffered_type == QulityType.Q720:
+			preffered_resolution_v = 720
+		elif settings.preffered_type == QulityType.Q2160:
+			preffered_resolution_v = 2160
+	except BaseException as e:
+		log.print_tb(e)
 
-	#debug('preffered_type: %s' % settings.preffered_type)
-	#debug('preffered_bitrate: %d' % preffered_bitrate)
+	preffered_bitrate	= settings.preffered_bitrate
 
 	rank = 0.0
 	conditions = 0
+	mults = []
 
 	if '[ad]' in full_title.lower():
-		rank += 2
-		conditions += 1
+		mults.append(1.1)
 
 	if 'seeds' in parser:
 		seeds = parser['seeds']
 		if seeds == 0:
-			rank += 1000
-		elif seeds < 5:
-			rank += 1 + 3.0 / seeds
+			mults.append(10)
 		else:
-			rank += 1 + 1.0 / seeds
-		conditions += 1
+			v = 1.0 + 0.25 / seeds
+			mults.append(v)
 	else:
-		rank += 1.1
-		conditions += 1
+		mults.append(1.25)
 
-		#parser = dict(parser, **info)
-
-	if parser.get('gold', 'False') == 'True':
-		rank += 0.8
-		conditions += 1
+	#if parser.get('gold', 'False') == 'True':
+	#	rank += 0.8
+	#	conditions += 1
 
 	res_v = 1080
 	if '720p' in full_title:
 		res_v = 720
 
-	if '2160p' in full_title:
+	if '2160' in full_title:
 		res_v = 2160
 
-	'''
-	size = parser.get('size', '')
-	if size != '':
-		if int(size) > preffered_size:
-			rank += int(size) / preffered_size
-		else:
-			rank += preffered_size / int(size)
-		conditions += 1
-	'''
-
 	video = parser.get('video', '')
-	parts = video.split(', ')
+	if video:
+		parts = video.split(', ')
+	else:
+		parts = []
 
-	if len(parts) == 0:
-		rank += 2
-		conditions += 1
+	#if len(parts) == 0:
+	#	rank += 2
+	#	conditions += 1
 
 	for part in parts:
 		multiplier = 0
@@ -145,8 +146,7 @@ def get_rank(full_title, parser, settings):
 			or 'Kbps' in part \
 			or u'Кбит/сек' in part \
 			or u'Кбит/с' in part \
-			or 'Kb/s' in part \
-			or '~' in part:
+			or 'Kb/s' in part:
 				multiplier = 1
 		if 'mbps' in part \
 			or 'mbs' in part \
@@ -154,7 +154,8 @@ def get_rank(full_title, parser, settings):
 			or u'Мбит/сек' in part \
 			or u'Mбит/с' in part \
 			or u'Мбит/с' in part \
-			or 'Mb/s' in part:
+			or 'Mb/s' in part \
+			or 'mb/s' in part:
 				multiplier = 1000
 		if multiplier != 0:
 			find = re.findall('[\d\.,]', part.split('(')[0])
@@ -163,19 +164,19 @@ def get_rank(full_title, parser, settings):
 				if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
 					debug('bitrate: %d kbps' % int(float(bitrate) * multiplier))
 					if float(bitrate) * multiplier > preffered_bitrate:
-						rank += float(bitrate) * multiplier / preffered_bitrate
+						rank += (float(bitrate) * multiplier) / preffered_bitrate
 					else:
-						rank += preffered_bitrate / float(bitrate) * multiplier
+						rank += preffered_bitrate / (float(bitrate) * multiplier)
 					conditions += 1
 				else:
-					rank += 10
-					conditions += 1
+					mults.append(1.5)
 					debug('bitrate: not parsed')
 			except:
-				rank += 10
-				conditions += 1
+				mults.append(1.5)
 				debug('bitrate: not parsed')
 
+		if '3840x' in part or 'x2160' in part:
+			res_v = 2160
 		if '1920x' in part or 'x1080' in part:
 			res_v = 1080
 		if '1280x' in part or 'x720' in part:
@@ -200,7 +201,7 @@ def get_rank(full_title, parser, settings):
 		detect_codec = CodecType.MPGSD
 
 	if detect_codec is None:
-		for part in video.split(', '):
+		for part in parts:
 			if detect_h264(part):
 				detect_codec = CodecType.MPGHD
 			elif detect_h265(part):
@@ -220,23 +221,28 @@ def get_rank(full_title, parser, settings):
 			if detect_codec == CodecType.MPGSD:
 				rank += 2
 				conditions += 1
-	elif settings.preffered_codec == CodecType.MPGUHD:
-		if settings.preffered_codec != detect_codec:
-			rank += 2
-			conditions += 1
-
-	if parser.get('format', '') == 'MKV':
-		rank += 0.6
-		conditions += 1
+		elif settings.preffered_codec == CodecType.MPGUHD:
+			if settings.preffered_codec != detect_codec:
+				rank += 2
+				conditions += 1
 
 	if 'ISO' in parser.get('format', ''):
 		rank += 100
 		conditions += 1
 
 	if conditions != 0:
-		return rank / conditions
+		rank /= conditions
 	else:
-		return 1
+		rank = 1.0
+
+	for m in mults:
+		rank *= m
+
+	if is_torrent_remembed(parser, settings):
+		rank /= 1000
+	
+	return rank
+
 
 def make_utf8(s):
 	if isinstance(s, unicode):
@@ -261,11 +267,14 @@ def scrape_now(fn):
 
 
 def seeds_peers(item):
-	import player
 	res = {}
 	try:
 		link = urllib.unquote(item['link'])
-		settings = player.load_settings()
+		try:
+			import player
+			settings = player.load_settings()
+		except:
+			settings = Settings.current_settings
 		if 'nnm-club' in link:
 			debug('seeds_peers: ' + link)
 			t_id = re.search(r't=(\d+)', link).group(1)
@@ -282,6 +291,9 @@ def seeds_peers(item):
 		elif 'bluebird' in link:
 			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'bluebird', t_id + '.torrent')
+			if not filesystem.exists(fn):
+				import bluebird
+				bluebird.download_torrent(link, fn, settings)
 			return scrape_now(fn)
 		elif 'rutor' in link:
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
@@ -316,6 +328,9 @@ class STRMWriterBase(object):
 
 	@staticmethod
 	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
+		#import vsdbg
+		#vsdbg._bp()
+
 		strmFilename_alt = strmFilename + '.alternative'
 		items = []
 		saved_dict = {}
@@ -334,15 +349,17 @@ class STRMWriterBase(object):
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif line.startswith('plugin://script.media.aggregator'):
 						try:
+							saved_dict['link'] = line.strip(u'\r\n\t ')
 							if use_scrape_info:
-								saved_dict['link'] = line.strip(u'\r\n\t ')
 								sp = seeds_peers(saved_dict)
 								saved_dict = dict(saved_dict, **sp)
 							if 'rank' in saved_dict:
 								curr_rank = float(saved_dict['rank'])
 							else:
 								curr_rank = get_rank(saved_dict.get('full_title', ''), saved_dict, settings)
-						except:
+						except BaseException as e:
+							import log
+							log.print_tb(e)
 							curr_rank = 1
 
 						item = {'rank': curr_rank, 'link': line.strip(u'\r\n\t ')}
@@ -380,7 +397,7 @@ class Informer(object):
 	def __init__(self):
 		self.__movie_api = None
 
-	def make_movie_api(self, imdb_id, kp_id, kp_googlecache=False):
+	def make_movie_api(self, imdb_id, kp_id, settings):
 		orig=None
 		year=None
 		#imdbRaiting=None
@@ -391,7 +408,7 @@ class Informer(object):
 			if u'year' in self.Dict():
 				year = self.Dict()['year']
 
-		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id, kp_id, orig, year, kp_googlecache=kp_googlecache)
+		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, kinopoisk_url=kp_id, orig=orig, year=year, settings=settings)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id
 
@@ -416,8 +433,8 @@ class Informer(object):
 	def make_filename_imdb(self):
 		if self.__movie_api:
 			title 			= self.__movie_api['title']
-			originaltitle	= self.__movie_api['original_title']
-			year			= self.__movie_api.Year()
+			originaltitle	= self.__movie_api['originaltitle']
+			year			= self.__movie_api['year']
 
 			return self.filename_with(title, originaltitle, year)
 
@@ -472,6 +489,8 @@ class DescriptionParserBase(Informer):
 
 	def __init__(self, full_title, content, settings = None):
 		Informer.__init__(self)
+
+		from bs4 import BeautifulSoup
 
 		self._dict = dict()
 		self._dict['full_title'] = full_title

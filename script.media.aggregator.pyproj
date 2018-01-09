@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{a1163bd6-35d4-47e7-908b-be0a65c3f951}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>nnmclub_test.py</StartupFile>
+    <StartupFile>rutor.py</StartupFile>
     <SearchPath />
     <WorkingDirectory>c:\Users\vd\AppData\Roaming\Kodi\addons\script.media.aggregator\</WorkingDirectory>
     <OutputPath>.</OutputPath>
@@ -23,6 +23,7 @@ VSDEV=1</Environment>
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="addon.xml" />
     <Content Include="changelog.txt" />
     <Content Include="fanart.jpg" />
     <Content Include="icon.png" />
@@ -37,10 +38,12 @@ VSDEV=1</Environment>
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="base.py" />
+    <Compile Include="bb_test.py" />
     <Compile Include="bencode.py" />
-    <Compile Include="brkpnt.py" />
+    <Compile Include="bluebird.py" />
     <Compile Include="context.py" />
     <Compile Include="context_search.py" />
+    <Compile Include="context_show_similar.py" />
     <Compile Include="countries.py" />
     <Compile Include="downloader.py" />
     <Compile Include="downloader_test.py" />

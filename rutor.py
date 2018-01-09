@@ -69,6 +69,7 @@ class DescriptionParser(DescriptionParserBase):
 		}.get(x.strip(), u'')
 
 	def clean(self, title):
+		title = re.sub('\[.+\]', '', title)
 		return title.strip(' \t\n\r')
 
 	def get_title(self, full_title):
@@ -276,12 +277,10 @@ class DescriptionParser(DescriptionParserBase):
 					except:
 						pass
 
-		if self.settings:
-			if self.settings.use_kinopoisk:
-				for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
-					self._dict['kp_id'] = kp_id['href']
+		for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
+			self._dict['kp_id'] = kp_id['href']
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), kp_googlecache=self.settings.kp_googlecache)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 
 		return True
 
@@ -346,6 +345,10 @@ def title(rss_url):
 
 def is_tvshow(title):
 	m = re.match(r'.+?\[.+?\] \(\d\d\d\d', title)
+	if m:
+		return True
+
+	m = re.search(r'\[[Ss]\d', title)
 	if m:
 		return True
 
@@ -623,6 +626,14 @@ def search_generate(what, imdb, settings, path_out):
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow', path_out)
 
+	"""
+		if not result4:
+			url = 'http://rutor.info/search/0/4/000/0/' + urllib2.quote(what.encode('utf-8'))
+			result4 = search_results(None, settings, url, what)
+			with filesystem.save_make_chdir_context(settings.tvshow_path()):
+				count += make_search_strms(result4, settings, 'tvshow', path_out)
+	"""
+
 	return count
 
 if __name__ == '__main__':
@@ -631,14 +642,22 @@ if __name__ == '__main__':
 	settings.rutor_domain = 'rutor.info'
 	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
 	settings.torrent_player = 'torrent2http'
+	settings.kp_googlecache = True
+	settings.use_kinopoisk = False
+	settings.use_worldart = True
 
-	import time
-	from_time = time.time()
+	path_out = []
+	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
 
-	from backgrounds import recheck_torrent_if_need
+	#import time
+	#from_time = time.time()
 
-	#run(settings)
+	#from backgrounds import recheck_torrent_if_need
 
-	recheck_torrent_if_need(from_time, settings)
+	from log import dump_context
+	with dump_context('rutor'):
+		run(settings)
+
+	#recheck_torrent_if_need(from_time, settings)
 
 	#search_generate(None, 'tt2948356', settings)

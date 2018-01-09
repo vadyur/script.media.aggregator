@@ -32,7 +32,7 @@ class DescriptionParser(DescriptionParserBase):
 
 		self.settings = settings
 
-		self.make_movie_api(self.imdb_id, kp_url, kp_googlecache=self.settings.kp_googlecache)
+		self.make_movie_api(self.imdb_id, kp_url, self.settings)
 		self.tvshow_api = TVShowAPI.get_by(info['originaltitle'], self.api_info['title_ru'], self.imdb_id, kp_url)
 
 		self.OK = self.parse(self.api_info)

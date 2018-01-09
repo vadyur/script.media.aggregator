@@ -11,8 +11,8 @@
     <import addon="script.module.myconnpy" optional="false"/>
     <import addon="script.module.pyxbmct" version="1.1.4"/>
     <import addon="script.module.chardet"/>
-	
-	<import addon="script.module.vsdbg"/>
+    <import addon="script.module.shikimori.core" optional="true"/>
+    <import addon="script.module.vsdbg"/>
 	
   </requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
@@ -70,7 +70,7 @@
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
-    <description lang="ru">Media Aggregator загружает данные раздач (elitehd.org, tr.anidub.com, nnm-club.me, rutor.info) и создаёт локальную онлайн библиотеку</description>
+    <description lang="ru">Media Aggregator загружает данные раздач (bluebird-hd.org, tr.anidub.com, nnm-club.name, rutor.info) и создаёт локальную онлайн библиотеку</description>
     <forum>http://xbmc.ru/forum/showthread.php?t=10592</forum>
   </extension>
   <extension point="xbmc.service" library="service.py"/>
