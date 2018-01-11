@@ -162,8 +162,8 @@ class NFOWriter:
 		actors = []
 		if self.movie_api:
 			actors = self.movie_api.actors()
-		if not actors and self.tvshow_api is not None:
-			actors = self.tvshow_api.Actors()
+		#if not actors and self.tvshow_api is not None:
+		#	actors = self.tvshow_api.Actors()
 
 		if actors:
 			for actorInfo in actors:
@@ -188,8 +188,9 @@ class NFOWriter:
 
 	def add_trailer(self, root):
 		try:
-			trailer = self.movie_api['trailer']
-			ET.SubElement(root, 'trailer').text = trailer
+			if self.movie_api:
+				trailer = self.movie_api['trailer']
+				ET.SubElement(root, 'trailer').text = trailer
 		except AttributeError:
 			pass
 
