@@ -826,6 +826,9 @@ class TMDB_API(object):
 					if not r['overview']:
 						continue
 
+					if '_results' in tag:
+						type = tag.replace('_results', '')
+
 					url2 = 'http://%s/3/' % TMDB_API.tmdb_api_key['host'] + type + '/' + str(
 						r['id']) + '?api_key=' + TMDB_API.tmdb_api_key['key'] + '&language=ru&append_to_response=credits,videos,external_ids'
 					data2 = json.load(urllib2.urlopen(url2))
