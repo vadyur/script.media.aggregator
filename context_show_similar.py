@@ -15,6 +15,9 @@ def show_similar():
 	FileNameAndPath = path.decode('utf-8')
 	dbtype = xbmc.getInfoLabel('ListItem.DBTYPE')
 
+	if dbtype == 'episode' or dbtype == 'tvshow':
+		type = 'tv'
+
 	if 'Anime' in path and not name:
 		import filesystem
 		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
