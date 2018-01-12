@@ -979,10 +979,10 @@ class MovieAPI(object):
 
 				if kinopoisk_url is not None:
 					kp = KinopoiskAPI(kinopoisk_url, settings)
-					orig = kp.getOriginalTitle()
+					orig = kp.originaltitle()
 					if not orig:
-						orig = kp.getTitle()
-					year = kp.getYear()
+						orig = kp.title()
+					year = kp.year()
 					imdb_id = TMDB_API.imdb_by_tmdb_search(orig if orig else _orig, year if year else _year)
 
 			except BaseException as e:

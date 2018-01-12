@@ -601,13 +601,6 @@ def search_generate(what, imdb, settings, path_out):
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie', path_out)
 
-		# 0/5/000/0 - Наше кино, поиск по названию в разделе
-		if not result1:
-			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
-			result1 = search_results(None, settings, url, what)
-			with filesystem.save_make_chdir_context(settings.movies_path()):
-				count += make_search_strms(result1, settings, 'movie', path_out)
-
 	if settings.animation_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result2 = search_results(imdb, settings, url)
@@ -625,6 +618,14 @@ def search_generate(what, imdb, settings, path_out):
 		result4 = search_results(imdb, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow', path_out)
+
+	if settings.movies_save and count == 0:
+		# 0/5/000/0 - Наше кино, поиск по названию в разделе
+		if not result1:
+			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
+			result1 = search_results(None, settings, url, what)
+			with filesystem.save_make_chdir_context(settings.movies_path()):
+				count += make_search_strms(result1, settings, 'movie', path_out)
 
 	"""
 		if not result4:
