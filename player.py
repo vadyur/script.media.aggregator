@@ -151,6 +151,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		elif settings.torrent_player == 'Ace Stream':
 			import aceplayer
 			player = aceplayer.AcePlayer(settings)
+		elif settings.torrent_player == 'Elementum':
+			import elementumplayer
+			player = elementumplayer.ElementumPlayer()
+
 
 		debug('------------ Open torrent: ' + path)
 		player.AddTorrent(path)
@@ -317,6 +321,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				if settings.torrent_player == 'Ace Stream':
 					return
 
+				if settings.torrent_player == 'Elementum':
+					return
+
 				if getSetting('show_dnl_progress', 'true') != 'true':
 					return
 
@@ -337,7 +344,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					percent = float(info['downloaded']) * 100 / info['size'];
 					#debug(percent)
 					if percent >= 0:
-						heading = u"{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + '%\n'
+						heading = u"{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + r'%' + '\n'
 						if percent < 100:
 							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
 							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])

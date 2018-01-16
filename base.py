@@ -618,6 +618,20 @@ class TorrentPlayer(object):
 
 		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items, 'name': name }
 
+	def GetTorrentInfo(self):
+		try:
+			return { 'downloaded' : 	100,
+			            'size' : 		100,
+			            'dl_speed' : 	1,
+			            'ul_speed' :	0,
+			            'num_seeds' :	1,
+			            'num_peers' :	0
+			            }
+		except:
+			pass
+
+		return None
+
 	def StartBufferFile(self, fileIndex):
 		pass
 
@@ -629,6 +643,15 @@ class TorrentPlayer(object):
 
 	def GetStreamURL(self, playable_item):
 		pass
+
+	def updateDialogInfo(self, progress, progressBar):
+		pass
+
+	def GetBufferingProgress(self):
+		return 100
+
+	def CheckBufferComplete(self):
+		return True
 
 	def loop(self):
 		pass

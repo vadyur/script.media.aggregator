@@ -41,27 +41,3 @@ class AcePlayer(TorrentPlayer):
 
 	def loop(self):
 		self.engine.loop()
-
-	def updateDialogInfo(self, progress, progressBar):
-		pass
-
-	def GetTorrentInfo(self):
-		try:
-			return { 'downloaded' : 	100,
-			            'size' : 		100,
-			            'dl_speed' : 	1,
-			            'ul_speed' :	0,
-			            'num_seeds' :	1,
-			            'num_peers' :	0
-			            }
-		except:
-			pass
-
-		return None
-
-	def GetBufferingProgress(self):
-		return 100
-
-
-	def CheckBufferComplete(self):
-		return True

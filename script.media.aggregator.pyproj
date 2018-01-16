@@ -47,6 +47,7 @@ VSDEV=1</Environment>
     <Compile Include="countries.py" />
     <Compile Include="downloader.py" />
     <Compile Include="downloader_test.py" />
+    <Compile Include="elementumplayer.py" />
     <Compile Include="filesystem.py" />
     <Compile Include="hdclub.py" />
     <Compile Include="hdclub_test.py" />
