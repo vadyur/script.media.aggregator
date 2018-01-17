@@ -36,7 +36,33 @@ def dispatch():
 	
 	if 'torrent' in params:
 		from player import play_torrent
-		play_torrent(settings=load_settings(), params=params)
+
+		settings = load_settings()
+		if settings.show_sources and 'onlythis' not in params:
+			import filesystem, urllib
+
+			rel_path = urllib.unquote(params['path']).decode('utf-8')
+			debug(rel_path)
+
+			filename = urllib.unquote(params['nfo']).decode('utf-8').replace(u'.nfo', u'.strm')
+			debug(filename)
+
+			path = filesystem.join(settings.base_path(), rel_path, filename)
+			debug(path)
+
+			def run(torr, index=None):
+				params['onlythis'] = 'true'
+				params['torrent'] = torr
+				if index is not None:
+					params['index'] = index
+				play_torrent(settings=settings, params=params)
+
+			import context
+			res = context.main(settings, path.encode('utf-8'), filename.encode('utf-8'), run)
+			if not res:
+				play_torrent(settings=settings, params=params)
+		else:
+			play_torrent(settings=settings, params=params)
 	
 	elif params.get('action') == 'anidub-add-favorites':
 		from player import action_anidub_add_favorites

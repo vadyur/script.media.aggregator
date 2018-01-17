@@ -345,11 +345,13 @@ def get_path_name():
 			name = path.replace('\\', '/').split('/')[-1]
 	return path, name
 
-def main():
-	path, name = get_path_name()
-		
-	import player
-	settings = player.load_settings()
+def main(settings=None, path=None, name=None, run=None):
+	if not path or not name:
+		path, name = get_path_name()
+
+	if not settings:		
+		import player
+		settings = player.load_settings()
 
 	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
@@ -359,7 +361,7 @@ def main():
 		xbmcvfs.copy(path + '.alternative', os.path.join(tempPath, name + '.alternative'))
 		path = os.path.join(tempPath, name)
 	else:
-		return
+		return False
 
 	def	links():
 		return STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
@@ -372,7 +374,7 @@ def main():
 
 	if not window.has_choice and not window.has_select_file:
 		del window
-		return
+		return True
 
 	cursel = window.list.getSelectedItem()
 	debug(cursel.getLabel())
@@ -382,18 +384,18 @@ def main():
 	if link == 'plugin://script.media.aggregator/?action=settings':
 		xbmc.executebuiltin('Addon.OpenSettings(script.media.aggregator)')
 		del window
-		return
+		return True
 
 	if link == 'plugin://script.media.aggregator/?action=show_similar':
 		from context_show_similar import show_similar
 		if show_similar():
 			del window
-			return
+			return True
 
 	if link == 'plugin://script.media.aggregator/?action=add_media':
 		from context_get_sources import get_sources
 		get_sources(settings)
-		return
+		return True
 
 	if link == 'plugin://script.media.aggregator/?action=united_search':
 		import context_united_search
@@ -415,20 +417,26 @@ def main():
 			match = re.search(pattern2, str(link))
 
 		if match:
-			dst_link = re.sub(pattern, 'torrent=' + match.group(1) + '&', str(src_link)) + '&onlythis=true'
+			torr = match.group(1)
+			dst_link = re.sub(pattern, 'torrent=' + torr + '&', str(src_link)) + '&onlythis=true'
 			debug(dst_link)
 
 			if selected_file:
-				#import urllib
-				#from tvshowapi import cutStr
-				#dst_link += '&cutName=' + urllib.quote(cutStr(selected_file))
 				dst_link += '&index=' + str(selected_file)
 
-			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
+			if run:
+				if selected_file:				
+					run(torr, int(selected_file))
+				else:
+					run(torr)
+			else:
+				xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
 	if tempPath in path:
 		xbmcvfs.delete(path)
 		xbmcvfs.delete(path + '.alternative')
+
+	return True
 
 if __name__ == '__main__':
 	main()

@@ -110,6 +110,8 @@ def load_settings():
 	settings.use_worldart			= getSetting('use_worldart') == 'true'
 	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
 
+	settings.show_sources			= getSetting('show_sources') == 'true'
+
 	return settings
 
 

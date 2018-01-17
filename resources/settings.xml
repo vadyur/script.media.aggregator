@@ -28,6 +28,7 @@
     </category>
 
     <category label="Действия">
+        <setting label="Показать окно выбора раздач вместо запуска воспроизведения" type="bool" id="show_sources" default="false"/>
         <setting label="Выполнить скрипт/программу по завершению просмотра" type="bool" id="run_script" default="false"/>
         <setting label="" type="text"   id="script_params" enable="eq(-1,true)" default="" visible="eq(-1,true)" />
         <setting label="Можно использовать параметры" type="lsep" visible="eq(-2,true)" />
