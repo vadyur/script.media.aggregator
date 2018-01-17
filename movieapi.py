@@ -37,7 +37,7 @@ def get_tmdb_api_key():
 		cur = filesystem.dirname(__file__)
 		home_path = filesystem.join(cur, '../..')
 
-	key = '6889f6089877fd092454d00edb44a84d'
+	key = 'ecbc86c92da237cb9faff6d3ddc4be6d'
 	host = 'api.tmdb.org'
 	try:
 		xml_path = filesystem.join(home_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
@@ -148,9 +148,13 @@ class world_art_actors(soup_base):
 					act['en_name'] = tds[2].get_text()
 					act['role'] = tds[3].get_text()
 
-					act = { k:v for k, v in act.iteritems() if v }
+					#act = { k:v for k, v in act.iteritems() if v }		## No python 2.6 compatible
+					res = {}
+					for k, v in act.iteritems():
+						if v:
+							res[k] = v
 
-					self._actors.append(act)
+					self._actors.append(res)
 
 			for b in self.soup.find_all('b'):
 				if b.get_text() == u'Актёры':
@@ -182,14 +186,14 @@ class world_art_actors(soup_base):
 class world_art_info(soup_base):
 	Request_URL = "http://www.world-art.ru/%s"
 
-	attrs = {
+	attrs = [
 		(u'Названия', 'knowns', attr_split_slash),
 		(u'Производство', 'country', attr_text),
 		(u'Хронометраж', 'runtime', attr_text),
 		(u'Жанр', 'genre', attr_genre),
 		(u'Первый показ', 'year', attr_year),
 		(u'Режиссёр', 'director', attr_text),
-	}
+	]
 
 	def __init__(self, url):
 		soup_base.__init__(self, self.Request_URL % url)
