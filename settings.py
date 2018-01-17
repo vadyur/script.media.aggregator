@@ -86,6 +86,8 @@ class Settings:
 		self.use_kinopoisk			= True
 		self.use_worldart			= True
 
+		self.show_sources			= False
+
 		self.rutor_domain           = rutor_domain
 		self.rutor_filter           = rutor_filter
 
