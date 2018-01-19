@@ -199,7 +199,7 @@ class DescriptionParser(DescriptionParserBase):
 				pass
 
 		tags = []
-		for a in self.soup.select('a[href*="http://tr.anidub.com/tags/"]'):
+		for a in self.soup.select('a[href*="https://tr.anidub.com/tags/"]'):
 			tags.append(a.get_text().strip())
 		if len(tags) > 0:
 			self._dict['tag'] = tags
@@ -299,8 +299,19 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 
 def get_session(settings):
 	s = requests.Session()
-	login = s.post("http://tr.anidub.com/", data = {"login_name": settings.anidub_login, "login_password": settings.anidub_password, "login": "submit"})
+	data = {"login_name": settings.anidub_login, "login_password": settings.anidub_password, "login": "submit"}
+	headers = {
+		'Host':							'tr.anidub.com',
+		'Origin':						'https://tr.anidub.com',
+		'Referer':						'https://tr.anidub.com/',
+		'Upgrade-Insecure-Requests':	'1',
+		'User-Agent':					'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132'
+	}
+	login = s.post("https://tr.anidub.com/", data=data, headers=headers)
 	debug('Login status: %d' % login.status_code)
+	if 'login_name' in login.content:
+		debug('Login failed')
+
 	return s
 	
 def download_torrent(url, path, settings):
@@ -328,7 +339,7 @@ def download_torrent(url, path, settings):
 		a = None
 
 	if a is not None:
-		href = 'http://tr.anidub.com' + a['href']
+		href = 'https://tr.anidub.com' + a['href']
 		debug(s.headers)
 		r = s.get(href, headers={'Referer': url})
 		debug(r.headers)
@@ -403,7 +414,7 @@ def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = N
 
 
 def write_favorites(path, settings):
-	write_pages('http://tr.anidub.com/favorites/', path, settings, dialog_title=u'Избранное AniDUB')
+	write_pages('https://tr.anidub.com/favorites/', path, settings, dialog_title=u'Избранное AniDUB')
 
 
 def search_generate(what, settings, path_out):
@@ -414,7 +425,7 @@ def search_generate(what, settings, path_out):
 		return False
 
 	write_tvshow_nfo.favorites = False
-	return write_pages('http://tr.anidub.com/index.php?do=search', 
+	return write_pages('https://tr.anidub.com/index.php?do=search', 
 				settings.anime_tvshow_path(), settings, 
 				{'do': 'search',
 				'subaction': 'search',
