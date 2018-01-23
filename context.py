@@ -75,6 +75,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 
 		self.fill_list()
 
+		links.set_reload(self.reload)
+
 		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
 		if kodi_ver_major < 16:
@@ -109,6 +111,27 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
 		self.has_choice = False
 		self.has_select_file = False
+
+	def reload(self, item):
+
+		#import xbmcgui
+		#xbmcgui.Dialog().ok(self.settings.addon_name, "Reload")
+
+		def find_listitem(item):
+			for index in xrange(self.list.size()):
+				li = self.list.getListItem(index)
+				if li.getProperty('link') == item['link']:
+					return li
+			return None
+
+		if 'seeds' in item and 'peers' in item:
+			li = find_listitem(item)
+			if li:
+				s = li.getLabel()
+				if not isinstance(s, unicode):
+					s = s.decode('utf-8')
+				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
+				li.setLabel(s)
 
 	def go_left(self):
 		if self.files:
@@ -363,11 +386,37 @@ def main(settings=None, path=None, name=None, run=None):
 	else:
 		return False
 
-	def	links():
-		return STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
+	class Links():
+		def __init__(self):
+			self.reload = None
+			self._links = result = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=False)
+
+		def	__call__(self):
+			return self._links
+
+		def set_reload(self, reload):
+			self.reload = reload
+			import threading
+			self.thread = threading.Thread(target=self.do_get_seeds_peers )
+			self.thread.start()
+
+		def do_get_seeds_peers(self):
+			from base import seeds_peers
+			for item in self._links:
+				if self.reload:
+					sp = seeds_peers(item)
+					item = dict(item, **sp)
+					self.reload(item)
+
+		def close(self):
+			self.reload = None
+
+	links = Links()
 
 	window = MyWindow(settings.addon_name, settings=settings, links=links)
 	window.doModal()
+
+	links.close()
 
 	debug(window.has_choice)
 	debug(window.has_select_file)
@@ -439,4 +488,6 @@ def main(settings=None, path=None, name=None, run=None):
 	return True
 
 if __name__ == '__main__':
+	#import vsdbg
+	#vsdbg._bp()
 	main()

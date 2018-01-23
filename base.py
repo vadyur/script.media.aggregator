@@ -251,19 +251,56 @@ def make_utf8(s):
 
 def scrape_now(fn):
 	debug(fn)
-	tp = TorrentPlayer()
-	tp.AddTorrent(fn)
-	data = tp.GetLastTorrentData()
-	debug(str(data))
-	if data:
-		hashes = [data['info_hash']]
+	with filesystem.fopen(fn, 'r') as fin:
+		from bencode import BTFailure
+		try:
+			from bencode import bdecode
+			decoded = bdecode(fin.read())
+		except BTFailure:
+			debug("Can't decode torrent data (invalid torrent link?)")
+			return {}
+
+		info = decoded['info']
+
+		import hashlib
+		from bencode import bencode
+		info_hash = hashlib.sha1(bencode(info)).hexdigest()
+
+		hashes = [info_hash]
 		import scraper
 
-		res = scraper.scrape(data['announce'], hashes)
-		debug(str(res))
-		return res[data['info_hash']]
-	else:
-		return {}
+		result = []
+		threads = []
+
+		def start_scrape(announce):
+			def do_scrape():
+				try:
+					res = scraper.scrape(announce, hashes, 0.25)
+					result.append(res[info_hash])
+				except:
+					debug(announce + ' - not working')
+					pass
+
+			import threading			
+			t = threading.Thread(target=do_scrape)
+			threads.append(t)
+			t.start()
+
+		for announce in decoded['announce-list']:
+			start_scrape(announce[0])
+
+		alive = True
+		while not result and alive:
+			alive = False
+			for t in threads:
+				if t.is_alive():
+					alive = True
+					break
+
+		if result:
+			return result[0]
+
+	return {}
 
 
 def seeds_peers(item):
