@@ -1,4 +1,4 @@
-import binascii, urllib, socket, random, struct
+import binascii, urllib, urllib2, socket, random, struct
 from bencode import bdecode
 from urlparse import urlparse, urlunsplit
 
@@ -65,7 +65,7 @@ def scrape_http(parsed_tracker, hashes, timeout):
 	url = urlunsplit((pt.scheme, pt.netloc, pt.path, qs, pt.fragment))
 	print url
 	try:
-		handle = urllib.urlopen(url, timeout=timeout);
+		handle = urllib2.urlopen(url, timeout=timeout);
 	except:
 		raise RuntimeError("Timeout")	
 	
