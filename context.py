@@ -11,6 +11,13 @@ import pyxbmct.addonwindow as pyxbmct
 import filesystem
 from base import STRMWriterBase, seeds_peers
 
+seeds_peers_fmt = u'[COLOR=FF5AC3C6][B]Сиды[/B]:[/COLOR] %d        [COLOR=FF5AC3C6][B]пиры[/B]:[/COLOR] %d'
+
+def colorify(text, sub, color):
+	return text.replace(str(sub), '[COLOR={}]{}[/COLOR]'.format(color, sub))
+def boldify(text, sub):
+	return text.replace(str(sub), '[B]{}[/B]'.format(sub))
+
 class MyWindow(pyxbmct.AddonDialogWindow):
 
 	def fill_list(self):
@@ -19,6 +26,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#s += str(item.get('rank', '')) + ' '
 			try:
 				link = item['link']
+				s += '[COLOR=FFFF6666][B]'
 				if 'anidub' in link:
 					s += '[AniDUB] '
 				elif 'nnm-club' in link:
@@ -31,6 +39,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[rutor] '
 				elif 'soap4' in link:
 					s += '[soap4me] '
+				s += '[/B][/COLOR]'
 			except:
 				pass
 			try:
@@ -38,22 +47,26 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			except:
 				pass
 			try:
-				s += '\n' + u'Видео: ' + item['video']
+				s += '\n' + u'[COLOR=FF5AC3C6][B]Видео[/B]:[/COLOR] ' + item['video']
 			except:
 				pass
 			try:
-				s += '\n' + u'Перевод: ' + item['translate']
+				s += '\n' + u'[COLOR=FF5AC3C6][B]Перевод[/B]:[/COLOR] ' + item['translate']
 				#print s
 			except:
 				pass
 			try:
 				#info = seeds_peers(item)
-				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
+				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
 			except BaseException as e:
 				#debug(str(e))
 				pass
-		
+
 			if s != '':
+				for sub in [1920, 1080, 1280, 720, 3840, 2160, 540, 480, 360]:
+					s = colorify(s, sub, 'white')
+					s = boldify(s, sub)
+
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)
 				self.list.addItem(li)
@@ -62,7 +75,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		# Вызываем конструктор базового класса.
 		super(MyWindow, self).__init__(title)
 		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
-		self.setGeometry(850, 600, 1, 1)
+		self.setGeometry(1280, 720, 1, 1)
 
 		self.settings = settings
 
@@ -130,7 +143,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				s = li.getLabel()
 				if not isinstance(s, unicode):
 					s = s.decode('utf-8')
-				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
+				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
 				li.setLabel(s)
 
 	def go_left(self):
@@ -369,12 +382,29 @@ def get_path_name():
 	return path, name
 
 def main(settings=None, path=None, name=None, run=None):
+
+	import time
+	main.start_time = time.time()
+
+	def stage(n):
+		"""
+		now = time.time()
+		debug('stage: {} ({} msec)'.format(n, (now - main.start_time)))
+		main.start_time = now
+		"""
+
+	stage(0)
+
 	if not path or not name:
 		path, name = get_path_name()
+
+	stage(1)
 
 	if not settings:		
 		import player
 		settings = player.load_settings()
+
+	stage(2)
 
 	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
@@ -411,9 +441,16 @@ def main(settings=None, path=None, name=None, run=None):
 		def close(self):
 			self.reload = None
 
+	stage(3)
+
 	links = Links()
 
+	stage(4)
+
 	window = MyWindow(settings.addon_name, settings=settings, links=links)
+
+	stage(5)
+
 	window.doModal()
 
 	links.close()
