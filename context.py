@@ -11,6 +11,13 @@ import pyxbmct.addonwindow as pyxbmct
 import filesystem
 from base import STRMWriterBase, seeds_peers
 
+seeds_peers_fmt = u'[COLOR=FF5AC3C6][B]Сиды[/B]:[/COLOR] %d        [COLOR=FF5AC3C6][B]пиры[/B]:[/COLOR] %d'
+
+def colorify(text, sub, color):
+	return text.replace(str(sub), '[COLOR={}]{}[/COLOR]'.format(color, sub))
+def boldify(text, sub):
+	return text.replace(str(sub), '[B]{}[/B]'.format(sub))
+
 class MyWindow(pyxbmct.AddonDialogWindow):
 
 	def fill_list(self):
@@ -19,6 +26,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			#s += str(item.get('rank', '')) + ' '
 			try:
 				link = item['link']
+				s += '[COLOR=FFFF6666][B]'
 				if 'anidub' in link:
 					s += '[AniDUB] '
 				elif 'nnm-club' in link:
@@ -31,6 +39,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[rutor] '
 				elif 'soap4' in link:
 					s += '[soap4me] '
+				s += '[/B][/COLOR]'
 			except:
 				pass
 			try:
@@ -38,22 +47,26 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			except:
 				pass
 			try:
-				s += '\n' + u'Видео: ' + item['video']
+				s += '\n' + u'[COLOR=FF5AC3C6][B]Видео[/B]:[/COLOR] ' + item['video']
 			except:
 				pass
 			try:
-				s += '\n' + u'Перевод: ' + item['translate']
+				s += '\n' + u'[COLOR=FF5AC3C6][B]Перевод[/B]:[/COLOR] ' + item['translate']
 				#print s
 			except:
 				pass
 			try:
 				#info = seeds_peers(item)
-				s +=  '\n' + u'Сиды: %d        пиры: %d' % (item['seeds'], item['peers'])
+				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
 			except BaseException as e:
 				#debug(str(e))
 				pass
-		
+
 			if s != '':
+				for sub in [1920, 1080, 1280, 720, 3840, 2160, 540, 480, 360]:
+					s = colorify(s, sub, 'white')
+					s = boldify(s, sub)
+
 				li = xbmcgui.ListItem(s)
 				li.setProperty('link', link)
 				self.list.addItem(li)
@@ -62,7 +75,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		# Вызываем конструктор базового класса.
 		super(MyWindow, self).__init__(title)
 		# Устанавливаем ширину и высоту окна, а также разрешение сетки (Grid):
-		self.setGeometry(850, 600, 1, 1)
+		self.setGeometry(1280, 720, 1, 1)
 
 		self.settings = settings
 
@@ -74,6 +87,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.make_links = links
 
 		self.fill_list()
+
+		links.set_reload(self.reload)
 
 		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
@@ -109,6 +124,27 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		self.connect(pyxbmct.ACTION_NAV_BACK, self.close)
 		self.has_choice = False
 		self.has_select_file = False
+
+	def reload(self, item):
+
+		#import xbmcgui
+		#xbmcgui.Dialog().ok(self.settings.addon_name, "Reload")
+
+		def find_listitem(item):
+			for index in xrange(self.list.size()):
+				li = self.list.getListItem(index)
+				if li.getProperty('link') == item['link']:
+					return li
+			return None
+
+		if 'seeds' in item and 'peers' in item:
+			li = find_listitem(item)
+			if li:
+				s = li.getLabel()
+				if not isinstance(s, unicode):
+					s = s.decode('utf-8')
+				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
+				li.setLabel(s)
 
 	def go_left(self):
 		if self.files:
@@ -346,12 +382,29 @@ def get_path_name():
 	return path, name
 
 def main(settings=None, path=None, name=None, run=None):
+
+	import time
+	main.start_time = time.time()
+
+	def stage(n):
+		"""
+		now = time.time()
+		debug('stage: {} ({} msec)'.format(n, (now - main.start_time)))
+		main.start_time = now
+		"""
+
+	stage(0)
+
 	if not path or not name:
 		path, name = get_path_name()
+
+	stage(1)
 
 	if not settings:		
 		import player
 		settings = player.load_settings()
+
+	stage(2)
 
 	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
@@ -363,11 +416,44 @@ def main(settings=None, path=None, name=None, run=None):
 	else:
 		return False
 
-	def	links():
-		return STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=True)
+	class Links():
+		def __init__(self):
+			self.reload = None
+			self._links = result = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=False)
+
+		def	__call__(self):
+			return self._links
+
+		def set_reload(self, reload):
+			self.reload = reload
+			import threading
+			self.thread = threading.Thread(target=self.do_get_seeds_peers )
+			self.thread.start()
+
+		def do_get_seeds_peers(self):
+			from base import seeds_peers
+			for item in self._links:
+				if self.reload:
+					sp = seeds_peers(item)
+					item = dict(item, **sp)
+					self.reload(item)
+
+		def close(self):
+			self.reload = None
+
+	stage(3)
+
+	links = Links()
+
+	stage(4)
 
 	window = MyWindow(settings.addon_name, settings=settings, links=links)
+
+	stage(5)
+
 	window.doModal()
+
+	links.close()
 
 	debug(window.has_choice)
 	debug(window.has_select_file)
@@ -439,4 +525,6 @@ def main(settings=None, path=None, name=None, run=None):
 	return True
 
 if __name__ == '__main__':
+	#import vsdbg
+	#vsdbg._bp()
 	main()

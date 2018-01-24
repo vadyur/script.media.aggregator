@@ -185,12 +185,12 @@ def scrape_nnm():
 	for chunk in chunks(hashes, 32):
 		import scraper
 		try:
-			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk])
+			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk], 10)
 		except RuntimeError as RunE:
 			if '414 status code returned' in RunE.message:
 				for c in chunks(chunk, 16):
 					try:
-						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c])
+						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c], 10)
 						process_chunk(c, data_path, seeds_peers)
 					except BaseException as e:
 						log.print_tb(e)
