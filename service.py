@@ -208,23 +208,24 @@ def add_media_case():
 
 	path = filesystem.join(addon_data_path(), 'add_media')
 	if filesystem.exists(path):
-		with filesystem.fopen(path, 'r') as f:
-			while True:
-				try:
-					title = f.readline().strip(' \n\t\r').decode('utf-8')
-					imdb = f.readline().strip(' \n\t\r')
+		try:
+			with filesystem.fopen(path, 'r') as f:
+				while True:
+					try:
+						title = f.readline().strip(' \n\t\r').decode('utf-8')
+						imdb = f.readline().strip(' \n\t\r')
 
-					log.debug('add_media_case: ' + imdb)
-					log.debug(title)
+						log.debug('add_media_case: ' + imdb)
+						log.debug(title)
 
-					if title and imdb:
-						call_bg( 'add_media_process', {'title': title, 'imdb': imdb} )
-					else:
-						break
-				except BaseException as e:
-					log.print_tb(e)
-
-		filesystem.remove(path)
+						if title and imdb:
+							call_bg( 'add_media_process', {'title': title, 'imdb': imdb} )
+						else:
+							break
+					except BaseException as e:
+						log.print_tb(e)
+		finally:
+			filesystem.remove(path)
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
