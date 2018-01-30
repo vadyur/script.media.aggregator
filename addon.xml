@@ -34,9 +34,15 @@
           <label>Поиск источников</label>
           <visible>StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)</visible>
         </item>
+        <!--
         <item library="context_united_search.py">
           <label>Поиск в United Search</label>
           <visible>[StringCompare(ListItem.dbtype,movie) | StringCompare(ListItem.dbtype,episode) | StringCompare(ListItem.dbtype,tvshow)] + !String.IsEmpty(System.AddonTitle(plugin.video.united.search)) ]</visible>
+        </item>
+        -->
+        <item library="context_repair.py">
+          <label>Починка (удаление дубликатов, строгое соответсвие с TMDB)</label>
+          <visible>StringCompare(ListItem.dbtype,tvshow)</visible>
         </item>
         <item library="context_search.py">
           <label>Поиск</label>
