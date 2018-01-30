@@ -22,16 +22,11 @@ from strmwriter import STRMWriter
 import movieapi
 import tvshowapi
 
-
-_RSS_URL = 'http://nnm-club.me/forum/rss-topic.xml'
 _BASE_URL = 'http://nnm-club.me/forum/'
-_HD_PORTAL_URL = _BASE_URL + 'portal.php?c=11'
-
-MULTHD_URL = 'http://nnm-club.me/forum/viewforum.php?f=661'
-
 _NEXT_PAGE_SUFFIX = '&start='
 
-#_mirror = 'nnm-club.name'
+tvshow_ids = '1140,1141,1142,1144,1195,1196,1242,1265,1288,1289,1290,1300,768,770,771,772,773,774,775,776,777,778,779,782,783,784,785,786,787,788,803,804,922'
+movie_ids = '1296,227,954'
 
 def real_url(url, settings):
 
@@ -39,10 +34,14 @@ def real_url(url, settings):
 	if settings.nnmclub_use_ssl:
 		protocol = 'https'
 
+	# nnm-club.name is not working now
+	settings.nnmclub_domain = settings.nnmclub_domain.replace('nnm-club.name', 'nnm-club.me')
+
 	import urlparse
 	res = urlparse.urlparse(url)
 	res = urlparse.ParseResult(protocol, settings.nnmclub_domain, res.path, res.params, res.query, res.fragment)
 	res = urlparse.urlunparse(res)
+
 	debug(res)
 	return res
 
@@ -506,13 +505,13 @@ def get_uid(settings, session=None):
 
 
 def get_rss_url(f_id, passkey, settings):
-	pkstr = '&uk=' + passkey + '&r' if passkey else ''
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1' + pkstr
+	pkstr = '&uk=' + passkey if passkey else ''
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1' + pkstr + '&r'
 
 
 def get_fav_rss_url(f_id, passkey, uid):
-	pkstr = '&uk=' + passkey + '&r' if passkey else ''
-	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1'  + pkstr
+	pkstr = '&uk=' + passkey if passkey else ''
+	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1'  + pkstr + '&r'
 
 
 def run(settings):
@@ -533,13 +532,13 @@ def run(settings):
 	if uid is not None:
 		debug('NNM uid: ' + str(uid))
 
-		write_movies_rss(get_fav_rss_url('227,954', passkey, uid), settings.movies_path(), settings)
+		write_movies_rss(get_fav_rss_url(movie_ids, passkey, uid), settings.movies_path(), settings)
 		write_movies_rss(get_fav_rss_url(661, passkey, uid), settings.animation_path(), settings)
 		write_tvshows(get_fav_rss_url(232, passkey, uid), settings.animation_tvshow_path(), settings)
 		write_tvshows(get_fav_rss_url(768, passkey, uid), settings.tvshow_path(), settings)
 
 	if settings.movies_save:
-		write_movies_rss(get_rss_url('227,954', passkey, settings), settings.movies_path(), settings)
+		write_movies_rss(get_rss_url(movie_ids, passkey, settings), settings.movies_path(), settings)
 
 	if settings.animation_save:
 		write_movies_rss(get_rss_url(661, passkey, settings), settings.animation_path(), settings)
@@ -717,7 +716,7 @@ def search_generate(what, imdb, settings, path_out):
 	session = create_session(settings)
 
 	if settings.movies_save:
-		url = make_search_url(what, '227,954')
+		url = make_search_url(what, movie_ids)
 		result1 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.movies_path()):
 			count += make_search_strms(result1, settings, 'movie', path_out)
@@ -735,7 +734,7 @@ def search_generate(what, imdb, settings, path_out):
 			count += make_search_strms(result3, settings, 'tvshow', path_out)
 
 	if settings.tvshows_save and count == 0:
-		url = make_search_url(what, '768')
+		url = make_search_url(what, tvshow_ids)
 		result4 = search_results(imdb, session, settings, url)
 		with filesystem.save_make_chdir_context(settings.tvshow_path()):
 			count += make_search_strms(result4, settings, 'tvshow', path_out)

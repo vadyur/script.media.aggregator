@@ -5,7 +5,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{a1163bd6-35d4-47e7-908b-be0a65c3f951}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>context_repair_test.py</StartupFile>
+    <StartupFile>nnmclub_test.py</StartupFile>
     <SearchPath>..\script.module.feedparser\lib;..\script.module.pyxbmct\lib</SearchPath>
     <WorkingDirectory>c:\Users\vd\AppData\Roaming\Kodi\addons\script.media.aggregator\</WorkingDirectory>
     <OutputPath>.</OutputPath>
