@@ -635,6 +635,18 @@ class TorrentPlayer(object):
 		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
 		#debug(self.info_hash)
 
+		def info_name():
+			if 'name.utf-8' in info:
+				return info['name.utf-8']
+			else:
+				return info['name']
+
+		def f_path(f):
+			if 'path.utf-8' in f:
+				return f['path.utf-8']
+			else:
+				return f['path']
+
 		name = '.'
 		playable_items = []
 		try:
@@ -642,14 +654,14 @@ class TorrentPlayer(object):
 				for i, f in enumerate(info['files']):
 					# debug(i)
 					# debug(f)
-					name = os.sep.join(f['path'])
+					name = os.sep.join(f_path(f))
 					size = f['length']
 					#debug(name)
 					if TorrentPlayer.is_playable(name):
 						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
-					name = TorrentPlayer.Name(info['name'])
+					name = TorrentPlayer.Name(info_name())
 			else:
-				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info['name']), 'size': info['length'] } ]
+				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info_name()), 'size': info['length'] } ]
 		except UnicodeDecodeError:
 			return None
 
