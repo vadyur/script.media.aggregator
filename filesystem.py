@@ -73,23 +73,17 @@ def xbmcvfs_path(path):
 		return xbmc.translatePath(os.path.join(_cwd.encode('utf-8'), u8path))
 
 def exists(path):
-	res = False
 	try:
-		res = os.path.exists(get_path(path))
-		if res:
-			return res
-	except BaseException as e:
-		log.print_tb(e)
-	
-	try:
-		import stat
-		if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
-			return True
+		if '://' in path or ( not _is_abs_path(path) and '://' in _cwd ):
+			import stat
+			if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
+				return True
 
-		return xbmcvfs.exists(xbmcvfs_path(path))
+			return xbmcvfs.exists(xbmcvfs_path(path))
+		else:
+			return os.path.exists(get_path(path))
 	except BaseException as e:
-		log.print_tb(e)
-		return res
+		return os.path.exists(get_path(path))
 
 
 def getcwd():
@@ -215,23 +209,16 @@ def fopen(path, mode):
 
 				self.filename = xbmcvfs_path(filename)
 				if 'r' in opt or 'a' in opt:
-					'''
 					exst = exists(filename)
 					if not exst and 'r' in opt:
 						from errno import ENOENT
 						raise IOError(ENOENT, 'Not a file', filename)
 
 					if exst:
-					'''
-					try:
 						# read
 						f = xbmcvfs.File(self.filename)
 						buf = f.read()
 						f.close()
-					except:
-						log.print_tb()
-						from errno import ENOENT
-						raise IOError(ENOENT, 'Not a file', filename)
 
 				StringIO.__init__(self, buf)
 
@@ -264,8 +251,7 @@ def fopen(path, mode):
 		else:
 			return File(path, mode)
 
-	except BaseException as e:
-		log.print_tb(e)
+	except BaseException:
 		return open(get_path(path), mode)
 
 	

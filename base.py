@@ -568,6 +568,43 @@ class DescriptionParserBase(Informer):
 
 class TorrentPlayer(object):
 
+	def __init__(self):
+		self._decoded	= None
+		self._info_hash = None
+
+	@property
+	def decoded(self):
+		if not self._decoded:
+			data = None
+			with filesystem.fopen(self.path, 'rb') as torr:
+				data = torr.read()
+
+			if data is None:
+				return None
+
+			from bencode import BTFailure
+			try:
+				from bencode import bdecode
+				self._decoded = bdecode(data)
+			except BTFailure:
+				debug("Can't decode torrent data (invalid torrent link?)")
+				return None
+
+		return self._decoded
+
+	@property
+	def info_hash(self):
+		if not self._info_hash:
+			try:
+				import hashlib
+				from bencode import bencode
+				info = self.decoded['info']
+				self._info_hash = hashlib.sha1(bencode(info)).hexdigest()
+			except:
+				return None
+
+		return self._info_hash
+
 	@staticmethod
 	def is_playable(name):
 		filename, file_extension = os.path.splitext(name)
@@ -611,29 +648,21 @@ class TorrentPlayer(object):
 		return name
 
 	def GetLastTorrentData(self):
-		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
 
-		data = None
-		with filesystem.fopen(self.path, 'rb') as torr:
-			data = torr.read()
-
-		if data is None:
-			return None
-
-		from bencode import BTFailure
-		try:
-			from bencode import bdecode
-			decoded = bdecode(data)
-		except BTFailure:
-			debug("Can't decode torrent data (invalid torrent link?)")
-			return None
-
+		decoded =self.decoded
 		info = decoded['info']
 
-		import hashlib
-		from bencode import bencode
-		self.info_hash = hashlib.sha1(bencode(info)).hexdigest()
-		#debug(self.info_hash)
+		def info_name():
+			if 'name.utf-8' in info:
+				return info['name.utf-8']
+			else:
+				return info['name']
+
+		def f_path(f):
+			if 'path.utf-8' in f:
+				return f['path.utf-8']
+			else:
+				return f['path']
 
 		name = '.'
 		playable_items = []
@@ -642,14 +671,14 @@ class TorrentPlayer(object):
 				for i, f in enumerate(info['files']):
 					# debug(i)
 					# debug(f)
-					name = os.sep.join(f['path'])
+					name = os.sep.join(f_path(f))
 					size = f['length']
 					#debug(name)
 					if TorrentPlayer.is_playable(name):
 						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
-					name = TorrentPlayer.Name(info['name'])
+					name = TorrentPlayer.Name(info_name())
 			else:
-				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info['name']), 'size': info['length'] } ]
+				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info_name()), 'size': info['length'] } ]
 		except UnicodeDecodeError:
 			return None
 
