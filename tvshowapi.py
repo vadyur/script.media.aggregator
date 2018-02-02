@@ -340,7 +340,7 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		if tvshow_path:
 			with filesystem.save_make_chdir_context(tvshow_path):
 
-				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo()
+				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo(tvshow_path)
 
 				# cnt = 0
 				for f in files:

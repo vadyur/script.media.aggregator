@@ -12,7 +12,11 @@ class STRMWriter(STRMWriterBase):
 		self.link = link
 		
 	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, index = None, parser = None, settings = None):
-		strmFilename = make_fullpath(filename, u'.strm')
+		path = filesystem.dirname(filename)
+		title = filesystem.basename(filename)
+		title =	make_fullpath(title, u'.strm')
+
+		strmFilename = filesystem.join(path, title)
 		
 		#------------------------------------------
 

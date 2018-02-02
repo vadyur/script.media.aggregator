@@ -28,22 +28,6 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 _cwd = ensure_unicode(os.getcwd(), get_filesystem_encoding())
 
 
-def get_path(path):
-	errors='strict'
-
-	try:
-		import xbmcvfs
-	except ImportError:
-		if path.startswith('smb://') and os.name == 'nt':
-			path = path.replace('smb://', r'\\').replace('/', '\\')
-
-	path = ensure_unicode(path)
-
-	if os.name == 'nt':
-		return path
-	return path.encode(get_filesystem_encoding(), errors)
-
-
 def _is_abs_path(path):
 	if path.startswith('/'):
 		return True
@@ -60,6 +44,30 @@ def _is_abs_path(path):
 			return True
 
 	return False
+
+def test_path(path):
+	if not _is_abs_path(path):
+		pass
+	return path
+
+def _get_path(path):
+	errors='strict'
+
+	try:
+		import xbmcvfs
+	except ImportError:
+		if path.startswith('smb://') and os.name == 'nt':
+			path = path.replace('smb://', r'\\').replace('/', '\\')
+
+	path = ensure_unicode(path)
+
+	if os.name == 'nt':
+		return path
+	return path.encode(get_filesystem_encoding(), errors)
+
+def get_path(path):
+	return test_path(_get_path(path))
+
 
 def xbmcvfs_path(path):
 	if isinstance(path, unicode):
@@ -256,14 +264,14 @@ def fopen(path, mode):
 
 	
 def join(path, *paths):
-	path = get_path(path)
+	path = _get_path(path)
 	fpaths = []
 	for p in paths:
-		fpaths.append( get_path(p) )
+		fpaths.append( _get_path(p) )
 	res = ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
 	if '://' in res:
 		res = res.replace('\\', '/')
-	return res
+	return test_path(res)
 
 
 def listdir(path):

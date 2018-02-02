@@ -25,6 +25,9 @@ def lower(s):
 	return _s
 
 def make_fullpath(title, ext):
+	if filesystem._is_abs_path(title):
+		pass
+
 	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
 
 def skipped(item):

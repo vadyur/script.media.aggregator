@@ -420,10 +420,12 @@ class NFOWriter:
 		self.write_actor(root)
 		write_tree(fn, root)
 
-	def write_tvshow_nfo(self, skip_nfo_exists=False):
-		fn = make_fullpath('tvshow', '.nfo')
-		debug(fn)
-		if skip_nfo_exists and filesystem.exists(fn):
+	def write_tvshow_nfo(self, tvshow_path, skip_nfo_exists=False):
+		tvshow_nfo_path = make_fullpath('tvshow', '.nfo')
+		tvshow_nfo_path = filesystem.join(tvshow_path, tvshow_nfo_path)
+		
+		debug(tvshow_nfo_path)
+		if skip_nfo_exists and filesystem.exists(tvshow_nfo_path):
 			return
 
 		root = ET.Element('tvshow')
@@ -454,4 +456,4 @@ class NFOWriter:
 		self.write_premiered(root)
 		self.write_studio(root)
 		self.write_actor(root)
-		write_tree(fn, root)
+		write_tree(tvshow_nfo_path, root)
