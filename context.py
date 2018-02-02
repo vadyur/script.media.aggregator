@@ -97,7 +97,6 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
 			self.list.addItem(li)
 
-			# (u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
 			li = xbmcgui.ListItem(u'СМОТРИТЕ ТАКЖЕ...')
 			li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
 			self.list.addItem(li)

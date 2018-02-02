@@ -55,7 +55,14 @@ def show_similar():
 		debug(res)
 		if res and len(res) > 0:
 			tmdb_id = res[0].tmdb_id()
-			xbmc.executebuiltin('Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % tmdb_id)
+			from plugin import make_url
+
+			url = make_url({
+				'action': 'show_similar',
+				'tmdb': tmdb_id,
+				'type': type
+			})
+			xbmc.executebuiltin('Container.Update("%s")' % url)
 			return True
 
 	return False
