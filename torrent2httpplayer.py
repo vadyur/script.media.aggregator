@@ -46,6 +46,8 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		self.pre_buffer_bytes 	= self.debug_assignment(int(getSetting('pre_buffer_bytes'))*1024*1024, 'pre_buffer_bytes')
 		
 		self.debug('__init__')
+
+		TorrentPlayer.__init__(self)
 		
 	def close(self):
 		if self.engine != None:
@@ -117,8 +119,6 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 			self.debug('resume file is: ' + args['resume_file'])
 
 		self.engine = Engine(**args)
-
-		#self.engine.start()
 		
 	def CheckTorrentAdded(self):
 		if self.engine:
@@ -163,33 +163,9 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 	def StartBufferFile(self, fileIndex):
 		self._AddTorrent(self.path)
 
-		'''
-		try:
-			files = self.engine.list()
-			debug('StartBufferFile: has files')
-			item = files[fileIndex]
-			debug('StartBufferFile: has item')
-			local_file = filesystem.join(self.download_path, item.name)
-			debug('StartBufferFile: local_file = ' + local_file.encode('utf-8'))
-			if filesystem.exists(local_file):
-				debug('StartBufferFile: %s exists' % local_file.encode('utf-8'))
-				self.download_path = local_file
-				self.engine.close()	
-				return
-			else:
-				debug('StartBufferFile: %s is not exists' % local_file.encode('utf-8'))
-				self.download_path = None
-		except:
-			debug('StartBufferFile: exception trown')
-			self.download_path = None
-		'''
-
 		self.download_path = None
 		
-		#if fileIndex != 0:
-		#self.engine.close()
 		self.engine.start(fileIndex)
-		#status = self.engine.file_status(fileIndex)
 		self.file_id = fileIndex
 		
 		self.debug('StartBufferFile: %d' % fileIndex)
