@@ -19,6 +19,8 @@ class YATPPlayer(TorrentPlayer):
 		'''
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "add_torrent", "params": {'torrent': path}})
 		debug(r.json())
+
+		TorrentPlayer.AddTorrent(self, path)
 		
 	def CheckTorrentAdded(self):
 		'''
@@ -51,7 +53,7 @@ class YATPPlayer(TorrentPlayer):
 		torr_data = r.json()['result']
 		debug(torr_data)
 		
-		self.info_hash = torr_data['info_hash']
+		self.__info_hash = torr_data['info_hash']
 		
 		
 		index = 0
@@ -60,7 +62,7 @@ class YATPPlayer(TorrentPlayer):
 				files.append({'index': index, 'name': file[0], 'size': long(file[1])})
 			index = index + 1
 			
-		return { 'info_hash': self.info_hash, 'files': files }
+		return { 'info_hash': self.__info_hash, 'files': files }
 		
 	def StartBufferFile(self, fileIndex):
 		r = requests.post('http://localhost:8668/json-rpc', json={"method": "buffer_file", "params": {"file_index": fileIndex}})
@@ -89,7 +91,7 @@ class YATPPlayer(TorrentPlayer):
 		return result
 		
 	def updateDialogInfo(self, progress, progressBar):
-		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.info_hash }})
+		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.__info_hash }})
 		
 		try:
 			torrent_info = r.json()['result']
@@ -104,7 +106,7 @@ class YATPPlayer(TorrentPlayer):
 			progressBar.update(progress)
 			
 	def GetTorrentInfo(self):
-		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.info_hash }})
+		r = requests.post('http://localhost:8668/json-rpc', json={"method": "get_torrent_info", "params": { "info_hash": self.__info_hash }})
 		try:
 			torrent_info = r.json()['result']
 			
