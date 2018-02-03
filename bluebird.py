@@ -84,8 +84,10 @@ class DescriptionParser(DescriptionParserBase):
 			from bs4 import NavigableString
 			if isinstance(txt, NavigableString):
 				txt = unicode(txt)
-				if ',' in txt:
+				if txt.startswith(':'):
 					return txt.lstrip(':').strip()
+				return txt if txt else ''
+			return ''
 
 		def get_other(b):
 			return unicode(b.next_sibling).lstrip(':').strip()
@@ -132,7 +134,7 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 
 
-def write_movie(item, settings):
+def write_movie(item, settings, path):
 	full_title = item.title
 	debug('full_title: ' + full_title.encode('utf-8'))
 
@@ -148,8 +150,8 @@ def write_movie(item, settings):
 			return
 		
 		debug('filename: ' + filename.encode('utf-8'))
-		STRMWriter(origin_url(item.link)).write(filename, parser=parser, settings=settings)
-		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
+		STRMWriter(origin_url(item.link)).write(filename, path, parser=parser, settings=settings)
+		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, path)
 		if settings.bluebird_preload_torrents:
 			from downloader import TorrentDownloader
 			TorrentDownloader(item.link, settings.torrents_path(), settings).download()
@@ -167,7 +169,7 @@ def write_movies(rss_url, path, settings):
 
 		for item in d.entries:
 			item.link = origin_url(item.link)
-			write_movie(item, settings)
+			write_movie(item, settings, path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'bluebird', path)

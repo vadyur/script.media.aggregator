@@ -148,20 +148,12 @@ class save_make_chdir_context(object):
 
 	# context management
 	def __enter__(self):
-		self.savePath = getcwd()
 		if not exists(self.newPath):
 			makedirs(self.newPath)
-		chdir(self.newPath)
-
-		log.debug(u'save_make_chdir_context: enter to %s from %s' % (self.newPath, self.savePath))
 
 		return self
 
 	def __exit__(self, exc_type, exc_val, exc_tb):
-
-		log.debug(u'save_make_chdir_context: exit from %s to %s' % (getcwd(), self.savePath))
-
-		chdir(self.savePath)
 		if exc_type:
 			import traceback
 			traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)

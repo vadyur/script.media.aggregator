@@ -306,7 +306,7 @@ def season_from_title(fulltitle):
 	return None
 
 
-def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
+def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False):
 	from nfowriter import NFOWriter
 	from strmwriter import STRMWriter
 	import requests
@@ -338,6 +338,7 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 		debug(tvshow_path.encode('utf-8'))
 
 		if tvshow_path:
+			tvshow_path = filesystem.join(path, tvshow_path)
 			with filesystem.save_make_chdir_context(tvshow_path):
 
 				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo(tvshow_path)
@@ -362,6 +363,7 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 						print_tb(e)
 						continue
 
+					season_path = filesystem.join(tvshow_path, season_path)
 					with filesystem.save_make_chdir_context(season_path):
 
 						results = filter(lambda x: x['season'] == s_num and x['episode'] == f['episode'], files)
@@ -381,12 +383,10 @@ def write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=False):
 						except:
 							debug([filename])
 
-						STRMWriter(parser.link()).write(filename, index=f['index'], settings=settings, parser=parser)
-						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename, skip_nfo_exists=skip_nfo_exists)
+						STRMWriter(parser.link()).write(filename, season_path, index=f['index'], settings=settings, parser=parser)
+						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename, season_path, skip_nfo_exists=skip_nfo_exists)
 
 					# end for
-
-				return filesystem.relpath( filesystem.getcwd(), start=settings.base_path())
 
 def test(link):
 	import requests

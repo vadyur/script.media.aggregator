@@ -213,9 +213,15 @@ class DescriptionParser(DescriptionParserBase):
 
 		self.parse_country_studio()
 
-		kp = self.soup.select_one('div.kpi a')
+		try:
+			kp = self.soup.select_one('div.kpi a')
+		except TypeError:
+			kp = None
 		if not kp:
-			kp = self.soup.select_one('#kp_id')
+			try:
+				kp = self.soup.select_one('#kp_id')
+			except TypeError:
+				kp = None
 		if kp:
 			self._dict['kp_id'] = kp['href']
 
@@ -329,12 +335,12 @@ class TrackerPostsEnumerator(PostsEnumerator):
 					self._items.append(item.copy())
 
 
-def write_movie_rss(fulltitle, description, link, settings):
+def write_movie_rss(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
 		#if link:
 		#	save_download_link(parser, settings, link)
-		movieapi.write_movie(fulltitle, link, settings, parser)
+		movieapi.write_movie(fulltitle, link, settings, parser, path)
 		#save_download_link(parser, settings, link)
 
 
@@ -406,12 +412,12 @@ def save_download_link(parser, settings, link):
 	#	pass
 
 
-def write_tvshow(fulltitle, description, link, settings):
+def write_tvshow(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
 		#if link:
 		#	save_download_link(parser, settings, link)
-		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
+		tvshowapi.write_tvshow(fulltitle, link, settings, parser, path)
 		#save_download_link(parser, settings, link)
 
 
@@ -444,7 +450,8 @@ def write_tvshows(rss_url, path, settings):
 				fulltitle=item.title,
 				description=item.description,
 				link=origin_url(item.link),
-				settings=settings)
+				settings=settings,
+				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -473,7 +480,8 @@ def write_movies_rss(rss_url, path, settings):
 				fulltitle=item.title,
 				description=item.description,
 				link=origin_url(item.link),
-				settings=settings)
+				settings=settings,
+				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)

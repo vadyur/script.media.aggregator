@@ -215,7 +215,6 @@ def write_tvshow_nfo(parser, tvshow_api, tvshow_path):
 	except:
 		pass
 
-	debug(filesystem.getcwd().encode('utf-8'))
 	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo(tvshow_path)
 	return
 
@@ -285,15 +284,14 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 
 				if episodeNumber <= parser.get_value('episodes'):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
-					filename = filesystem.join(season_path, filename)
 					debug(filename)
 
 					ep = tvshow_api.Episode(season, episodeNumber)
 					if ep:
 						episode = ep
 
-					STRMWriter(item.link).write(filename, episodeNumber=episodeNumber, settings=settings)
-					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
+					STRMWriter(item.link).write(filename, season_path, episodeNumber=episodeNumber, settings=settings)
+					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename, season_path)
 
 	else:
 		skipped(item)
