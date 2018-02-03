@@ -54,15 +54,14 @@ class Downloader(object):
 			return True
 
 	def move_file_to(self, path):
-		import shutil
 		src = self.get_filename()
 
 		dirname = filesystem.dirname(path)
 		if not filesystem.exists(dirname):
 			filesystem.makedirs(dirname)
 
-		shutil.copy2(src, path)
-		os.remove(src)
+		filesystem.copyfile(src, path)
+		filesystem.remove(src)
 
 class TorrentDownloader(Downloader):
 	def __init__(self, url, saveDir, settings):
