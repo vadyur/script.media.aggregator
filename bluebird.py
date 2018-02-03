@@ -305,31 +305,27 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = make_search_url(what, 1, imdb, settings)
 		result1 = search_results(imdb, session, settings, url, 1)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = make_search_url(what, 2, imdb, settings)
 		result2 = search_results(imdb, session, settings, url, 2)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.documentary_save and count == 0:
 		url = make_search_url(what, 3, imdb, settings)
 		result3 = search_results(imdb, session, settings, url, 3)
-		with filesystem.save_make_chdir_context(settings.documentary_path()):
-			count += make_search_strms(result3, settings, 'movie', path_out)
+		count += make_search_strms(result3, settings, 'movie', settings.documentary_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, 6, imdb, settings)
 		result4 = search_results(imdb, session, settings, url, 6)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	return count
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 		link = item['link']
@@ -339,12 +335,12 @@ def make_search_strms(result, settings, type, path_out):
 
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True, download_torrent=False)
+				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True, download_torrent=False)
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 

@@ -487,7 +487,7 @@ def download_torrent(url, path, settings):
 	return False
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 
@@ -499,12 +499,12 @@ def make_search_strms(result, settings, type, path_out):
 		if link:
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 
@@ -599,34 +599,29 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = 'http://rutor.info/search/0/1/010/2/' + imdb
 		result1 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result2 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result3 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow', path_out)
+		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = 'http://rutor.info/search/0/4/010/2/' + imdb
 		result4 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	if settings.movies_save and count == 0:
 		# 0/5/000/0 - Наше кино, поиск по названию в разделе
 		if not result1:
 			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
 			result1 = search_results(None, settings, url, what)
-			with filesystem.save_make_chdir_context(settings.movies_path()):
-				count += make_search_strms(result1, settings, 'movie', path_out)
+			count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	"""
 		if not result4:

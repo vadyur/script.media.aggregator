@@ -444,14 +444,14 @@ def write_tvshows(rss_url, path, settings):
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
+				write_tvshow(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(item.link),
+					settings=settings,
+					path=path)
 			except:
 				continue
-			write_tvshow(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(item.link),
-				settings=settings,
-				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -474,14 +474,14 @@ def write_movies_rss(rss_url, path, settings):
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
+				write_movie_rss(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(item.link),
+					settings=settings,
+					path=path)
 			except:
 				continue
-			write_movie_rss(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(item.link),
-				settings=settings,
-				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -726,31 +726,27 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = make_search_url(what, movie_ids)
 		result1 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = make_search_url(what, '661')
 		result2 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
 		url = make_search_url(what, '232')
 		result3 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow', path_out)
+		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, tvshow_ids)
 		result4 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	return count
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 		link = item['link']
@@ -759,11 +755,11 @@ def make_search_strms(result, settings, type, path_out):
 		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 			if type == 'tvshow':
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
+				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
 				path_out.append(path)
 				count += 1
 
