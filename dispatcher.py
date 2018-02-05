@@ -96,7 +96,7 @@ def dispatch():
 		main()
 
 	elif params.get('action') == 'add_media_process':
-		vsdbg._bp()
+		#vsdbg._bp()
 
 		from backgrounds import add_media_process
 		title = params.get('title')

@@ -8,7 +8,7 @@ import json, re, base, filesystem
 import urllib2, requests
 from bs4 import BeautifulSoup
 
-def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False, download_torrent=True):
+def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
@@ -16,17 +16,19 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False, downlo
 		debug('filename: ' + filename.encode('utf-8'))
 		debug('-------------------------------------------+')
 		from strmwriter import STRMWriter
-		STRMWriter(parser.link()).write(filename,
+		STRMWriter(parser.link()).write(filename, path,
 										parser=parser,
 										settings=settings)
 		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename,skip_nfo_exists=skip_nfo_exists)
+		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, path, skip_nfo_exists=skip_nfo_exists)
 
 		if download_torrent:
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		return filesystem.relpath( filesystem.join(filesystem.getcwd(), base.make_fullpath(filename, '.strm')), start=settings.base_path())
+		return filesystem.relpath( filesystem.join(path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+	else:
+		return None
 
 def get_tmdb_api_key():
 	try:
@@ -1014,7 +1016,7 @@ class MovieAPI(object):
 				_orig = orig
 				_year = year
 
-				if kinopoisk_url is not None:
+				if kinopoisk_url:
 					kp = KinopoiskAPI(kinopoisk_url, settings)
 					orig = kp.originaltitle()
 					if not orig:
@@ -1093,8 +1095,11 @@ class MovieAPI(object):
 		for act in self._actors:
 			for variant in actors[1:]:
 				for add in variant:
-					if act['en_name'] == add['en_name']:
-						act.update(add)
+					try:
+						if act['en_name'] == add['en_name']:
+							act.update(add)
+					except KeyError:
+						pass
 				
 		return self._actors
 

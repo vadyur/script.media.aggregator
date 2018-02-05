@@ -208,15 +208,14 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 
 ###################################################################################################
-def write_tvshow_nfo(parser, tvshow_api):
+def write_tvshow_nfo(parser, tvshow_api, tvshow_path):
 	try:
 		if write_tvshow_nfo.favorites:
 			parser.Dict().get('tag', []).append('favorites')
 	except:
 		pass
 
-	debug(filesystem.getcwd().encode('utf-8'))
-	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo()
+	NFOWriter(parser, tvshow_api=tvshow_api).write_tvshow_nfo(tvshow_path)
 	return
 
 ###################################################################################################
@@ -251,15 +250,17 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 		debug('Episodes: ' + str(parser.get_value('episodes')))
 
 		tvshow_path = make_fullpath(title, '')
-		debug(tvshow_path.encode('utf-8'))
 
-		path_out.append(filesystem.join(path, tvshow_path))
+		tvshow_path = filesystem.join(path, tvshow_path)
+		debug(tvshow_path)
+
+		path_out.append(tvshow_path)
 
 		with filesystem.save_make_chdir_context(tvshow_path):
 			tvshow_api = TVShowAPI.get_by(originaltitle, title)
-			write_tvshow_nfo(parser, tvshow_api)
+			write_tvshow_nfo(parser, tvshow_api, tvshow_path)
 
-		season_path = filesystem.join(make_fullpath(title, u''), u'Season ' + unicode(season))
+		season_path = filesystem.join(tvshow_path, u'Season ' + unicode(season))
 		debug(season_path.encode('utf-8'))
 
 		with filesystem.save_make_chdir_context(season_path):
@@ -283,14 +284,14 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 
 				if episodeNumber <= parser.get_value('episodes'):
 					filename = str(episodeNumber) + '. ' + 'episode_' + shortName
-					debug(filename.encode('utf-8'))
+					debug(filename)
 
 					ep = tvshow_api.Episode(season, episodeNumber)
 					if ep:
 						episode = ep
 
-					STRMWriter(item.link).write(filename, episodeNumber=episodeNumber, settings=settings)
-					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename)
+					STRMWriter(item.link).write(filename, season_path, episodeNumber=episodeNumber, settings=settings)
+					NFOWriter(parser, tvshow_api=tvshow_api).write_episode(episode, filename, season_path)
 
 	else:
 		skipped(item)

@@ -116,8 +116,10 @@ class NFOWriter:
 				ET.SubElement(parent, tagname).text = i.strip()
 		return len(values) > 0
 
-	def write_episode(self, episode, filename, actors = None, skip_nfo_exists=False):
+	def write_episode(self, episode, filename, path, actors = None, skip_nfo_exists=False):
 		fn = make_fullpath(filename, '.nfo')
+		fn = filesystem.join(path, fn)
+
 		debug(fn)
 		if skip_nfo_exists and filesystem.exists(fn):
 			return
@@ -167,7 +169,7 @@ class NFOWriter:
 
 		if actors:
 			for actorInfo in actors:
-				if 'ru_name' in actorInfo and actorInfo['ru_name'] in self.parser.get_value('actor'):
+				if 'ru_name' in actorInfo and actorInfo['ru_name'] in self.parser.get_value('actor', []):
 					actor = ET.SubElement(root, 'actor')
 
 					def setup(dst_name, src_name):
@@ -385,8 +387,9 @@ class NFOWriter:
 				self.add_element_value(root, 'premiered', val)
 
 
-	def write_movie(self, filename, skip_nfo_exists=False):
+	def write_movie(self, filename, path, skip_nfo_exists=False):
 		fn = make_fullpath(filename, '.nfo')
+		fn = filesystem.join(path, fn)
 		debug(fn)
 		if skip_nfo_exists and filesystem.exists(fn):
 			return
@@ -420,10 +423,12 @@ class NFOWriter:
 		self.write_actor(root)
 		write_tree(fn, root)
 
-	def write_tvshow_nfo(self, skip_nfo_exists=False):
-		fn = make_fullpath('tvshow', '.nfo')
-		debug(fn)
-		if skip_nfo_exists and filesystem.exists(fn):
+	def write_tvshow_nfo(self, tvshow_path, skip_nfo_exists=False):
+		tvshow_nfo_path = make_fullpath('tvshow', '.nfo')
+		tvshow_nfo_path = filesystem.join(tvshow_path, tvshow_nfo_path)
+		
+		debug(tvshow_nfo_path)
+		if skip_nfo_exists and filesystem.exists(tvshow_nfo_path):
 			return
 
 		root = ET.Element('tvshow')
@@ -454,4 +459,4 @@ class NFOWriter:
 		self.write_premiered(root)
 		self.write_studio(root)
 		self.write_actor(root)
-		write_tree(fn, root)
+		write_tree(tvshow_nfo_path, root)

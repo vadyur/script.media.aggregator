@@ -28,22 +28,6 @@ def ensure_unicode(string, encoding=get_filesystem_encoding()):
 _cwd = ensure_unicode(os.getcwd(), get_filesystem_encoding())
 
 
-def get_path(path):
-	errors='strict'
-
-	try:
-		import xbmcvfs
-	except ImportError:
-		if path.startswith('smb://') and os.name == 'nt':
-			path = path.replace('smb://', r'\\').replace('/', '\\')
-
-	path = ensure_unicode(path)
-
-	if os.name == 'nt':
-		return path
-	return path.encode(get_filesystem_encoding(), errors)
-
-
 def _is_abs_path(path):
 	if path.startswith('/'):
 		return True
@@ -60,6 +44,30 @@ def _is_abs_path(path):
 			return True
 
 	return False
+
+def test_path(path):
+	if not _is_abs_path(path):
+		pass
+	return path
+
+def _get_path(path):
+	errors='strict'
+
+	try:
+		import xbmcvfs
+	except ImportError:
+		if path.startswith('smb://') and os.name == 'nt':
+			path = path.replace('smb://', r'\\').replace('/', '\\')
+
+	path = ensure_unicode(path)
+
+	if os.name == 'nt':
+		return path
+	return path.encode(get_filesystem_encoding(), errors)
+
+def get_path(path):
+	return test_path(_get_path(path))
+
 
 def xbmcvfs_path(path):
 	if isinstance(path, unicode):
@@ -133,32 +141,21 @@ def save_make_chdir(new_path):
 		return current
 
 
-class save_make_chdir_context(object):
+from log import dump_context
+class save_make_chdir_context(dump_context):
 
-	def __init__(self, path):
+	def __init__(self, path, module='save_make_chdir_context', use_timestamp=True):
 		self.newPath = path
+		dump_context.__init__(self, module, use_timestamp)
 
 	# context management
 	def __enter__(self):
-		self.savePath = getcwd()
 		if not exists(self.newPath):
 			makedirs(self.newPath)
-		chdir(self.newPath)
 
-		log.debug(u'save_make_chdir_context: enter to %s from %s' % (self.newPath, self.savePath))
+		return dump_context.__enter__(self)
 
-		return self
-
-	def __exit__(self, exc_type, exc_val, exc_tb):
-
-		log.debug(u'save_make_chdir_context: exit from %s to %s' % (getcwd(), self.savePath))
-
-		chdir(self.savePath)
-		if exc_type:
-			import traceback
-			traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)
-			log.debug("!!error!! " + str(exc_val))
-			return True
+	# __exit__ in dump_context
 
 
 def isfile(path):
@@ -256,14 +253,14 @@ def fopen(path, mode):
 
 	
 def join(path, *paths):
-	path = get_path(path)
+	path = _get_path(path)
 	fpaths = []
 	for p in paths:
-		fpaths.append( get_path(p) )
+		fpaths.append( _get_path(p) )
 	res = ensure_unicode(os.path.join(path, *tuple(fpaths)), get_filesystem_encoding())
 	if '://' in res:
 		res = res.replace('\\', '/')
-	return res
+	return test_path(res)
 
 
 def listdir(path):

@@ -213,9 +213,15 @@ class DescriptionParser(DescriptionParserBase):
 
 		self.parse_country_studio()
 
-		kp = self.soup.select_one('div.kpi a')
+		try:
+			kp = self.soup.select_one('div.kpi a')
+		except TypeError:
+			kp = None
 		if not kp:
-			kp = self.soup.select_one('#kp_id')
+			try:
+				kp = self.soup.select_one('#kp_id')
+			except TypeError:
+				kp = None
 		if kp:
 			self._dict['kp_id'] = kp['href']
 
@@ -329,12 +335,12 @@ class TrackerPostsEnumerator(PostsEnumerator):
 					self._items.append(item.copy())
 
 
-def write_movie_rss(fulltitle, description, link, settings):
+def write_movie_rss(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSS(fulltitle, description, settings)
 	if parser.parsed():
 		#if link:
 		#	save_download_link(parser, settings, link)
-		movieapi.write_movie(fulltitle, link, settings, parser)
+		movieapi.write_movie(fulltitle, link, settings, parser, path)
 		#save_download_link(parser, settings, link)
 
 
@@ -406,12 +412,12 @@ def save_download_link(parser, settings, link):
 	#	pass
 
 
-def write_tvshow(fulltitle, description, link, settings):
+def write_tvshow(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSSTVShows(fulltitle, description, settings)
 	if parser.parsed():
 		#if link:
 		#	save_download_link(parser, settings, link)
-		tvshowapi.write_tvshow(fulltitle, link, settings, parser)
+		tvshowapi.write_tvshow(fulltitle, link, settings, parser, path)
 		#save_download_link(parser, settings, link)
 
 
@@ -438,13 +444,14 @@ def write_tvshows(rss_url, path, settings):
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
+				write_tvshow(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(item.link),
+					settings=settings,
+					path=path)
 			except:
 				continue
-			write_tvshow(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(item.link),
-				settings=settings)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -467,13 +474,14 @@ def write_movies_rss(rss_url, path, settings):
 		for item in d.entries:
 			try:
 				debug(item.title.encode('utf-8'))
+				write_movie_rss(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(item.link),
+					settings=settings,
+					path=path)
 			except:
 				continue
-			write_movie_rss(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(item.link),
-				settings=settings)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -718,31 +726,27 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = make_search_url(what, movie_ids)
 		result1 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = make_search_url(what, '661')
 		result2 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
 		url = make_search_url(what, '232')
 		result3 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow', path_out)
+		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, tvshow_ids)
 		result4 = search_results(imdb, session, settings, url)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	return count
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 		link = item['link']
@@ -751,13 +755,15 @@ def make_search_strms(result, settings, type, path_out):
 		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -767,7 +773,10 @@ def search_results(imdb, session, settings, url):
 
 	enumerator = TrackerPostsEnumerator(session)
 	enumerator.settings = settings
-	enumerator.process_page(real_url(url, settings))
+
+	from log import dump_context
+	with dump_context('nnmclub.enumerator.process_page'):
+		enumerator.process_page(real_url(url, settings))
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:

@@ -10,8 +10,9 @@ prefix = 'script.media.aggregator'
 
 import sys
 try:
-	handle = int(sys.argv[1])
-	prefix += ': ' + sys.argv[1]
+	if len(sys.argv) > 1:
+		handle = int(sys.argv[1])
+		prefix += ': ' + sys.argv[1]
 except:
 	pass
 
