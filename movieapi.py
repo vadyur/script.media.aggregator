@@ -26,7 +26,9 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		#return filesystem.relpath( filesystem.join(filesystem.getcwd(), base.make_fullpath(filename, '.strm')), start=settings.base_path())
+		return filesystem.relpath( filesystem.join(path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+	else:
+		return None
 
 def get_tmdb_api_key():
 	try:

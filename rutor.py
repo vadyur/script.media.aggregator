@@ -499,14 +499,16 @@ def make_search_strms(result, settings, type, path, path_out):
 		if link:
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -562,7 +564,10 @@ def search_results(imdb, settings, url, what=None):
 	result = []
 
 	enumerator = PostsEnumerator(settings)
-	enumerator.process_page(url)
+
+	from log import dump_context
+	with dump_context('rutor.enumerator.process_page'):
+		enumerator.process_page(url)
 
 	for post in enumerator.items():
 		try:
@@ -652,7 +657,7 @@ if __name__ == '__main__':
 	#from backgrounds import recheck_torrent_if_need
 
 	from log import dump_context
-	with dump_context('rutor'):
+	with dump_context('rutor.run'):
 		run(settings)
 
 	#recheck_torrent_if_need(from_time, settings)

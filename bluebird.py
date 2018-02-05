@@ -335,14 +335,16 @@ def make_search_strms(result, settings, type, path, path_out):
 
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True, download_torrent=False)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True, download_torrent=False)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -393,7 +395,11 @@ def search_results(imdb, session, settings, url, cat):
 	debug('search_results: url = ' + url)
 
 	enumerator = TrackerPostsEnumerator(session)
-	enumerator.process_page(url)
+	
+	from log import dump_context
+	with dump_context('bluebird.enumerator.process_page'):
+		enumerator.process_page(url)
+
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:

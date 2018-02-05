@@ -755,13 +755,15 @@ def make_search_strms(result, settings, type, path, path_out):
 		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -771,7 +773,10 @@ def search_results(imdb, session, settings, url):
 
 	enumerator = TrackerPostsEnumerator(session)
 	enumerator.settings = settings
-	enumerator.process_page(real_url(url, settings))
+
+	from log import dump_context
+	with dump_context('nnmclub.enumerator.process_page'):
+		enumerator.process_page(real_url(url, settings))
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:

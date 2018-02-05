@@ -141,24 +141,21 @@ def save_make_chdir(new_path):
 		return current
 
 
-class save_make_chdir_context(object):
+from log import dump_context
+class save_make_chdir_context(dump_context):
 
-	def __init__(self, path):
+	def __init__(self, path, module='save_make_chdir_context', use_timestamp=True):
 		self.newPath = path
+		dump_context.__init__(self, module, use_timestamp)
 
 	# context management
 	def __enter__(self):
 		if not exists(self.newPath):
 			makedirs(self.newPath)
 
-		return self
+		return dump_context.__enter__(self)
 
-	def __exit__(self, exc_type, exc_val, exc_tb):
-		if exc_type:
-			import traceback
-			traceback.print_exception(exc_type, exc_val, exc_tb, limit=10, file=sys.stderr)
-			log.debug("!!error!! " + str(exc_val))
-			return True
+	# __exit__ in dump_context
 
 
 def isfile(path):
