@@ -333,10 +333,10 @@ def write_movie_rss(fulltitle, description, link, settings, path):
 		movieapi.write_movie(fulltitle, link, settings, parser, path=path, skip_nfo_exists=True)
 
 
-def write_tvshow(fulltitle, description, link, settings):
+def write_tvshow(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSSTVShows(fulltitle, link, settings)
 	if parser.parsed():
-		tvshowapi.write_tvshow(fulltitle, link, settings, parser, skip_nfo_exists=True)
+		tvshowapi.write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=True)
 		#save_download_link(parser, settings, link)
 
 
@@ -382,7 +382,8 @@ def write_tvshows(rss_url, path, settings):
 				fulltitle=item.title,
 				description=item.description,
 				link=origin_url(get_source_url(item.link), settings),
-				settings=settings)
+				settings=settings,
+				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
