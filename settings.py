@@ -60,8 +60,8 @@ class Settings:
 		self.documentary_url 		= self.base_url + '?cat=78&passkey=' + hdclub_passkey
 		self.hdclub_passkey			= hdclub_passkey
 		self.bluebird_passkey		= bluebird_passkey
-		self.bluebird_login			= bluebird_login, 
-		self.bluebird_password		= bluebird_password,
+		self.bluebird_login			= bluebird_login
+		self.bluebird_password		= bluebird_password
 		self.bluebird_preload_torrents = bluebird_preload_torrents
 		self.bluebird_nouhd			= bluebird_nouhd
 		

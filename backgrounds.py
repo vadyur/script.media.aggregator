@@ -290,7 +290,7 @@ def add_media_process(title, imdb):
 	if count:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			if p:
+			if p and p[0]:
 				path = p[0]
 				
 				if path.endswith('.strm'):

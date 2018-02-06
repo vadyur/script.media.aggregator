@@ -8,7 +8,7 @@ import json, re, base, filesystem
 import urllib2, requests
 from bs4 import BeautifulSoup
 
-def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False, download_torrent=True):
+def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
@@ -16,17 +16,19 @@ def write_movie(fulltitle, link, settings, parser, skip_nfo_exists=False, downlo
 		debug('filename: ' + filename.encode('utf-8'))
 		debug('-------------------------------------------+')
 		from strmwriter import STRMWriter
-		STRMWriter(parser.link()).write(filename,
+		STRMWriter(parser.link()).write(filename, path,
 										parser=parser,
 										settings=settings)
 		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename,skip_nfo_exists=skip_nfo_exists)
+		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, path, skip_nfo_exists=skip_nfo_exists)
 
 		if download_torrent:
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		return filesystem.relpath( filesystem.join(filesystem.getcwd(), base.make_fullpath(filename, '.strm')), start=settings.base_path())
+		return filesystem.relpath( filesystem.join(path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+	else:
+		return None
 
 def get_tmdb_api_key():
 	try:
@@ -341,8 +343,9 @@ class world_art(soup_base):
 			return []
 
 class tmdb_movie_item(object):
-	def __init__(self, json_data):
+	def __init__(self, json_data, type='movie'):
 		self.json_data_ = json_data
+		self.type = type
 
 	def poster(self):
 		try:
@@ -818,11 +821,38 @@ class TMDB_API(object):
 
 	@staticmethod
 	def tmdb_query(url, type='movie'):
-		result = []
+
+		class tmdb_query_result(object):
+			def __init__(self):
+				self.result = []
+				self.total_pages = None
+
+			def append(self, item):
+				self.result.append(item)
+
+			def __iter__(self):
+				for x in self.result:
+					yield x
+
+			def __add__(self, other):
+				r = tmdb_query_result()
+				r.result = self.result + other.result
+				return r
+
+			def __len__(self):
+				return len(self.result)
+
+			def __getitem__(self, index):
+				return self.result[index]
+
+		result = tmdb_query_result()
 		try:
 			data = json.load(urllib2.urlopen(url))
 		except urllib2.HTTPError:
-			return []
+			return tmdb_query_result()
+
+		if "total_pages" in data:
+			result.total_pages = data["total_pages"]
 
 		for tag in ['results', 'movie_results', 'tv_results']:
 			if tag in data:
@@ -838,9 +868,9 @@ class TMDB_API(object):
 					data2 = json.load(urllib2.urlopen(url2))
 
 					if 'imdb_id' in data2:
-						result.append(tmdb_movie_item(data2))
+						result.append(tmdb_movie_item(data2, type))
 					elif 'external_ids' in data2 and 'imdb_id' in data2['external_ids']:
-						result.append(tmdb_movie_item(data2))
+						result.append(tmdb_movie_item(data2, type))
 
 		return result
 
@@ -852,35 +882,40 @@ class TMDB_API(object):
 		return TMDB_API.tmdb_query(url, type)
 
 	@staticmethod
-	def popular():
+	def popular(page=1):
 		url = 'http://%s/3/movie/popular?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		url += '&page={}'.format(page)
 		return TMDB_API.tmdb_query(url)
 
 	@staticmethod
-	def popular_tv():
+	def popular_tv(page=1):
 		url = 'http://%s/3/tv/popular?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		url += '&page={}'.format(page)
 		return TMDB_API.tmdb_query(url, 'tv')
 
 	@staticmethod
-	def top_rated():
+	def top_rated(page=1):
 		url = 'http://%s/3/movie/top_rated?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		url += '&page={}'.format(page)
 		return TMDB_API.tmdb_query(url)
 
 	@staticmethod
-	def top_rated_tv():
+	def top_rated_tv(page=1):
 		url = 'http://%s/3/tv/top_rated?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		url += '&page={}'.format(page)
 		return TMDB_API.tmdb_query(url, 'tv')
 
 	@staticmethod
-	def show_similar_t(tmdb_id, type):
+	def show_similar_t(page, tmdb_id, type):
 		url = 'http://%s/3/' % TMDB_API.tmdb_api_key['host'] + type + '/' + str(
 				tmdb_id) + '/similar?api_key=' + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		url += '&page={}'.format(page)
 		log.debug(url)
 		return TMDB_API.tmdb_query(url, type)
 
 	@staticmethod
 	def show_similar(tmdb_id):
-		return TMDB_API.show_similar_t(tmdb_id, 'movie') + TMDB_API.show_similar_t(tmdb_id, 'tv')
+		return TMDB_API.show_similar_t(1, tmdb_id, 'movie') + TMDB_API.show_similar_t(1, tmdb_id, 'tv')
 
 	@staticmethod
 	def imdb_by_tmdb_search(orig, year):
@@ -981,7 +1016,7 @@ class MovieAPI(object):
 				_orig = orig
 				_year = year
 
-				if kinopoisk_url is not None:
+				if kinopoisk_url:
 					kp = KinopoiskAPI(kinopoisk_url, settings)
 					orig = kp.originaltitle()
 					if not orig:
@@ -1060,8 +1095,11 @@ class MovieAPI(object):
 		for act in self._actors:
 			for variant in actors[1:]:
 				for add in variant:
-					if act['en_name'] == add['en_name']:
-						act.update(add)
+					try:
+						if act['en_name'] == add['en_name']:
+							act.update(add)
+					except KeyError:
+						pass
 				
 		return self._actors
 

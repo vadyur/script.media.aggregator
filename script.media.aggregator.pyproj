@@ -67,6 +67,7 @@ VSDEV=1</Environment>
     <Compile Include="nnmclub_test.py" />
     <Compile Include="player.py" />
     <Compile Include="player_test.py" />
+    <Compile Include="plugin.py" />
     <Compile Include="rutor.py" />
     <Compile Include="scraper.py" />
     <Compile Include="scraper_test.py" />

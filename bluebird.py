@@ -84,8 +84,10 @@ class DescriptionParser(DescriptionParserBase):
 			from bs4 import NavigableString
 			if isinstance(txt, NavigableString):
 				txt = unicode(txt)
-				if ',' in txt:
+				if txt.startswith(':'):
 					return txt.lstrip(':').strip()
+				return txt if txt else ''
+			return ''
 
 		def get_other(b):
 			return unicode(b.next_sibling).lstrip(':').strip()
@@ -132,7 +134,7 @@ class DescriptionParser(DescriptionParserBase):
 		return True
 
 
-def write_movie(item, settings):
+def write_movie(item, settings, path):
 	full_title = item.title
 	debug('full_title: ' + full_title.encode('utf-8'))
 
@@ -148,8 +150,8 @@ def write_movie(item, settings):
 			return
 		
 		debug('filename: ' + filename.encode('utf-8'))
-		STRMWriter(origin_url(item.link)).write(filename, parser=parser, settings=settings)
-		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename)
+		STRMWriter(origin_url(item.link)).write(filename, path, parser=parser, settings=settings)
+		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, path)
 		if settings.bluebird_preload_torrents:
 			from downloader import TorrentDownloader
 			TorrentDownloader(item.link, settings.torrents_path(), settings).download()
@@ -167,7 +169,7 @@ def write_movies(rss_url, path, settings):
 
 		for item in d.entries:
 			item.link = origin_url(item.link)
-			write_movie(item, settings)
+			write_movie(item, settings, path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'bluebird', path)
@@ -303,31 +305,27 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = make_search_url(what, 1, imdb, settings)
 		result1 = search_results(imdb, session, settings, url, 1)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = make_search_url(what, 2, imdb, settings)
 		result2 = search_results(imdb, session, settings, url, 2)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.documentary_save and count == 0:
 		url = make_search_url(what, 3, imdb, settings)
 		result3 = search_results(imdb, session, settings, url, 3)
-		with filesystem.save_make_chdir_context(settings.documentary_path()):
-			count += make_search_strms(result3, settings, 'movie', path_out)
+		count += make_search_strms(result3, settings, 'movie', settings.documentary_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, 6, imdb, settings)
 		result4 = search_results(imdb, session, settings, url, 6)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	return count
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 		link = item['link']
@@ -337,14 +335,16 @@ def make_search_strms(result, settings, type, path_out):
 
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True, download_torrent=False)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True, download_torrent=False)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -395,7 +395,11 @@ def search_results(imdb, session, settings, url, cat):
 	debug('search_results: url = ' + url)
 
 	enumerator = TrackerPostsEnumerator(session)
-	enumerator.process_page(url)
+	
+	from log import dump_context
+	with dump_context('bluebird.enumerator.process_page'):
+		enumerator.process_page(url)
+
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:

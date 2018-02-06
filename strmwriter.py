@@ -11,8 +11,9 @@ class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
 		self.link = link
 		
-	def write(self, filename, seasonNumber = None, episodeNumber = None, cutname = None, index = None, parser = None, settings = None):
+	def write(self, filename, path, seasonNumber = None, episodeNumber = None, cutname = None, index = None, parser = None, settings = None):
 		strmFilename = make_fullpath(filename, u'.strm')
+		strmFilename = filesystem.join(path, strmFilename)
 		
 		#------------------------------------------
 
@@ -43,7 +44,7 @@ class STRMWriter(STRMWriterBase):
 		
 		#------------------------------------------
 		if settings != None:
-			path = filesystem.relpath(filesystem.getcwd(), settings.base_path())
+			path = filesystem.relpath(path, settings.base_path())
 			debug(path.encode('utf-8'))
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 

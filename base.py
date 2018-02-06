@@ -25,7 +25,22 @@ def lower(s):
 	return _s
 
 def make_fullpath(title, ext):
-	return unicode(title.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
+	if filesystem._is_abs_path(title):
+		dir_path = filesystem.dirname(title)
+		filename = filesystem.basename(title)
+		pass
+	else:
+		dir_path = None
+		filename = title
+
+	if '/' in title:
+		pass
+
+	result = unicode(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
+	if dir_path:
+		result = filesystem.join(dir_path, result)
+
+	return result
 
 def skipped(item):
 	debug(item.title.encode('utf-8') + '\t\t\t[Skipped]')
@@ -488,11 +503,11 @@ class DescriptionParserBase(Informer):
 	def Dict(self):
 		return self._dict
 
-	def get_value(self, tag):
+	def get_value(self, tag, def_value=u''):
 		try:
 			return self._dict[tag]
 		except:
-			return u''
+			return def_value
 
 	def get(self, tag, def_value):
 		return self._dict.get(tag, def_value)

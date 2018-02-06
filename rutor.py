@@ -326,11 +326,11 @@ class DescriptionParserRSSTVShows(DescriptionParserRSS, DescriptionParserTVShows
 	pass
 
 
-def write_movie_rss(fulltitle, description, link, settings):
+def write_movie_rss(fulltitle, description, link, settings, path):
 	parser = DescriptionParserRSS(fulltitle, link, settings)
 	if parser.parsed():
 		import movieapi
-		movieapi.write_movie(fulltitle, link, settings, parser, skip_nfo_exists=True)
+		movieapi.write_movie(fulltitle, link, settings, parser, path=path, skip_nfo_exists=True)
 
 
 def write_tvshow(fulltitle, description, link, settings):
@@ -410,7 +410,8 @@ def write_movies_rss(rss_url, path, settings):
 				fulltitle=item.title,
 				description=item.description,
 				link=origin_url(get_source_url(item.link), settings),
-				settings=settings)
+				settings=settings,
+				path=path)
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
@@ -486,7 +487,7 @@ def download_torrent(url, path, settings):
 	return False
 
 
-def make_search_strms(result, settings, type, path_out):
+def make_search_strms(result, settings, type, path, path_out):
 	count = 0
 	for item in result:
 
@@ -498,14 +499,16 @@ def make_search_strms(result, settings, type, path_out):
 		if link:
 			if type == 'movie':
 				import movieapi
-				path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 			if type == 'tvshow':
 				import tvshowapi
-				path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, skip_nfo_exists=True)
-				path_out.append(path)
-				count += 1
+				_path = tvshowapi.write_tvshow(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
+				if _path:
+					path_out.append(_path)
+					count += 1
 
 	return count
 
@@ -561,7 +564,10 @@ def search_results(imdb, settings, url, what=None):
 	result = []
 
 	enumerator = PostsEnumerator(settings)
-	enumerator.process_page(url)
+
+	from log import dump_context
+	with dump_context('rutor.enumerator.process_page'):
+		enumerator.process_page(url)
 
 	for post in enumerator.items():
 		try:
@@ -598,34 +604,29 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save:
 		url = 'http://rutor.info/search/0/1/010/2/' + imdb
 		result1 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.movies_path()):
-			count += make_search_strms(result1, settings, 'movie', path_out)
+		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result2 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_path()):
-			count += make_search_strms(result2, settings, 'movie', path_out)
+		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
 		url = 'http://rutor.info/search/0/7/010/2/' + imdb
 		result3 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.animation_tvshow_path()):
-			count += make_search_strms(result3, settings, 'tvshow', path_out)
+		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = 'http://rutor.info/search/0/4/010/2/' + imdb
 		result4 = search_results(imdb, settings, url)
-		with filesystem.save_make_chdir_context(settings.tvshow_path()):
-			count += make_search_strms(result4, settings, 'tvshow', path_out)
+		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	if settings.movies_save and count == 0:
 		# 0/5/000/0 - Наше кино, поиск по названию в разделе
 		if not result1:
 			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
 			result1 = search_results(None, settings, url, what)
-			with filesystem.save_make_chdir_context(settings.movies_path()):
-				count += make_search_strms(result1, settings, 'movie', path_out)
+			count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	"""
 		if not result4:
@@ -638,9 +639,9 @@ def search_generate(what, imdb, settings, path_out):
 	return count
 
 if __name__ == '__main__':
-	settings = Settings('../../..')
+	settings = Settings(r'c:\Users\vd\Videos')
 	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
-	settings.rutor_domain = 'rutor.info'
+	settings.rutor_domain = 'new-rutor.org'
 	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
 	settings.torrent_player = 'torrent2http'
 	settings.kp_googlecache = True
@@ -656,7 +657,7 @@ if __name__ == '__main__':
 	#from backgrounds import recheck_torrent_if_need
 
 	from log import dump_context
-	with dump_context('rutor'):
+	with dump_context('rutor.run'):
 		run(settings)
 
 	#recheck_torrent_if_need(from_time, settings)

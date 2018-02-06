@@ -24,6 +24,7 @@ except:
 
 debug(_addondir.encode('utf-8'))
 
+from plugin import make_url
 
 def getSetting(id, default=''):
 	result = _addon.getSetting(id)
@@ -31,7 +32,6 @@ def getSetting(id, default=''):
 		return result
 	else:
 		return default
-
 
 def load_settings():
 	base_path = getSetting('base_path', '').decode('utf-8')
@@ -711,6 +711,28 @@ def dialog_action(action, settings, params=None):
 
 	return False
 
+def next_item(total_pages):
+	'''	returns True if current listing is next page
+		else return False
+	'''
+	if not total_pages:
+		return False
+
+	from plugin import get_params
+	params = get_params()
+	if params:
+		page = int(params.get('page', 1))
+		if page < total_pages:
+			params['page'] = page + 1
+			url = make_url(params)
+
+			addon_handle = int(sys.argv[1])
+			li = xbmcgui.ListItem(u'[Далее]')
+			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
+		return page > 1
+	else:
+		return False
+
 
 def show_list(listing):
 	addon_handle = int(sys.argv[1])
@@ -721,23 +743,25 @@ def show_list(listing):
 		li.setInfo('video', info)
 		li.setArt(item.get_art())
 
-		url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
+		url_search = make_url(
 			{'action': 'add_media',
 			 'title': info['title'].encode('utf-8'),
 			 'imdb': item.imdb()})
 
-		items = [(u'Смотрите также', 'Container.Update("plugin://script.media.aggregator/?action=show_similar&tmdb=%s")' % str(item.tmdb_id())),
-				(u'Искать источники', 'RunPlugin("%s")' % (url + '&force=true') )]
-		pathUnited = 'special://home/addons/plugin.video.united.search'
-		pathUnited = xbmc.translatePath(pathUnited)
+		url_similar = make_url(
+			{'action': 'show_similar',
+			 'type': item.type,
+			 'tmdb': item.tmdb_id()})
 
-		if filesystem.exists(pathUnited.decode('utf-8')):
-			items.append((u'United search', 'Container.Update("plugin://plugin.video.united.search/?action=search&keyword=%s")' % urllib.quote(info['title'].encode('utf-8'))))
+		items = [(u'Смотрите также', 'Container.Update("%s")' % url_similar),
+				(u'Искать источники', 'RunPlugin("%s")' % (url_search + '&force=true') )]
 
 		li.addContextMenuItems(items)
 
-		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li)
-	xbmcplugin.endOfDirectory(addon_handle)
+		xbmcplugin.addDirectoryItem(handle=addon_handle, url=url_search, listitem=li)
+	
+	updateListing = next_item(listing.total_pages)
+	xbmcplugin.endOfDirectory(addon_handle, updateListing=updateListing, cacheToDisc=True)
 
 
 def force_library_update(settings, params):
@@ -839,20 +863,26 @@ def action_add_media(params, settings):
 
 def action_show_similar(params):
 	from movieapi import TMDB_API
-	listing = TMDB_API.show_similar(params.get('tmdb'))
+	page = params.get('page', 1)
+	listing = TMDB_API.show_similar_t(page, params.get('tmdb'), params.get('type'))
 	debug(listing)
 	show_list(listing)
 
 def action_show_category(params):
+	page = params.get('page', 1)
+
+	import vsdbg
+	#vsdbg._bp()
+
 	from movieapi import TMDB_API
 	if params.get('category') == 'popular':
-		show_list(TMDB_API.popular())
+		show_list(TMDB_API.popular(page))
 	if params.get('category') == 'top_rated':
-		show_list(TMDB_API.top_rated())
+		show_list(TMDB_API.top_rated(page))
 	if params.get('category') == 'popular_tv':
-		show_list(TMDB_API.popular_tv())
+		show_list(TMDB_API.popular_tv(page))
 	if params.get('category') == 'top_rated_tv':
-		show_list(TMDB_API.top_rated_tv())
+		show_list(TMDB_API.top_rated_tv(page))
 	if params.get('category') == 'anime':
 		uri = 'plugin://plugin.video.shikimori.2/'
 		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
