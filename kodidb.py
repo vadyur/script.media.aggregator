@@ -1,8 +1,9 @@
 ﻿import log
 
-import xbmc, filesystem, xbmcvfs, os, time
+import filesystem, os, time
 import xml.etree.ElementTree as ET
 
+test_reader = None
 
 class AdvancedSettingsReader(object):
 	dict = {}
@@ -14,11 +15,16 @@ class AdvancedSettingsReader(object):
 		self.dict.clear()
 		root = []
 	
-		path = xbmc.translatePath('special://profile/advancedsettings.xml').decode('utf-8')
-		self.LOG(path)
-		if not filesystem.exists(path):
-			return
+		try:
+			import xbmc
+			path = xbmc.translatePath('special://profile/advancedsettings.xml').decode('utf-8')
+			self.LOG(path)
+			if filesystem.exists(path):
+				self.load(path)
+		except:
+			pass
 
+	def load(self, path):
 		try:
 			with filesystem.fopen(path, 'r') as f:
 				content = f.read()
@@ -45,8 +51,6 @@ class AdvancedSettingsReader(object):
 	def __getitem__(self, key):
 		return self.dict.get(key, None)
 
-reader = AdvancedSettingsReader()
-
 DB_VERSIONS = {
 	'10': '37',
 	'11': '60',
@@ -62,7 +66,7 @@ BASE_PATH = 'special://database'
 class VideoDatabase(object):
 	@staticmethod
 	def find_last_version(name, path=BASE_PATH):
-		import re
+		import re, xbmcvfs
 		try:
 			dirs, files = xbmcvfs.listdir(path)
 			matched_files = [f for f in files if bool(re.match(name, f, re.I))]  #f.startswith(name)]
@@ -76,17 +80,22 @@ class VideoDatabase(object):
 
 	@staticmethod
 	def get_db_version(name=None):
-		major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
-		ver = DB_VERSIONS.get(major)
-		if ver:
-			return ver
+		try:
+			import xbmc		
+			major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
+			ver = DB_VERSIONS.get(major)
+			if ver:
+				return ver
 
-		return VideoDatabase.find_last_version(name, 'special://home/dbversions')
+			return VideoDatabase.find_last_version(name, 'special://home/dbversions')
+		except ImportError:
+			return DB_VERSIONS['17']
 
 	def __init__(self):
 		try:
+			reader = test_reader if test_reader else AdvancedSettingsReader()
 			
-			self.DB_NAME = reader['name'] if reader['name'] is not None else 'myvideos'
+			self.DB_NAME = reader['name'] if reader['name'] is not None else 'MyVideos'
 			self.DB_NAME += self.get_db_version(self.DB_NAME)
 			log.debug('kodidb: DB name is ' + self.DB_NAME )
 
@@ -108,6 +117,7 @@ class VideoDatabase(object):
 				raise ValueError('MySQL not enabled or not setup correctly')
 		except:
 			self.DB = 'sqlite'
+			import xbmc
 			self.db_dir = os.path.join(xbmc.translatePath(BASE_PATH), 'MyVideos%s.db' % VideoDatabase.find_last_version('MyVideos'))
 			
 	def create_connection(self):
@@ -128,7 +138,28 @@ class VideoDatabase(object):
 			return req.replace('?', '%s')
 		else:
 			return req.replace('%s', '?')
+
+def request(fn):
+	def wrapper(self, *args, **kwargs):
+		self.db = self.videoDB.create_connection()
+		try:
+			sql = fn(self, *args, **kwargs)
+
+			cur = self.db.cursor()
+			cur.execute(sql)
+			result = cur.fetchall()
+			self.db.commit()
+
+			#result = []
+			#for item in res:
+			#	result.append(item)
+			return result
+
+		finally:
+			self.db.close()
 	
+	return wrapper
+
 class KodiDB(object):
 	
 	def debug(self, msg, line=0):
@@ -152,6 +183,7 @@ class KodiDB(object):
 		self.videoDB = VideoDatabase()
 	
 	def PlayerPreProccessing(self):
+		import xbmc
 		xbmc.sleep(1000)
 		self.db = self.videoDB.create_connection()
 		try:
@@ -191,7 +223,6 @@ class KodiDB(object):
 
 		finally:
 			self.db.close()
-		
 		
 	def CopyWatchedStatus(self, pluginItem, strmItem ):
 	
@@ -297,3 +328,28 @@ class KodiDB(object):
 		
 	def getFileDataById(self, fileId):
 		return
+
+class MoreRequests(object):
+	def __init__(self):
+		self.videoDB = VideoDatabase()
+
+	@request
+	def get_movies_by_imdb(self, imdb):
+		""" return movie data by imdb """
+
+		sql = """select idMovie, idFile, c00, c22, uniqueid_value
+				from movie_view
+				where uniqueid_value='{}'""".format(imdb)
+		#self.debug(sql, log.lineno())
+		return sql
+
+	@request
+	def get_movie_duplicates(self):
+		sql = """select idMovie, idFile, c00, c22, uniqueid_value, COUNT(uniqueid_value)
+from movie_view
+where uniqueid_value like 'tt%'
+GROUP BY
+    uniqueid_value
+HAVING 
+    COUNT(uniqueid_value) > 1"""
+		return sql
