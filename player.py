@@ -826,8 +826,10 @@ def action_add_media(params, settings):
 			debug('KeyError: Animes not found')
 	
 	if not found:
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		#req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
+		#result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		from complex_requests import get_movies_by_imdb
+		result = get_movies_by_imdb(imdb)
 		try:
 			for r in result['result']['movies']:
 				if r['imdbnumber'] == imdb:

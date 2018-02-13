@@ -337,7 +337,7 @@ class MoreRequests(object):
 	def get_movies_by_imdb(self, imdb):
 		""" return movie data by imdb """
 
-		sql = """select idMovie, idFile, c00, c22, uniqueid_value
+		sql = """select idMovie, idFile, c00, c22, uniqueid_value, c16, premiered
 				from movie_view
 				where uniqueid_value='{}'""".format(imdb)
 		#self.debug(sql, log.lineno())

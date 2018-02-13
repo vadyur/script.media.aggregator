@@ -1001,6 +1001,9 @@ class TMDB_API(object):
 			result.append(res)
 		return result
 
+	def genres(self):
+		ll = [g['name'] for g in self.tmdb_data['genres']]
+		return ll
 
 class MovieAPI(object):
 

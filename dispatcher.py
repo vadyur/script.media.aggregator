@@ -90,6 +90,10 @@ def dispatch():
 		from backgrounds import scrape_nnm
 		scrape_nnm()
 
+	elif params.get('action') == 'clean_movies':
+		from backgrounds import clean_movies
+		clean_movies()
+
 	elif params.get('action') == 'select_source':
 		from context import main
 		vsdbg._bp()
