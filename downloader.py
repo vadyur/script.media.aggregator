@@ -8,6 +8,10 @@ class Downloader(object):
 		self.extension = extension
 		self.index = index
 
+	def log(self, msg):
+		from log import debug
+		debug('Downloader: {}'.format(msg))
+
 	def get_subdir_name(self):
 		if 'nnm-club' in self.url:
 			return 'nnmclub'
@@ -109,6 +113,8 @@ class TorrentDownloader(Downloader):
 		elif 'soap4' in self.url:
 			import soap4me
 			return soap4me.download_torrent(self.url, self.get_filename(), self.settings)
+
+		self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
 
 
 

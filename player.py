@@ -118,6 +118,9 @@ def load_settings():
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
 	import filecmp
 
+	def _debug(msg):
+		debug(u'play_torrent_variant: {}'.format(msg) )
+
 	play_torrent_variant. resultOK 		= 'OK'
 	play_torrent_variant. resultCancel 	= 'Cancel'
 	play_torrent_variant. resultTryNext	= 'TryNext'
@@ -158,7 +161,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			player = elementumplayer.ElementumPlayer()
 
 
-		debug('------------ Open torrent: ' + path)
+		_debug('------------ Open torrent: ' + path)
 		player.AddTorrent(path)
 
 		added = False
@@ -173,22 +176,23 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			info_dialog.update(i, u'Проверяем файлы', ' ', ' ')
 
 			if downloader and downloader.is_finished():
-				if not filecmp.cmp(path, downloader.get_filename()):
+				#if not filecmp.cmp(path, downloader.get_filename()):
+				if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
 					downloader.move_file_to(path)
-					debug('play_torrent_variant.resultTryAgain')
+					_debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
 				else:
-					debug('Torrents are equal')
+					_debug('Torrents are equal')
 					downloader = None
 
 			xbmc.sleep(1000)
 
 		if not added:
-			debug('Torrent not added')
+			_debug('Torrent not added')
 			return play_torrent_variant.resultTryNext
 
 		files = player.GetLastTorrentData()['files']
-		debug(files)
+		_debug(files)
 
 		if 'cutName' not in params:
 			if 'index' not in params:
@@ -196,8 +200,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					files.sort(key=operator.itemgetter('name'))
 				else:
 					files.sort(key=operator.itemgetter('size'), reverse=True)
-				debug('sorted_files:')
-				debug(files)
+				_debug('sorted_files:')
+				_debug(files)
 
 		try:		
 			if 'cutName' not in params:
@@ -230,13 +234,14 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		except IndexError:
 			for i in range(10):
 				if downloader and downloader.is_finished():
-					if not filecmp.cmp(path, downloader.get_filename()):
+					#if not filecmp.cmp(path, downloader.get_filename()):
+					if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
 						downloader.move_file_to(path)
 						print 'play_torrent_variant.resultTryAgain'
 						return play_torrent_variant.resultTryAgain
 				xbmc.sleep(1000)
 
-		debug(playable_item)
+		_debug(playable_item)
 
 		player.StartBufferFile(index)
 
@@ -265,16 +270,17 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				info = player.GetTorrentInfo()
 				if 'num_seeds' in info:
 					if info['num_seeds'] == 0:
-						debug('Seeds not found')
+						_debug('Seeds not found')
 						return play_torrent_variant.resultTryNext
 
 			if downloader and downloader.is_finished():
-				if not filecmp.cmp(path, downloader.get_filename()):
+				#if not filecmp.cmp(path, downloader.get_filename()):
+				if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
 					downloader.move_file_to(path)
-					debug('play_torrent_variant.resultTryAgain')
+					_debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
 				else:
-					debug('Torrents are equal')
+					_debug('Torrents are equal')
 					downloader = None
 
 			xbmc.sleep(1000)
@@ -286,13 +292,15 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			return play_torrent_variant.resultCancel
 
 		playable_url = player.GetStreamURL(playable_item)
-		debug(playable_url)
+		_debug(playable_url)
 
 		handle = int(sys.argv[1])
 		if nfoReader != None:
 			list_item = nfoReader.make_list_item(playable_url)
 		else:
 			list_item = xbmcgui.ListItem(path=playable_url)
+
+		_debug('ListItem created')
 
 		rel_path = urllib.unquote(params['path']).decode('utf-8')
 		filename = urllib.unquote(params['nfo']).decode('utf-8')
@@ -303,6 +311,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		              sys.argv[0] + sys.argv[2])
 		k_db.PlayerPreProccessing()
 
+		_debug('VideoDB PreProccessing: OK')
 
 		class OurPlayer(xbmc.Player):
 			def __init__(self):
@@ -361,15 +370,20 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			def onPlayBackStopped(self):	self._hide_progress()
 
 		xbmc_player = OurPlayer()
+
+		_debug('OurPlayer creaded')
+
 		xbmcplugin.setResolvedUrl(handle, True, list_item)
+
+		_debug('setResolvedUrl')
 
 		while not xbmc_player.isPlaying():
 			xbmc.sleep(300)
 
-		debug('!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!')
+		_debug('!!!!!!!!!!!!!!!!! Start PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
 		if k_db.timeOffset != 0:
-			debug("Seek to time: " + str(k_db.timeOffset))
+			_debug("Seek to time: " + str(k_db.timeOffset))
 			xbmc.sleep(2000)
 			xbmc_player.seekTime(int(k_db.timeOffset))
 
@@ -379,7 +393,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			xbmc.sleep(1000)
 			xbmc_player.UpdateProgress()
 
-		debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')
+		_debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
 		xbmc.sleep(1000)
 
@@ -391,16 +405,22 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		xbmc.executebuiltin('Container.Refresh')
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
-		debug(UpdateLibrary_path)
+		_debug(UpdateLibrary_path)
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
 
 	except TPError as e:
-		print_tb(e)
+		_debug(e)
+		print_tb()
+		return play_torrent_variant.resultTryNext
+
+	except BaseException as e:
+		_debug(e)
+		print_tb()
 		return play_torrent_variant.resultTryNext
 
 	finally:
-		debug('FINALLY')
+		_debug('FINALLY')
 		player.close()
 
 	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:

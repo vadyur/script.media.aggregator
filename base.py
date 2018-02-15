@@ -301,16 +301,21 @@ def scrape_now(fn):
 			threads.append(t)
 			t.start()
 
-		for announce in decoded['announce-list']:
-			start_scrape(announce[0])
+		if 'announce-list' in decoded:
+			for announce in decoded['announce-list']:
+				start_scrape(announce[0])
 
-		alive = True
-		while not result and alive:
-			alive = False
-			for t in threads:
-				if t.is_alive():
-					alive = True
-					break
+			alive = True
+			while not result and alive:
+				alive = False
+				for t in threads:
+					if t.is_alive():
+						alive = True
+						break
+		elif 'announce' in decoded:
+			res = scraper.scrape(decoded['announce'], hashes)
+			return res[info_hash]
+
 
 		if result:
 			return result[0]
