@@ -26,7 +26,9 @@
       <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default="" visible="!eq(-7,одиночный)"/>
       <setting label="Использовать Кинопоиск"	type="bool" id="use_kinopoisk" default="true" visible="!eq(-8,клиент)"/>
       <setting label="Использовать Google cache для доступа к Кинопоиску"	type="bool" id="kp_googlecache" default="false" visible="!eq(-9,клиент)" enable="eq(-1,true)"/>
-      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-10,клиент)"/>
+      <setting label="Использовать zaborona.help для доступа к Кинопоиску"	type="bool" id="kp_usezaborona" default="false" visible="!eq(-10,клиент)" enable="eq(-2,true)"/>
+      
+      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-11,клиент)"/>
     </category>
 
     <category label="Действия">

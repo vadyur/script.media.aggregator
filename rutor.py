@@ -646,6 +646,7 @@ if __name__ == '__main__':
 	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
 	settings.torrent_player = 'torrent2http'
 	settings.kp_googlecache = True
+	settings.kp_usezaborona = True
 	settings.use_kinopoisk = False
 	settings.use_worldart = True
 

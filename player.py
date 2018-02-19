@@ -109,6 +109,7 @@ def load_settings():
 	settings.use_kinopoisk			= getSetting('use_kinopoisk') == 'true'
 	settings.use_worldart			= getSetting('use_worldart') == 'true'
 	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
+	settings.kp_usezaborona			= getSetting('kp_usezaborona') == 'true'
 
 	settings.show_sources			= getSetting('show_sources') == 'true'
 

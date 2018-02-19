@@ -5,6 +5,7 @@ from log import debug, print_tb
 
 
 import json, re, base, filesystem
+
 import urllib2, requests
 from bs4 import BeautifulSoup
 
@@ -443,7 +444,8 @@ class KinopoiskAPI(object):
 		return 'http://www.kinopoisk.ru/film/' + str(kp_id) + '/'
 
 	def __init__(self, kinopoisk_url = None, settings = None):
-		self.force_googlecache = settings.kp_googlecache
+		from settings import Settings
+		self.settings = settings if settings else Settings()
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self._actors = None
@@ -458,12 +460,15 @@ class KinopoiskAPI(object):
 		if self.session is None:
 			self.session = requests.session()
 
+
 		try:
-			if self.force_googlecache:
+			if self.settings.kp_googlecache:
 				r = self.get_google_cache(url)
 			else:
+				proxy = 'socks5h://any:any@socks.zaborona.help:1488'
+				proxies = { 'http': proxy, 'https': proxy } if self.settings.kp_usezaborona else None
 				headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
-				r = self.session.get(url, headers=headers, timeout=5.0)
+				r = self.session.get(url, headers=headers, proxies=proxies, timeout=5.0)
 		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
 			r.status_code = requests.codes.service_unavailable
@@ -475,7 +480,7 @@ class KinopoiskAPI(object):
 
 			debug(str(te))
 
-		if not self.force_googlecache:
+		if not self.settings.kp_googlecache:
 			if 'captcha' in r.text:
 				r = self.get_google_cache(url)
 
@@ -1175,6 +1180,12 @@ if __name__ == '__main__':
 	#api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/257774/')
 	#api = world_art(title=u"Команда Тора")
 
+	from settings import Settings
+	settings = Settings('.')
+	settings.kp_usezaborona = True
+	api = KinopoiskAPI('https://www.kinopoisk.ru/film/257774/', settings)
+	title = api.title()
+	
 	api = world_art(u'The Fate of the Furious', year='2017', kp_url='https://www.kinopoisk.ru/film/894027/')
 	info = api.info
 	knowns = info.knowns

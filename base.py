@@ -465,6 +465,7 @@ class Informer(object):
 			if u'year' in self.Dict():
 				year = self.Dict()['year']
 
+		from movieapi import MovieAPI
 		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, kinopoisk_url=kp_id, orig=orig, year=year, settings=settings)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id
