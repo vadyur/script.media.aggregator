@@ -9,6 +9,8 @@ import json, re, base, filesystem
 import urllib2, requests
 from bs4 import BeautifulSoup
 
+user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
+
 def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
@@ -114,22 +116,35 @@ class IDs(object):
 		return kp_id in IDs.imdb_by_kp
 
 class soup_base(object):
-	def __init__(self, url):
+	def __init__(self, url, headers=None):
 		self.url = url
 		self._soup = None
 		self._request = None
+		self._headers = headers
 
 	@property
 	def soup(self):
 		if not self._soup:
-			r = requests.get(self.url)
+			r = requests.get(self.url, headers=self._headers)
 			self._soup = BeautifulSoup(r.content, 'html.parser')
 			self._request = r
+
 		return self._soup
 
-class world_art_actors(soup_base):
+class world_art_soup(soup_base):
+	headers = {
+		'Host': 						'www.world-art.ru',
+		'Upgrade-Insecure-Requests': 	'1',
+		'User-Agent':					user_agent,
+		'X-Compress': 					'null',
+	}
+
 	def __init__(self, url):
-		soup_base.__init__(self, url)
+		soup_base.__init__(self, url, self.headers)
+
+class world_art_actors(world_art_soup):
+	def __init__(self, url):
+		world_art_soup.__init__(self, url)
 		self._actors = []
 
 	@property
@@ -186,7 +201,7 @@ class world_art_actors(soup_base):
 					return act
 		raise KeyError
 
-class world_art_info(soup_base):
+class world_art_info(world_art_soup):
 	Request_URL = "http://www.world-art.ru/%s"
 
 	attrs = [
@@ -199,7 +214,7 @@ class world_art_info(soup_base):
 	]
 
 	def __init__(self, url):
-		soup_base.__init__(self, self.Request_URL % url)
+		world_art_soup.__init__(self, self.Request_URL % url)
 		self._info_data = dict()
 		self._actors = None
 
@@ -251,13 +266,13 @@ class world_art_info(soup_base):
 		if p:
 			return p.get_text()
 
-class world_art(soup_base):
+class world_art(world_art_soup):
 	Request_URL = "http://www.world-art.ru/search.php?public_search=%s&global_sector=cinema"
 
 	def __init__(self, title, year=None, imdbid=None, kp_url=None):
 		import urllib
 		url = self.Request_URL % urllib.quote_plus(title.encode('cp1251'))
-		soup_base.__init__(self, url)
+		world_art_soup.__init__(self, url)
 
 		self._title = title
 		self._year = year
@@ -465,9 +480,9 @@ class KinopoiskAPI(object):
 			if self.settings.kp_googlecache:
 				r = self.get_google_cache(url)
 			else:
-				proxy = 'socks5h://any:any@socks.zaborona.help:1488'
+				proxy = 'socks5h://socks.zaborona.help:1488'
 				proxies = { 'http': proxy, 'https': proxy } if self.settings.kp_usezaborona else None
-				headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+				headers = {'user-agent': user_agent}
 				r = self.session.get(url, headers=headers, proxies=proxies, timeout=5.0)
 		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
@@ -491,7 +506,7 @@ class KinopoiskAPI(object):
 	def get_google_cache(self, url):
 		import urllib
 		search_url = "http://www.google.com/search?q=" + urllib.quote_plus(url)
-		headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+		headers = {'user-agent': user_agent}
 
 		r = self.session.get(search_url, headers=headers, timeout=2.0)
 
