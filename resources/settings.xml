@@ -9,6 +9,8 @@
         <setting label="Аниме" 			type="bool"   id="anime_save" 		default="true"/>
         <setting label="Сериалы" 		type="bool"   id="tvshows_save" 		default="true"/>
         <setting label="Анимационные сериалы" 	type="bool"   id="animation_tvshows_save" 	default="true"/>
+      <setting label="Первая помощь" type="lsep"/>
+        <setting label="Очистка дубликатов фильмов" type="action" action="RunPlugin(plugin://script.media.aggregator/?action=clean_movies)"/>
     </category>
 
     <category label="Дополнительно">
@@ -24,7 +26,9 @@
       <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default="" visible="!eq(-7,одиночный)"/>
       <setting label="Использовать Кинопоиск"	type="bool" id="use_kinopoisk" default="true" visible="!eq(-8,клиент)"/>
       <setting label="Использовать Google cache для доступа к Кинопоиску"	type="bool" id="kp_googlecache" default="false" visible="!eq(-9,клиент)" enable="eq(-1,true)"/>
-      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-10,клиент)"/>
+      <setting label="Использовать zaborona.help для доступа к Кинопоиску"	type="bool" id="kp_usezaborona" default="false" visible="!eq(-10,клиент)" enable="eq(-2,true)"/>
+      
+      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-11,клиент)"/>
     </category>
 
     <category label="Действия">

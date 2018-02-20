@@ -5,8 +5,11 @@ from log import debug, print_tb
 
 
 import json, re, base, filesystem
+
 import urllib2, requests
 from bs4 import BeautifulSoup
+
+user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
 
 def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
@@ -113,22 +116,35 @@ class IDs(object):
 		return kp_id in IDs.imdb_by_kp
 
 class soup_base(object):
-	def __init__(self, url):
+	def __init__(self, url, headers=None):
 		self.url = url
 		self._soup = None
 		self._request = None
+		self._headers = headers
 
 	@property
 	def soup(self):
 		if not self._soup:
-			r = requests.get(self.url)
+			r = requests.get(self.url, headers=self._headers)
 			self._soup = BeautifulSoup(r.content, 'html.parser')
 			self._request = r
+
 		return self._soup
 
-class world_art_actors(soup_base):
+class world_art_soup(soup_base):
+	headers = {
+		'Host': 						'www.world-art.ru',
+		'Upgrade-Insecure-Requests': 	'1',
+		'User-Agent':					user_agent,
+		'X-Compress': 					'null',
+	}
+
 	def __init__(self, url):
-		soup_base.__init__(self, url)
+		soup_base.__init__(self, url, self.headers)
+
+class world_art_actors(world_art_soup):
+	def __init__(self, url):
+		world_art_soup.__init__(self, url)
 		self._actors = []
 
 	@property
@@ -185,7 +201,7 @@ class world_art_actors(soup_base):
 					return act
 		raise KeyError
 
-class world_art_info(soup_base):
+class world_art_info(world_art_soup):
 	Request_URL = "http://www.world-art.ru/%s"
 
 	attrs = [
@@ -198,7 +214,7 @@ class world_art_info(soup_base):
 	]
 
 	def __init__(self, url):
-		soup_base.__init__(self, self.Request_URL % url)
+		world_art_soup.__init__(self, self.Request_URL % url)
 		self._info_data = dict()
 		self._actors = None
 
@@ -250,13 +266,13 @@ class world_art_info(soup_base):
 		if p:
 			return p.get_text()
 
-class world_art(soup_base):
+class world_art(world_art_soup):
 	Request_URL = "http://www.world-art.ru/search.php?public_search=%s&global_sector=cinema"
 
 	def __init__(self, title, year=None, imdbid=None, kp_url=None):
 		import urllib
 		url = self.Request_URL % urllib.quote_plus(title.encode('cp1251'))
-		soup_base.__init__(self, url)
+		world_art_soup.__init__(self, url)
 
 		self._title = title
 		self._year = year
@@ -443,7 +459,8 @@ class KinopoiskAPI(object):
 		return 'http://www.kinopoisk.ru/film/' + str(kp_id) + '/'
 
 	def __init__(self, kinopoisk_url = None, settings = None):
-		self.force_googlecache = settings.kp_googlecache
+		from settings import Settings
+		self.settings = settings if settings else Settings()
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self._actors = None
@@ -458,12 +475,15 @@ class KinopoiskAPI(object):
 		if self.session is None:
 			self.session = requests.session()
 
+
 		try:
-			if self.force_googlecache:
+			if self.settings.kp_googlecache:
 				r = self.get_google_cache(url)
 			else:
-				headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
-				r = self.session.get(url, headers=headers, timeout=5.0)
+				proxy = 'socks5h://socks.zaborona.help:1488'
+				proxies = { 'http': proxy, 'https': proxy } if self.settings.kp_usezaborona else None
+				headers = {'user-agent': user_agent}
+				r = self.session.get(url, headers=headers, proxies=proxies, timeout=5.0)
 		except requests.exceptions.ConnectionError as ce:
 			r = requests.Response()
 			r.status_code = requests.codes.service_unavailable
@@ -475,7 +495,7 @@ class KinopoiskAPI(object):
 
 			debug(str(te))
 
-		if not self.force_googlecache:
+		if not self.settings.kp_googlecache:
 			if 'captcha' in r.text:
 				r = self.get_google_cache(url)
 
@@ -486,7 +506,7 @@ class KinopoiskAPI(object):
 	def get_google_cache(self, url):
 		import urllib
 		search_url = "http://www.google.com/search?q=" + urllib.quote_plus(url)
-		headers = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'}
+		headers = {'user-agent': user_agent}
 
 		r = self.session.get(search_url, headers=headers, timeout=2.0)
 
@@ -1001,6 +1021,9 @@ class TMDB_API(object):
 			result.append(res)
 		return result
 
+	def genres(self):
+		ll = [g['name'] for g in self.tmdb_data['genres']]
+		return ll
 
 class MovieAPI(object):
 
@@ -1172,6 +1195,12 @@ if __name__ == '__main__':
 	#api = MovieAPI(kinopoisk = 'https://www.kinopoisk.ru/film/257774/')
 	#api = world_art(title=u"Команда Тора")
 
+	from settings import Settings
+	settings = Settings('.')
+	settings.kp_usezaborona = True
+	api = KinopoiskAPI('https://www.kinopoisk.ru/film/257774/', settings)
+	title = api.title()
+	
 	api = world_art(u'The Fate of the Furious', year='2017', kp_url='https://www.kinopoisk.ru/film/894027/')
 	info = api.info
 	knowns = info.knowns

@@ -1,5 +1,7 @@
-import filesystem, log
+# -*- coding: utf-8 -*-
 
+import filesystem, log
+from movieapi import MovieAPI
 
 def addon_data_path():
 	from player import _addon, _addondir
@@ -326,3 +328,59 @@ def add_media_process(title, imdb):
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
+
+# ------------------------------------------------------------------------------------------------------------------- #
+def clean_movies():
+	from kodidb import MoreRequests
+	ll = MoreRequests().get_movie_duplicates()
+
+	try:
+		from player import load_settings
+		settings = load_settings()
+	except:
+		from settings import Settings
+		settings = Settings(filesystem.join(filesystem.dirname(__file__), 'test', 'Videos'))
+	
+	import movieapi
+	from base import make_fullpath
+	def clean_movie_by_imdbid(imdbid):
+		api = movieapi.MovieAPI(imdbid)
+		genre = api['genres']
+		if u'мультфильм' in genre:
+			base_path = settings.animation_path()
+		elif u'документальный' in genre:
+			base_path = settings.documentary_path()
+		else:
+			base_path = settings.movies_path()
+
+		mm = MoreRequests().get_movies_by_imdb(imdbid)
+
+		from base import STRMWriterBase
+		from base import Informer
+
+		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
+
+		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
+		#alt_path = strm_path + '.alternative'
+		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
+
+		strm_data = filesystem.fopen(mm[0][3], 'r').read()
+		alt_data = []
+		for m in mm:
+			links_with_ranks = STRMWriterBase.get_links_with_ranks(mm[0][3], settings, use_scrape_info=False)
+			alt_data.extend(links_with_ranks)
+
+		alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
+		#alt_data = list(set(alt_data))
+		#alt_data.sort(key=operator.itemgetter('rank'))
+		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
+			STRMWriterBase.write_alternative(strm_path, alt_data)
+		pass
+
+
+	for m in ll:
+		try:
+			clean_movie_by_imdbid(m[4])
+		except:
+			pass
+

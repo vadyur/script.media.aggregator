@@ -301,16 +301,21 @@ def scrape_now(fn):
 			threads.append(t)
 			t.start()
 
-		for announce in decoded['announce-list']:
-			start_scrape(announce[0])
+		if 'announce-list' in decoded:
+			for announce in decoded['announce-list']:
+				start_scrape(announce[0])
 
-		alive = True
-		while not result and alive:
-			alive = False
-			for t in threads:
-				if t.is_alive():
-					alive = True
-					break
+			alive = True
+			while not result and alive:
+				alive = False
+				for t in threads:
+					if t.is_alive():
+						alive = True
+						break
+		elif 'announce' in decoded:
+			res = scraper.scrape(decoded['announce'], hashes)
+			return res[info_hash]
+
 
 		if result:
 			return result[0]
@@ -444,6 +449,18 @@ class STRMWriterBase(object):
 							return True
 		return False
 
+	@staticmethod
+	def write_alternative(strmFilename, links_with_ranks):
+		strmFilename_alt = strmFilename + '.alternative'
+		with filesystem.fopen(strmFilename_alt, 'w') as alternative:
+			for variant in links_with_ranks:
+				if 'link' in variant:
+					for k, v in variant.iteritems():
+						if k != 'link':
+							alternative.write('#%s=%s\n' % (make_utf8(k), make_utf8(v)))
+
+					alternative.write( make_utf8(variant['link']) + '\n')
+
 
 class Informer(object):
 	def __init__(self):
@@ -460,6 +477,7 @@ class Informer(object):
 			if u'year' in self.Dict():
 				year = self.Dict()['year']
 
+		from movieapi import MovieAPI
 		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, kinopoisk_url=kp_id, orig=orig, year=year, settings=settings)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id

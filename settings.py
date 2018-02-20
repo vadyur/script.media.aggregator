@@ -50,7 +50,8 @@ class Settings:
 	             animation_tvshows_save = True,
 	             torrent_path        = '',
 				 addon_data_path	 = '',
-				 kp_googlecache     =False,
+				 kp_googlecache     = False,
+				 kp_usezaborona		= False,
 				 rutor_nosd			= True):
 		#--------------------------------------------------------------------------------
 		Settings.current_settings	= self
@@ -112,6 +113,7 @@ class Settings:
 		self.addon_data_path		= addon_data_path
 
 		self.kp_googlecache			= kp_googlecache
+		self.kp_usezaborona			= kp_usezaborona
 		self.rutor_nosd				= rutor_nosd
 
 		self.progress_dialog		= FakeProgressDlg()
