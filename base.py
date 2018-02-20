@@ -449,6 +449,18 @@ class STRMWriterBase(object):
 							return True
 		return False
 
+	@staticmethod
+	def write_alternative(strmFilename, links_with_ranks):
+		strmFilename_alt = strmFilename + '.alternative'
+		with filesystem.fopen(strmFilename_alt, 'w') as alternative:
+			for variant in links_with_ranks:
+				if 'link' in variant:
+					for k, v in variant.iteritems():
+						if k != 'link':
+							alternative.write('#%s=%s\n' % (make_utf8(k), make_utf8(v)))
+
+					alternative.write( make_utf8(variant['link']) + '\n')
+
 
 class Informer(object):
 	def __init__(self):

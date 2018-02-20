@@ -345,8 +345,11 @@ def clean_movies():
 		genre = api['genres']
 		if u'мультфильм' in genre:
 			base_path = settings.animation_path()
+		elif u'документальный' in genre:
+			base_path = settings.documentary_path()
 		else:
 			base_path = settings.movies_path()
+
 		mm = MoreRequests().get_movies_by_imdb(imdbid)
 
 		from base import STRMWriterBase
@@ -355,7 +358,7 @@ def clean_movies():
 		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
 
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
-		alt_path = strm_path + '.alternative'
+		#alt_path = strm_path + '.alternative'
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
 
 		strm_data = filesystem.fopen(mm[0][3], 'r').read()
@@ -364,11 +367,17 @@ def clean_movies():
 			links_with_ranks = STRMWriterBase.get_links_with_ranks(mm[0][3], settings, use_scrape_info=False)
 			alt_data.extend(links_with_ranks)
 
+		alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
 		#alt_data = list(set(alt_data))
-		alt_data.sort(key=operator.itemgetter('rank'))
+		#alt_data.sort(key=operator.itemgetter('rank'))
+		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
+			STRMWriterBase.write_alternative(strm_path, alt_data)
 		pass
 
 
 	for m in ll:
-		clean_movie_by_imdbid(m[4])
+		try:
+			clean_movie_by_imdbid(m[4])
+		except:
+			pass
 
