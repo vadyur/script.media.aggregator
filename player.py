@@ -178,7 +178,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 			if downloader and downloader.is_finished():
 				#if not filecmp.cmp(path, downloader.get_filename()):
-				if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
+				if downloader.info_hash() and downloader.info_hash() != player.info_hash:
 					downloader.move_file_to(path)
 					_debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
@@ -236,7 +236,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			for i in range(10):
 				if downloader and downloader.is_finished():
 					#if not filecmp.cmp(path, downloader.get_filename()):
-					if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
+					if downloader.info_hash() and downloader.info_hash() != player.info_hash:
 						downloader.move_file_to(path)
 						print 'play_torrent_variant.resultTryAgain'
 						return play_torrent_variant.resultTryAgain
@@ -276,7 +276,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 			if downloader and downloader.is_finished():
 				#if not filecmp.cmp(path, downloader.get_filename()):
-				if downloader.tp.info_hash and downloader.tp.info_hash != player.info_hash:
+				if downloader.info_hash() and downloader.info_hash() != player.info_hash:
 					downloader.move_file_to(path)
 					_debug('play_torrent_variant.resultTryAgain')
 					return play_torrent_variant.resultTryAgain
@@ -440,7 +440,7 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(),
 	                       torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
-		if not torr_downloader.download():
+		if not torr_downloader.start():
 			return None
 		torr_downloader.move_file_to(path)
 		torr_downloader = None

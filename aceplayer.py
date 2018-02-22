@@ -12,6 +12,8 @@ class AcePlayer(TorrentPlayer):
 		self.engine = TSengine()
 		del TSengine
 
+		TorrentPlayer.__init__(self)
+
 	def close(self):
 		if self.engine != None:
 			self.engine.end()
