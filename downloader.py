@@ -7,6 +7,7 @@ class Downloader(object):
 		self.saveDir = saveDir
 		self.extension = extension
 		self.index = index
+		self.saved_to = None
 
 	def log(self, msg):
 		from log import debug
@@ -43,12 +44,15 @@ class Downloader(object):
 		response = urllib2.urlopen(self.url)
 		with filesystem.fopen(self.get_filename(), 'wb') as f:
 			shutil.copyfileobj(response, f)
+		self.saved_to = self.get_filename()
 
 	def start(self, in_background = False):
 		if in_background:
+			self.log('Start downloading proccess in other thread')
 			self.thread = threading.Thread(target=self.download)
 			self.thread.start()
 		else:
+			self.log('Start downloading proccess in main thread')
 			self.download()
 
 	def is_finished(self):
@@ -67,11 +71,16 @@ class Downloader(object):
 		filesystem.copyfile(src, path)
 		filesystem.remove(src)
 
+		self.saved_to = path
+
+		self.log('{} was moved to {}'.format(src, path))
+
 class TorrentDownloader(Downloader):
 	def __init__(self, url, saveDir, settings):
 		Downloader.__init__(self, url, saveDir, '.torrent')
 		self.index = self.get_post_index()
 		self.settings = settings
+		self._info_hash = None
 
 	def get_post_index(self):
 		try:
@@ -95,26 +104,35 @@ class TorrentDownloader(Downloader):
 			return None
 
 	def download(self):
-		if 'nnm-club' in self.url:
-			import nnmclub
-			return nnmclub.download_torrent(self.url, self.get_filename(), self.settings)
-		elif 'hdclub' in self.url:
-			import hdclub
-			return hdclub.download_torrent(self.url, self.get_filename(), self.settings)
-		elif 'bluebird' in self.url:
-			import bluebird
-			return bluebird.download_torrent(self.url, self.get_filename(), self.settings)
-		elif 'anidub' in self.url:
-			import anidub
-			return anidub.download_torrent(self.url, self.get_filename(), self.settings)
-		elif 'rutor' in self.url:
-			import rutor
-			return rutor.download_torrent(self.url, self.get_filename(), self.settings)
-		elif 'soap4' in self.url:
-			import soap4me
-			return soap4me.download_torrent(self.url, self.get_filename(), self.settings)
+		def dnl():
+			if 'nnm-club' in self.url:
+				import nnmclub
+				return nnmclub.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'hdclub' in self.url:
+				import hdclub
+				return hdclub.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'bluebird' in self.url:
+				import bluebird
+				return bluebird.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'anidub' in self.url:
+				import anidub
+				return anidub.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'rutor' in self.url:
+				import rutor
+				return rutor.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'soap4' in self.url:
+				import soap4me
+				return soap4me.download_torrent(self.url, self.get_filename(), self.settings)
 
-		self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
+		if dnl():
+			self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
+			self.saved_to = self.get_filename()
 
+	def info_hash(self):
+		if not self._info_hash and self.is_finished():
+			from base import TorrentPlayer
+			tp = TorrentPlayer()
+			tp.AddTorrent(self.saved_to)
+			return tp.info_hash
 
-
+		return self._info_hash
