@@ -735,12 +735,12 @@ def search_generate(what, imdb, settings, path_out):
 
 	if settings.animation_tvshows_save and count == 0:
 		url = make_search_url(what, '232')
-		result3 = search_results(imdb, session, settings, url)
+		result3 = search_results(imdb, session, settings, url, 'tvshow')
 		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
 	if settings.tvshows_save and count == 0:
 		url = make_search_url(what, tvshow_ids)
-		result4 = search_results(imdb, session, settings, url)
+		result4 = search_results(imdb, session, settings, url, 'tvshow')
 		count += make_search_strms(result4, settings, 'tvshow', settings.tvshow_path(), path_out)
 
 	return count
@@ -768,7 +768,7 @@ def make_search_strms(result, settings, type, path, path_out):
 	return count
 
 
-def search_results(imdb, session, settings, url):
+def search_results(imdb, session, settings, url, type='movie'):
 	debug('search_results: url = ' + url)
 
 	enumerator = TrackerPostsEnumerator(session)
@@ -782,7 +782,12 @@ def search_results(imdb, session, settings, url):
 		if 'seeds' in post and int(post['seeds']) < 5:
 			continue
 
-		parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+		if type=='movie':
+			parser = DescriptionParser(post['a'], settings=settings, tracker=True)
+		elif type=='tvshow':
+			parser = DescriptionParserTVShows(post['a'], settings=settings, tracker=True)
+		else:
+			break
 		if parser.parsed() and parser.get_value('imdb_id') == imdb:
 			result.append({'parser': parser, 'link': post['dl_link']})
 
