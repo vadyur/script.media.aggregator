@@ -127,6 +127,9 @@ class TorrentDownloader(Downloader):
 		if dnl():
 			self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
 			self.saved_to = self.get_filename()
+			return True
+		
+		return False
 
 	def info_hash(self):
 		if not self._info_hash and self.is_finished():
