@@ -6,7 +6,7 @@ from log import debug
 
 import os
 import xml.etree.ElementTree as ET
-import requests, filesystem
+import filesystem
 
 def ensure_utf8(string):
 	if isinstance(string, unicode):
@@ -43,6 +43,12 @@ class NFOReader(object):
 	def make_path(base_path, rel_path, filename):
 		# params is utf-8
 		path = filesystem.join(base_path.decode('utf-8'), rel_path.decode('utf-8'), filename.decode('utf-8'))
+
+		if path.startswith('/') or '://' in path:
+			path = path.replace('\\', '/')
+		elif len(path) > 2 and path[1] == ':' and path[2] == '\\':
+			path = path.replace('/', '\\')
+
 		return path
 
 	def is_episode(self):
@@ -107,6 +113,7 @@ class NFOReader(object):
 		return info
 		
 	def download_image(self, url, type):
+		import requests
 		r = requests.get(url)
 		debug(r.headers)
 		
@@ -185,9 +192,6 @@ class NFOReader(object):
 		return art
 
 	def make_list_item(self, playable_url):
-		import vsdbg
-		vsdbg._bp()
-
 		import xbmcgui
 		list_item = xbmcgui.ListItem(path=playable_url)
 		list_item.setInfo('video', self.try_join_tvshow_info())

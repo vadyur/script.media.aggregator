@@ -440,7 +440,7 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(),
 	                       torr_downloader.get_post_index() + '.torrent')
 	if not filesystem.exists(path):
-		if not torr_downloader.start():
+		if not torr_downloader.download():
 			return None
 		torr_downloader.move_file_to(path)
 		torr_downloader = None
@@ -550,11 +550,20 @@ def play_torrent(settings, params):
 			episodeNumber = path_or_url_and_episode['episode']
 			downloader = path_or_url_and_episode['downloader']
 
+			torr_params = params.copy()
+
+			try:
+				import urlparse
+				dct = urlparse.parse_qs(variant['link'])
+				torr_params['index'] = dct['index'][0]
+			except:
+				pass
+
 			play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog,
-			                                                   episodeNumber, nfoReader, settings, params, downloader)
+			                                                   episodeNumber, nfoReader, settings, torr_params, downloader)
 			if play_torrent_variant_result == play_torrent_variant.resultTryAgain:
 				play_torrent_variant_result = play_torrent_variant(path_or_url_and_episode['path_or_url'], info_dialog,
-				                                                   episodeNumber, nfoReader, settings, params, None)
+				                                                   episodeNumber, nfoReader, settings, torr_params, None)
 
 			if play_torrent_variant_result != play_torrent_variant.resultTryNext:
 				break
