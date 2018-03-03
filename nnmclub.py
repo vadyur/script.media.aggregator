@@ -713,7 +713,7 @@ def download_torrent(url, path, settings):
 
 def make_search_url(what, IDs):
 	url = u'http://nnm-club.me/forum/tracker.php'
-	url += '?f=' + str(IDs)
+	url += '?f=' + str(IDs)+'&s=2'
 	url += '&nm=' + urllib2.quote(what.encode('utf-8'))
 	return url
 
