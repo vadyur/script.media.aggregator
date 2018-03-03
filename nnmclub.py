@@ -669,7 +669,7 @@ def download_torrent(url, path, settings):
 		if len(a) > 0:
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
 	else:
-		href = linkd
+		href = link
 		response = urllib2.urlopen(real_url(link, settings))
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
@@ -729,12 +729,12 @@ def search_generate(what, imdb, settings, path_out):
 		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
-		url = make_search_url(what, '661')
+		url = make_search_url(what, '730,732,230,659,658,231,660,661,890,232,623,622,621,632,627,626,625,644,635,634,638,646')
 		result2 = search_results(imdb, session, settings, url)
 		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
-		url = make_search_url(what, '232')
+		url = make_search_url(what, '658, 232,623,622,621,632,627,626,625,644,635,634,638,646')
 		result3 = search_results(imdb, session, settings, url, 'tvshow')
 		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
