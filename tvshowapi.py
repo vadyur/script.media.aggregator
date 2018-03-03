@@ -132,7 +132,7 @@ def FileNamesPrepare(filename):
 	except:
 		pass
 
-	urls = [r's(\d+)e(\d+)', r's(\d+) e(\d+)', r'(\d+)[x|-](\d+)', r'E(\d+)', r'Ep(\d+)', r'\((\d+)\)']
+	urls = [r's(\d+)e(\d+)', r's(\d+) e(\d+)', r'(\d+)[x|-](\d+)', r'E(\d+)', r'Ep(\d+)', r'\((\d+)\)', r'S(\d+)e(\d+)', r'S(\d+)E(\d+)', r'S(\d+)\.E(\d+)',r'S(\d+)\.e(\d+)' ,r's(\d+)\.e(\d+)']
 	for file in urls:
 		match = re.compile(file, re.DOTALL | re.I | re.IGNORECASE).findall(filename)
 		if match:
