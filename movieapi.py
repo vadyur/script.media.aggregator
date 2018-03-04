@@ -115,21 +115,7 @@ class IDs(object):
 		kp_id = IDs.id_by_kp_url(kp_url)
 		return kp_id in IDs.imdb_by_kp
 
-class soup_base(object):
-	def __init__(self, url, headers=None):
-		self.url = url
-		self._soup = None
-		self._request = None
-		self._headers = headers
-
-	@property
-	def soup(self):
-		if not self._soup:
-			r = requests.get(self.url, headers=self._headers)
-			self._soup = BeautifulSoup(r.content, 'html.parser')
-			self._request = r
-
-		return self._soup
+from soup_base import soup_base
 
 class world_art_soup(soup_base):
 	headers = {
@@ -460,7 +446,7 @@ class KinopoiskAPI(object):
 
 	def __init__(self, kinopoisk_url = None, settings = None):
 		from settings import Settings
-		self.settings = settings if settings else Settings()
+		self.settings = settings if settings else Settings('')
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self._actors = None
