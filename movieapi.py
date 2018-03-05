@@ -1011,6 +1011,12 @@ class TMDB_API(object):
 		ll = [g['name'] for g in self.tmdb_data['genres']]
 		return ll
 
+	def countries(self):
+		from countries import ru
+		cc = [ c for c in self.tmdb_data['production_countries']]
+		cc = [ru(c['iso_3166_1']) for c in cc]
+		return cc
+
 class MovieAPI(object):
 
 	APIs	= {}

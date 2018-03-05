@@ -197,16 +197,20 @@ class NFOWriter:
 			pass
 
 	def write_title(self, root):
-		if self.tvshow_api:
+		title = self.movie_api.get('title')
+		if not title and self.tvshow_api:
 			title = self.tvshow_api.Title()
-			if title:
-				self.add_element_value(root, 'title', title)
-				return
-
-		self.add_element_copy(root, 'title', self.parser)
+		if title:
+			self.add_element_value(root, 'title', title)
+		else:
+			self.add_element_copy(root, 'title', self.parser)
 
 	def write_originaltitle(self, root):
-		self.add_element_copy(root, 'originaltitle', self.parser)
+		originaltitle = self.movie_api.get('originaltitle')
+		if originaltitle:
+			self.add_element_value(root, 'originaltitle', originaltitle)
+		else:
+			self.add_element_copy(root, 'originaltitle', self.parser)
 
 	def write_sorttitle(self, root):
 		pass
@@ -220,25 +224,25 @@ class NFOWriter:
 			pass
 
 	def write_rating(self, root):
-		if self.parser.get('rating', None):
-			ET.SubElement(root, 'rating').text = str(self.parser.get_value('rating'))
-			return
-
 		try:
 			res = self.movie_api['rating']
 			ET.SubElement(root, 'rating').text = str(res)
+			return
 		except:
 			pass
 
+		if self.parser.get('rating', None):
+			ET.SubElement(root, 'rating').text = str(self.parser.get_value('rating'))
+
+
 	def write_year(self, root):
-
-		if self.tvshow_api:
+		year = self.movie_api.get('year')
+		if not year and self.tvshow_api:
 			year = self.tvshow_api.Year()
-			if year:
-				ET.SubElement(root, 'year').text = str(year)
-				return
-
-		self.add_element_copy(root, 'year', self.parser)
+		if year:
+			ET.SubElement(root, 'year').text = str(year)
+		else:
+			self.add_element_copy(root, 'year', self.parser)
 
 	def write_top250(self, root):
 		pass
@@ -250,13 +254,15 @@ class NFOWriter:
 		pass
 
 	def write_plot(self, root):
-		plot = self.stripHtml(self.parser.get_value('plot'))
-
-		if not plot and self.movie_api:
+		plot = None
+		if self.movie_api:
 			try:
 				plot = self.movie_api.ru('plot')
 			except AttributeError:
 				pass
+
+		if not plot:
+			plot = self.stripHtml(self.parser.get_value('plot'))
 
 		if plot:
 			self.add_element_value(root, 'plot', plot)
@@ -343,20 +349,23 @@ class NFOWriter:
 	def write_genre(self, root):
 		#self.add_element_split(root, 'genre', self.parser)
 
-		s = self.parser.get_value('genre')
-		from base import lower
+		try:
+			genres = self.movie_api['genres']
+		except:
+			s = self.parser.get_value('genre')
+			from base import lower
 
-		if ',' in s:
-			values = lower(s).split(',')
-		elif ' ' in s:
-			values = lower(s).split(' ')
-		else:
-			values = [lower(s)]
+			if ',' in s:
+				genres = lower(s).split(',')
+			elif ' ' in s:
+				genres = lower(s).split(' ')
+			else:
+				genres = [lower(s)]
 
-		for i in values:
+		for i in genres:
 			if i:
 				ET.SubElement(root, 'genre').text = i.strip()
-		return len(values) > 0
+		return len(genres) > 0
 
 
 	def write_tag(self, root):
@@ -375,7 +384,12 @@ class NFOWriter:
 		self.add_actors(root)
 
 	def write_country(self, root):
-		self.add_element_split(root, 'country', self.parser)
+		try:
+			cc = self.movie_api['countries']
+			for c in cc:
+				self.add_element_value(root, 'country', c)
+		except:
+			self.add_element_split(root, 'country', self.parser)
 
 	def write_studio(self, root):
 		self.add_element_split(root, 'studio', self.parser)

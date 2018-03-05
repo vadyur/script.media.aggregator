@@ -4,12 +4,13 @@ from base import DescriptionParserBase, Informer
 from soup_base import soup_base
 
 class DescriptionParser(DescriptionParserBase, soup_base):
-	def __init__(self, url, settings=None):
+	def __init__(self, url, fulltitle, settings=None):
 		Informer.__init__(self)
 		soup_base.__init__(self, url)
 
 		self._dict = dict()
 		self._dict['link'] = url
+		self._dict['full_title'] = fulltitle
 		
 		self.settings = settings
 		self.OK = self.parse()
@@ -26,6 +27,31 @@ class DescriptionParser(DescriptionParserBase, soup_base):
 		if kp_a:
 			self._dict['kp_id'] = kp_a[0]['href'].split('url=')[-1]
 
+		from bs4 import NavigableString
+		tag = None
+		for div in self.soup.find_all('div', class_="quotef"):
+			txt = div.get_text()
+			if u'Технические данные:' in txt:
+				txt = ''
+				for part in div.children:
+					if isinstance(part, NavigableString):
+						txt += unicode(part)
+					else:
+						if part.name == 'br':
+							txt += '\n'
+						else:
+							txt += part.get_text()
+						
+				def write_tag(tag, value):
+					self._dict[tag] = value.split(':')[-1].lstrip()
+
+				for line in txt.split('\n'):
+					if line.startswith(u'Видео:'):
+						write_tag('video', line)
+					if line.startswith(u'Перевод:'):
+						write_tag('translate', line)
+							
+
 		if self.get_value('imdb_id'):
 			self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 			return True
@@ -41,12 +67,15 @@ class PostEnumerator(soup_base):
 			for a in div.find_all('a'):
 				href = a.get('href', '')
 				if href.endswith(u'.html'):
-					yield a['href']
+					box = a.parent.parent.parent
+					fulltitle = box.find('h4').get_text() if box else u''
+					yield a['href'], fulltitle
 
 def url(type):
 	return 'http://kinohd.net/{}/'.format(type)
 
 def run(settings):
+	import filesystem
 	types = ['4k', '1080p', '720p', '3d', 'serial']
 	processed_urls = []
 
@@ -66,7 +95,8 @@ def run(settings):
 		else:
 			base_path = settings.movies_path()
 
-		movieapi.write_movie(u'', url, settings, parser, path=base_path)
+		with filesystem.save_make_chdir_context(base_path, 'kinohd_movies'):
+			movieapi.write_movie(parser.get_value('full_title'), url, settings, parser, path=base_path)
 
 	def process_tvshow(url, parser):
 		import tvshowapi
@@ -76,20 +106,21 @@ def run(settings):
 			base_path = settings.animation_tvshow_path()
 		else:
 			base_path = settings.tvshow_path()
-		tvshowapi.write_tvshow(u'', url, settings, parser, path)
+		with filesystem.save_make_chdir_context(base_path, 'kinohd_tvshow'):
+			tvshowapi.write_tvshow(parser.get_value('full_title'), url, settings, parser, path)
 
-	def process_url(url):
-		parser = DescriptionParser(url)
+	def process(url, fulltitle):
+		parser = DescriptionParser(url, fulltitle)
 		if parser.parsed():
 			if 'sezon' in url:
 				procces_tvshow(url, parser)
 			else:
 				process_movie(url, parser)
 
-	for item in urls():
-		if item not in processed_urls:
-			process_url(item)
-			processed_urls.append(item)
+	for href, fulltitle in urls():
+		if href not in processed_urls:
+			process(href, fulltitle)
+			processed_urls.append(href)
 
 	pass
 
@@ -101,6 +132,6 @@ def search_generate(what, imdb, settings, path_out):
 
 if __name__ == '__main__':
 	from settings import Settings
-	settings = Settings('c:\\Temp')
+	settings = Settings('test')
 
 	run(settings)
