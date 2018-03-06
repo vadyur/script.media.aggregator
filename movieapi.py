@@ -1013,9 +1013,12 @@ class TMDB_API(object):
 
 	def countries(self):
 		from countries import ru
-		cc = [ c for c in self.tmdb_data['production_countries']]
-		cc = [ru(c['iso_3166_1']) for c in cc]
-		return cc
+		cc = [c['iso_3166_1'] for c in self.tmdb_data['production_countries']]
+		return [ru(c) for c in cc]
+	
+	def studios(self):
+		ss = [ s['name'] for s in self.tmdb_data['production_companies']]
+		return ss
 
 class MovieAPI(object):
 

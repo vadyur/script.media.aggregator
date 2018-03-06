@@ -2,6 +2,10 @@
 
 from base import DescriptionParserBase, Informer
 from soup_base import soup_base
+from log import debug
+
+protocol = 'http'
+domain = 'kinohd.net'
 
 class DescriptionParser(DescriptionParserBase, soup_base):
 	def __init__(self, url, fulltitle, settings=None):
@@ -72,7 +76,7 @@ class PostEnumerator(soup_base):
 					yield a['href'], fulltitle
 
 def url(type):
-	return 'http://kinohd.net/{}/'.format(type)
+	return '{}://{}/{}/'.format(protocol, domain, type)
 
 def run(settings):
 	import filesystem
@@ -125,7 +129,42 @@ def run(settings):
 	pass
 
 def download_torrent(url, path, settings):
-	pass
+	from base import save_hashes
+	save_hashes(path)
+
+	import urllib2
+	url = urllib2.unquote(url)
+	debug('download_torrent:' + url)
+
+	soup = soup_base(url).soup
+	if soup:
+		# <button onclick="window.document.location.href='/engine/torrent.php?nid=8280&amp;id=10977'" class="bytn" style="cursor: pointer;" title="скачивание работает с программой Utorrent"> Скачать</button>
+		btn = soup.find('button', class_="bytn")
+		if btn:
+			try:
+				dnl_url = btn['onclick']
+				dnl_url = dnl_url.split("href=")[-1]
+				dnl_url = dnl_url.replace("'", "")
+				dnl_url = '{}://{}{}'.format(protocol, domain, dnl_url)
+			except BaseException as e:
+				pass
+			
+			import requests
+			r = requests.get(dnl_url)
+
+			try:
+				import filesystem
+				with filesystem.fopen(path, 'wb') as torr:
+					for chunk in r.iter_content(100000):
+						torr.write(chunk)
+
+				save_hashes(path)
+				return True
+			except:
+				pass
+
+	return False
+			
 
 def search_generate(what, imdb, settings, path_out):
 	pass
@@ -133,5 +172,12 @@ def search_generate(what, imdb, settings, path_out):
 if __name__ == '__main__':
 	from settings import Settings
 	settings = Settings('test')
+	settings.addon_data_path = u"test"
+	settings.torrent_path = u'test'
+	settings.torrent_player = 'torrent2http'
+	settings.kp_googlecache = False
+	settings.kp_usezaborona = True
+	settings.use_kinopoisk = True
+	settings.use_worldart = True
 
 	run(settings)

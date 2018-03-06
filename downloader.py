@@ -26,6 +26,8 @@ class Downloader(object):
 			return 'rutor'
 		elif 'soap4' in self.url:
 			return 'soap4'
+		elif 'kinohd' in self.url:
+			return 'kinohd'
 		else:
 			return None
 
@@ -96,6 +98,10 @@ class TorrentDownloader(Downloader):
 				return re.search(r'torrent/(\d+)/', self.url).group(1)
 			elif 'soap4' in self.url:
 				return re.search(r'/(\d+).torrent', self.url).group(1)
+			elif 'kinohd' in self.url:
+				# http://kinohd.net/1080p/8279-tohya-928pot886b-bcex-itonya-2017.html
+				part = self.url.split('/')[-1]
+				return re.search(r'^(\d+)', part).group(1)
 			else:
 				return None
 		except BaseException as e:
@@ -123,6 +129,9 @@ class TorrentDownloader(Downloader):
 			elif 'soap4' in self.url:
 				import soap4me
 				return soap4me.download_torrent(self.url, self.get_filename(), self.settings)
+			elif 'kinohd' in self.url:
+				import kinohd
+				return kinohd.download_torrent(self.url, self.get_filename(), self.settings)
 
 		if dnl():
 			self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))

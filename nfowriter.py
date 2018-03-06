@@ -169,7 +169,7 @@ class NFOWriter:
 
 		if actors:
 			for actorInfo in actors:
-				if 'ru_name' in actorInfo and actorInfo['ru_name'] in self.parser.get_value('actor', []):
+				if 'ru_name' in actorInfo:
 					actor = ET.SubElement(root, 'actor')
 
 					def setup(dst_name, src_name):
@@ -392,7 +392,12 @@ class NFOWriter:
 			self.add_element_split(root, 'country', self.parser)
 
 	def write_studio(self, root):
-		self.add_element_split(root, 'studio', self.parser)
+		try:
+			ss = self.movie_api['studios']
+			for s in ss:
+				self.add_element_value(root, 'studio', s)
+		except:
+			self.add_element_split(root, 'studio', self.parser)
 
 	def write_premiered(self, root):
 		if self.tvshow_api:

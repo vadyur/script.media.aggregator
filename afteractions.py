@@ -215,6 +215,8 @@ class Runner(object):
 			return 'rutor'
 		if 'soap4' in self.torrent_source:
 			return 'soap4me'
+		if 'kinohd' in self.torrent_source:
+			return 'kinohd'
 		return None
 
 	@property
