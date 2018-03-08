@@ -106,12 +106,19 @@ def load_settings():
 	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
 	settings.copy_torrent_path		= getSetting('copy_torrent_path').decode('utf-8')
 
-	settings.use_kinopoisk			= getSetting('use_kinopoisk') == 'true'
-	settings.use_worldart			= getSetting('use_worldart') == 'true'
-	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
-	settings.kp_usezaborona			= getSetting('kp_usezaborona') == 'true'
+	settings.use_kinopoisk			= getSetting('use_kinopoisk')	== 'true'
+	settings.use_worldart			= getSetting('use_worldart')	== 'true'
+	settings.kp_googlecache			= getSetting('kp_googlecache')	== 'true'
+	settings.kp_usezaborona			= getSetting('kp_usezaborona')	== 'true'
 
-	settings.show_sources			= getSetting('show_sources') == 'true'
+	settings.show_sources			= getSetting('show_sources')	== 'true'
+
+	settings.kinohd_enable			= getSetting('kinohd_enable')	== 'true'
+	settings.kinohd_4k				= getSetting('kinohd_4k')		== 'true'
+	settings.kinohd_1080p			= getSetting('kinohd_1080p')	== 'true'
+	settings.kinohd_720p			= getSetting('kinohd_720p')		== 'true'
+	settings.kinohd_3d				= getSetting('kinohd_3d')		== 'true'
+	settings.kinohd_serial			= getSetting('kinohd_serial')	== 'true'
 
 	return settings
 

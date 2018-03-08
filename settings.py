@@ -117,6 +117,14 @@ class Settings:
 		self.rutor_nosd				= rutor_nosd
 
 		self.progress_dialog		= FakeProgressDlg()
+
+		self.kinohd_enable			= False
+		self.kinohd_4k				= True
+		self.kinohd_1080p			= True
+		self.kinohd_720p			= True
+		self.kinohd_3d				= True
+		self.kinohd_serial			= True
+
 		
 	def __repr__(self):
 		attrs = vars(self)

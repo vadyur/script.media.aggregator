@@ -54,79 +54,134 @@ class DescriptionParser(DescriptionParserBase, soup_base):
 						write_tag('video', line)
 					if line.startswith(u'Перевод:'):
 						write_tag('translate', line)
-							
 
 		if self.get_value('imdb_id'):
 			self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
 			return True
 
 
-class PostEnumerator(soup_base):
-	def __init__(self, url):
-		soup_base.__init__(self, url)
+class BaseEnumerator:
+	def __init__(self, content):
+		from bs4 import BeautifulSoup
+		self.soup = BeautifulSoup(content, "html.parser")
 
 	def items(self):
 		div = self.soup.find('div', class_="s5roundwrap")
-		if div:
-			for a in div.find_all('a'):
+		sz = self.size()
+		root = div if sz == 30 else self.soup
+
+		if root:
+			count = 0
+			for a in root.find_all('a'):
 				href = a.get('href', '')
-				if href.endswith(u'.html'):
+				if href.startswith('http://') and href.endswith(u'.html'):
+					count += 1
+					if count > sz:
+						return
+
 					box = a.parent.parent.parent
 					fulltitle = box.find('h4').get_text() if box else u''
 					yield a['href'], fulltitle
 
+	def size(self):
+		span = self.soup.find('span', class_="sresult")
+		if span:
+			import re
+			m = re.search(r'(\d+)', span.get_text())
+			if m:
+				return int(m.group(1))
+
+		return 30
+
+
+class PostEnumerator(soup_base, BaseEnumerator):
+	def __init__(self, url):
+		soup_base.__init__(self, url)
+
+
+
 def url(type):
 	return '{}://{}/{}/'.format(protocol, domain, type)
+
+
+class Process(object):
+	def __init__(self, settings):
+		self.settings = settings
+
+	def process_movie(self, url, parser):
+		import movieapi
+		import filesystem
+
+		api = parser.movie_api()
+		genre = api['genres']
+		if u'мультфильм' in genre:
+			if not self.settings.animation_save:
+				return
+			base_path = self.settings.animation_path()
+		elif u'документальный' in genre:
+			if not self.settings.documentary_save:
+				return
+			base_path = self.settings.documentary_path()
+		else:
+			if not self.settings.movies_save:
+				return
+			base_path = self.settings.movies_path()
+
+		with filesystem.save_make_chdir_context(base_path, 'kinohd_movies'):
+			return movieapi.write_movie(parser.get_value('full_title'), url, self.settings, parser, path=base_path)
+
+	def process_tvshow(self, url, parser):
+		import tvshowapi
+		import filesystem
+
+		api = parser.movie_api()
+		genre = api['genres']
+		if u'мультфильм' in genre:
+			if not self.settings.animation_tvshows_save:
+				return
+			base_path = self.settings.animation_tvshow_path()
+		else:
+			if not self.settings.tvshows_save:
+				return
+			base_path = self.settings.tvshow_path()
+		with filesystem.save_make_chdir_context(base_path, 'kinohd_tvshow'):
+			return tvshowapi.write_tvshow(parser.get_value('full_title'), url, self.settings, parser, path=base_path)
+
+	def process(self, url, fulltitle):
+		parser = DescriptionParser(url, fulltitle)
+		if parser.parsed():
+			if 'sezon' in url:
+				self.process_tvshow(url, parser)
+			else:
+				self.process_movie(url, parser)
+
 
 def run(settings):
 	import filesystem
 	types = ['4k', '1080p', '720p', '3d', 'serial']
+	items_on_page	= 30
+	#all_items_count = len(types) * items_on_page
 	processed_urls = []
 
 	def urls():
 		for t in types:
+			if not getattr(settings, 'kinohd_' + t, False):
+				continue
+
+			indx = 0
 			for item in PostEnumerator(url(t)).items():
+				progress = int(indx * 100 / items_on_page)
+				settings.progress_dialog.update(progress, u'KinoHD: {}'.format(t.upper()), item[1])
+				indx += 1
+
 				yield item
 
-	def process_movie(url, parser):
-		import movieapi
-		api = parser.movie_api()
-		genre = api['genres']
-		if u'мультфильм' in genre:
-			base_path = settings.animation_path()
-		elif u'документальный' in genre:
-			base_path = settings.documentary_path()
-		else:
-			base_path = settings.movies_path()
-
-		with filesystem.save_make_chdir_context(base_path, 'kinohd_movies'):
-			movieapi.write_movie(parser.get_value('full_title'), url, settings, parser, path=base_path)
-
-	def process_tvshow(url, parser):
-		import tvshowapi
-		api = parser.movie_api()
-		genre = api['genres']
-		if u'мультфильм' in genre:
-			base_path = settings.animation_tvshow_path()
-		else:
-			base_path = settings.tvshow_path()
-		with filesystem.save_make_chdir_context(base_path, 'kinohd_tvshow'):
-			tvshowapi.write_tvshow(parser.get_value('full_title'), url, settings, parser, path)
-
-	def process(url, fulltitle):
-		parser = DescriptionParser(url, fulltitle)
-		if parser.parsed():
-			if 'sezon' in url:
-				procces_tvshow(url, parser)
-			else:
-				process_movie(url, parser)
-
+	process = Process(settings)
 	for href, fulltitle in urls():
 		if href not in processed_urls:
-			process(href, fulltitle)
+			process.process(href, fulltitle)
 			processed_urls.append(href)
 
-	pass
 
 def download_torrent(url, path, settings):
 	from base import save_hashes
@@ -167,7 +222,40 @@ def download_torrent(url, path, settings):
 			
 
 def search_generate(what, imdb, settings, path_out):
-	pass
+
+	url = '{}://{}'.format(protocol, domain)
+	headers = {
+		'Host' :		domain,
+		'Origin' :		url,
+		'Referer' :		url + '/',
+		'Upgrade-Insecure-Requests': '1'
+	}
+
+	data = {
+		'do':			'search',
+		'subaction':	'search',
+		'story':		str(imdb)
+	}
+
+	import requests
+	res = requests.post(url + '/', headers=headers, data=data)
+
+	enumerator = BaseEnumerator(res.content)
+	sz = enumerator.size()
+
+	def urls():
+		indx = 0
+		for item in enumerator.items():
+			progress = int(indx * 100 / sz)
+			settings.progress_dialog.update(progress, u'KinoHD: поиск', item[1])
+			indx += 1
+
+			yield item
+
+	process = Process(settings)
+	for href, fulltitle in urls():
+		process.process(href, fulltitle)
+
 
 if __name__ == '__main__':
 	from settings import Settings
@@ -180,4 +268,6 @@ if __name__ == '__main__':
 	settings.use_kinopoisk = True
 	settings.use_worldart = True
 
-	run(settings)
+	path_out = []
+	search_generate(None, 'tt0898266', settings, path_out)
+	#run(settings)
