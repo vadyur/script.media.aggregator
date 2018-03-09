@@ -57,7 +57,7 @@ def clean_html(page):
 	#r = re.compile(pattern, flags=flags)
 	#debug(r)
 	#page = r.sub('', page)
-	#debug(page.encode('utf-8'))
+	#debug(page)
 	page = remove_script_tags(page)
 
 	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
@@ -521,7 +521,7 @@ class DescriptionParserBase(Informer):
 	def Dump(self):
 		debug('-------------------------------------------------------------------------')
 		for key, value in self._dict.iteritems():
-			debug(key.encode('utf-8') + '\t: ' + value.encode('utf-8'))
+			debug(key + '\t: ' + value)
 
 	def Dict(self):
 		return self._dict

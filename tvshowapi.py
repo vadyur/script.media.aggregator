@@ -323,9 +323,9 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 		files = parse_torrent(content, season_from_title(fulltitle))
 
 		title = parser.get_value('title')
-		debug(title.encode('utf-8'))
+		debug(title)
 		originaltitle = parser.get_value('originaltitle')
-		debug(originaltitle.encode('utf-8'))
+		debug(originaltitle)
 
 		imdb_id = parser.get('imdb_id', None)
 		kp_id = parser.get('kp_id', None)
@@ -335,7 +335,7 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 		if not api_title:
 			api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
-		debug(tvshow_path.encode('utf-8'))
+		debug(tvshow_path)
 
 		if tvshow_path:
 			tvshow_path = filesystem.join(path, tvshow_path)

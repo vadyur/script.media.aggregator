@@ -22,7 +22,7 @@ try:
 except:
 	_addondir = u''
 
-debug(_addondir.encode('utf-8'))
+debug(_addondir)
 
 from plugin import make_url
 
@@ -490,7 +490,7 @@ def play_torrent(settings, params):
 	strmFilename = nfoFullPath.replace('.nfo', '.strm')
 	nfoReader = NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
-	debug(strmFilename.encode('utf-8'))
+	debug(strmFilename)
 	
 	from base import STRMWriterBase
 	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
@@ -501,6 +501,7 @@ def play_torrent(settings, params):
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
+	kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -521,6 +522,9 @@ def play_torrent(settings, params):
 			links_with_ranks.remove(v)
 		if not soap4me_enable and 'soap4.me' in v['link']:
 			links_with_ranks.remove(v)
+		if not kinohd_enable and 'kinohd' in v['link']:
+			links_with_ranks.remove(v)
+
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
 
@@ -623,8 +627,9 @@ def dialog_action(action, settings, params=None):
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
+		kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
 
-		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable):
+		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable or kinohd_enable):
 			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:

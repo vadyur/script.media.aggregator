@@ -149,11 +149,16 @@ class Process(object):
 
 	def process(self, url, fulltitle):
 		parser = DescriptionParser(url, fulltitle)
+		try:
+			parser.Dict()['title']			= parser.movie_api()['title']
+			parser.Dict()['originaltitle']	= parser.movie_api()['originaltitle']
+		except:
+			pass
 		if parser.parsed():
 			if 'sezon' in url:
-				self.process_tvshow(url, parser)
+				return self.process_tvshow(url, parser)
 			else:
-				self.process_movie(url, parser)
+				return self.process_movie(url, parser)
 
 
 def run(settings):
@@ -241,12 +246,12 @@ def search_generate(what, imdb, settings, path_out):
 	res = requests.post(url + '/', headers=headers, data=data)
 
 	enumerator = BaseEnumerator(res.content)
-	sz = enumerator.size()
+	count = enumerator.size()
 
 	def urls():
 		indx = 0
 		for item in enumerator.items():
-			progress = int(indx * 100 / sz)
+			progress = int(indx * 100 / count)
 			settings.progress_dialog.update(progress, u'KinoHD: поиск', item[1])
 			indx += 1
 
@@ -254,20 +259,27 @@ def search_generate(what, imdb, settings, path_out):
 
 	process = Process(settings)
 	for href, fulltitle in urls():
-		process.process(href, fulltitle)
+		result = process.process(href, fulltitle)
+		path_out.append(result) 
+
+	return count
 
 
 if __name__ == '__main__':
 	from settings import Settings
-	settings = Settings('test')
-	settings.addon_data_path = u"test"
-	settings.torrent_path = u'test'
-	settings.torrent_player = 'torrent2http'
-	settings.kp_googlecache = False
-	settings.kp_usezaborona = True
-	settings.use_kinopoisk = True
-	settings.use_worldart = True
+	import filesystem
+
+	test_dir = filesystem.join(filesystem.dirname(__file__), 'test')
+
+	settings = Settings( filesystem.join(test_dir, 'Videos') )
+	settings.addon_data_path	= filesystem.join(test_dir, 'data')
+	settings.torrent_path		= filesystem.join(test_dir, 'torrents')
+	settings.torrent_player		= 'torrent2http'
+	settings.kp_googlecache		= False
+	settings.kp_usezaborona		= True
+	settings.use_kinopoisk		= True
+	settings.use_worldart		= True
 
 	path_out = []
-	search_generate(None, 'tt0898266', settings, path_out)
-	#run(settings)
+	#search_generate(None, 'tt0898266', settings, path_out)
+	run(settings)

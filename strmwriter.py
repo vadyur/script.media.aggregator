@@ -45,7 +45,7 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(path, settings.base_path())
-			debug(path.encode('utf-8'))
+			debug(path)
 			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
 
 		#------------------------------------------

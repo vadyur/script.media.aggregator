@@ -130,7 +130,7 @@ class DescriptionParser(DescriptionParserBase):
 		
 		for title in self.soup.select('#news-title'):
 			full_title = title.get_text()
-			debug(full_title.encode('utf-8'))
+			debug(full_title)
 			self._dict['title'] = self.get_title(full_title)
 			self._dict['originaltitle'] = self.get_original_title(full_title)
 			self.parse_season_from_title(full_title)
@@ -155,7 +155,7 @@ class DescriptionParser(DescriptionParserBase):
 				text = text.strip()
 				self._dict['plot'] = text
 				#debug('---')
-				#debug(text.encode('utf-8'))
+				#debug(text)
 				#debug('---')
 			except:
 				pass
@@ -239,9 +239,9 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 	parser = DescriptionParser(item.link)
 	if parser.parsed():
 		title = parser.get_value('title')
-		debug(title.encode('utf-8'))
+		debug(title)
 		originaltitle = parser.get_value('originaltitle')
-		debug(originaltitle.encode('utf-8'))
+		debug(originaltitle)
 		season = parser.get_value('season')
 
 		from downloader import TorrentDownloader
@@ -261,7 +261,7 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 			write_tvshow_nfo(parser, tvshow_api, tvshow_path)
 
 		season_path = filesystem.join(tvshow_path, u'Season ' + unicode(season))
-		debug(season_path.encode('utf-8'))
+		debug(season_path)
 
 		with filesystem.save_make_chdir_context(season_path):
 

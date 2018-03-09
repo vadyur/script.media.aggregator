@@ -70,7 +70,7 @@ def recheck_torrent_if_need(from_time, settings):
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
 
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
 
 	from player import _addon
 
@@ -80,6 +80,8 @@ def update_service(show_progress=False):
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
+	kinohd_enable		= _addon.getSetting('kinohd_enable') == 'true'
+
 
 	from player import load_settings
 	settings = load_settings()
@@ -109,6 +111,10 @@ def update_service(show_progress=False):
 	if rutor_enable:
 		with dump_context('rutor.run'):
 			rutor.run(settings)
+
+	if kinohd_enable:
+		with dump_context('kinohd.run'):
+			kinohd.run(settings)
 
 	if nnmclub_enable:
 		from service import Addon
@@ -143,7 +149,7 @@ def update_service(show_progress=False):
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
+	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable or kinohd_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			xbmc.executebuiltin('UpdateLibrary("video")')
@@ -221,7 +227,7 @@ def add_media_process(title, imdb):
 	count = 0
 
 	from player import getSetting, load_settings
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
 
 	settings = load_settings()
 
@@ -231,6 +237,7 @@ def add_media_process(title, imdb):
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
 	soap4me_enable		= getSetting('soap4me_enable') == 'true'
+	kinohd_enable		= getSetting('kinohd_enable') == 'true'
 
 	class RemoteDialogProgress:
 		progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
@@ -270,6 +277,11 @@ def add_media_process(title, imdb):
 				with dump_context('rutor.search_generate'):
 					c = rutor.search_generate(title, imdb, settings, p)
 					count += c
+			if kinohd_enable:
+				with dump_context('kinohd.search_generate'):
+					c = kinohd.search_generate(title, imdb, settings, p)
+					count += c
+
 			if nnmclub_enable:
 				with dump_context('nnmclub.search_generate'):
 					c = nnmclub.search_generate(title, imdb, settings, p)

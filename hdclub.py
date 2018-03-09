@@ -72,7 +72,6 @@ class DescriptionParser(DescriptionParserBase):
 				if text == u'Золотая раздача':
 					self._dict['gold'] = True
 				
-				#debug(text.encode('utf-8'))
 				if tag == u'':
 					tag = self.get_tag(text.strip(' \t\n\r'))
 				else:
