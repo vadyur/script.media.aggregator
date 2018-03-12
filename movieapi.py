@@ -337,6 +337,13 @@ class world_art(world_art_soup):
 
 	#def trailer(self):
 	#	info = self.info
+	def director(self):
+		try:
+			result = self.info.director
+			result = result.replace(u'и другие', '')
+			return [d.strip() for d in result.split(',')]
+		except:
+			return []
 
 	def actors(self):
 		try:
@@ -560,6 +567,15 @@ class KinopoiskAPI(object):
 					return a.get_text()
 		raise AttributeError
 
+	def director(self):
+		self.makeSoup()
+		if self.soup:
+			#<td itemprop="director"><a href="/name/535852/" data-popup-info="enabled">Роар Утхауг</a></td>
+			td = self.soup.find('td', attrs={"itemprop": "director"})
+			if td:
+				return [ a.get_text() for a in td.find_all('a') if '/name' in a['href'] ]
+		raise AttributeError
+
 	def plot(self):
 		plot = None
 
@@ -736,6 +752,13 @@ class ImdbAPI(object):
 
 		raise AttributeError
 
+	def type(self):
+		# <div class="bp_heading">Episode Guide</div>
+		for div in self.page.find_all('div', class_="bp_heading"):
+			if div.get_text() == 'Episode Guide':
+				return 'tvshow'
+
+		return 'movie'
 
 
 class KinopoiskAPI2(KinopoiskAPI):
@@ -1162,13 +1185,23 @@ class MovieAPI(object):
 					nr += 1
 			return r > nr
 
+		def ru_list(ll):
+			for l in ll:
+				if ru_text(l):
+					return True
+			return False
+
 		for api in self.providers:
 			try:
 				res = api.__getattribute__(name)
 				if res and callable(res):
 					value = res()
-					if ru_text(value):
-						return value
+					if isinstance(value, list):
+						if ru_list(value):
+							return value
+					else:
+						if ru_text(value):
+							return value
 
 			except AttributeError:
 				continue

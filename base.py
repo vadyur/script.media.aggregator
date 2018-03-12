@@ -467,9 +467,16 @@ class STRMWriterBase(object):
 					alternative.write( make_utf8(variant['link']) + '\n')
 
 
+class EmptyMovieApi(object):
+	def get(self, key, default=None):
+		return default
+	def __getitem__(self, key):
+		raise AttributeError
+
+
 class Informer(object):
 	def __init__(self):
-		self.__movie_api = None
+		self.__movie_api = EmptyMovieApi()
 
 	def make_movie_api(self, imdb_id, kp_id, settings):
 		orig=None

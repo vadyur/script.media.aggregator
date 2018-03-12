@@ -280,7 +280,7 @@ class DescriptionParser(DescriptionParserBase):
 		for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
 			self._dict['kp_id'] = kp_id['href']
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 
 		return True
 

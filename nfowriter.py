@@ -63,7 +63,6 @@ def write_tree(fn, root):
 	except TypeError as te:
 		debug("Type error({0}): {1}".format(te.errno, te.strerror))
 
-
 class NFOWriter:
 	stripPairs = (
 		('<p>', '\n'),
@@ -86,7 +85,7 @@ class NFOWriter:
 		string = string.replace('&#151;', u'—')
 		return string.strip(' \t\n\r')
 
-	def __init__(self, parser, movie_api=None, tvshow_api=None):
+	def __init__(self, parser, movie_api=EmptyMovieApi(), tvshow_api=None):
 		self.parser = parser
 		self.movie_api = movie_api
 		self.tvshow_api = tvshow_api
@@ -162,8 +161,10 @@ class NFOWriter:
 	def add_actors(self, root):
 		index = 0
 		actors = []
-		if self.movie_api:
+		try:
 			actors = self.movie_api.actors()
+		except:
+			pass
 		#if not actors and self.tvshow_api is not None:
 		#	actors = self.tvshow_api.Actors()
 
@@ -190,9 +191,8 @@ class NFOWriter:
 
 	def add_trailer(self, root):
 		try:
-			if self.movie_api:
-				trailer = self.movie_api['trailer']
-				ET.SubElement(root, 'trailer').text = trailer
+			trailer = self.movie_api['trailer']
+			ET.SubElement(root, 'trailer').text = trailer
 		except AttributeError:
 			pass
 
@@ -255,11 +255,10 @@ class NFOWriter:
 
 	def write_plot(self, root):
 		plot = None
-		if self.movie_api:
-			try:
-				plot = self.movie_api.ru('plot')
-			except AttributeError:
-				pass
+		try:
+			plot = self.movie_api.ru('plot')
+		except AttributeError:
+			pass
 
 		if not plot:
 			plot = self.stripHtml(self.parser.get_value('plot'))
@@ -280,13 +279,11 @@ class NFOWriter:
 
 	def write_thumb(self, root):
 		thumbs = []
-
-		if self.movie_api is not None:
-			try:
-				poster = self.movie_api['poster']
-				thumbs.append({'original': poster})
-			except:
-				pass
+		try:
+			poster = self.movie_api['poster']
+			thumbs.append({'original': poster})
+		except:
+			pass
 
 		if self.tvshow_api is not None:
 			for poster in self.tvshow_api.Poster():
@@ -378,7 +375,12 @@ class NFOWriter:
 		pass
 
 	def write_director(self, root):
-		self.add_element_split(root, 'director', self.parser)
+		try:
+			director = self.movie_api.ru('director')
+			for d in director:
+				self.add_element_value(root, 'director', d)
+		except:
+			self.add_element_split(root, 'director', self.parser)
 
 	def write_actor(self, root):
 		self.add_actors(root)

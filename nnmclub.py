@@ -225,7 +225,7 @@ class DescriptionParser(DescriptionParserBase):
 		if kp:
 			self._dict['kp_id'] = kp['href']
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 
 		return True
 

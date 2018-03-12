@@ -27,7 +27,7 @@ class DescriptionParser(DescriptionParserBase, soup_base):
 		imdb = self.soup.find('img', class_="imdb_informer")
 		if imdb:
 			self._dict['imdb_id'] = re.search('(tt\d+)', imdb['src']).group(1)
-		kp_a = self.soup.select('a[href*="/class/goo.php?url=http://www.kinopoisk.ru/film/]')
+		kp_a = self.soup.select('a[href*="/class/goo.php?url=http://www.kinopoisk.ru/film/"]')
 		if kp_a:
 			self._dict['kp_id'] = kp_a[0]['href'].split('url=')[-1]
 
@@ -56,7 +56,7 @@ class DescriptionParser(DescriptionParserBase, soup_base):
 						write_tag('translate', line)
 
 		if self.get_value('imdb_id'):
-			self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+			self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 			return True
 
 
@@ -148,17 +148,22 @@ class Process(object):
 			return tvshowapi.write_tvshow(parser.get_value('full_title'), url, self.settings, parser, path=base_path)
 
 	def process(self, url, fulltitle):
-		parser = DescriptionParser(url, fulltitle)
+		parser = DescriptionParser(url, fulltitle, settings=self.settings)
 		try:
 			parser.Dict()['title']			= parser.movie_api()['title']
 			parser.Dict()['originaltitle']	= parser.movie_api()['originaltitle']
 		except:
 			pass
 		if parser.parsed():
-			if 'sezon' in url:
+			if 'sezon' in url or parser.movie_api().get('type') == 'tvshow':
 				return self.process_tvshow(url, parser)
 			else:
 				return self.process_movie(url, parser)
+
+	def test(self):
+		url = 'http://kinohd.net/1080p/7653-3be3916hbiy-928ytb-916uckabepu-1-sezon-1-2-serii-iz-15-star-trek-discovery-2017.html'
+		fulltitle = u'3BE3ΔHblҊ ΠYTb: ΔͶCKABEPͶ (1 сезон: 1-15 серии из 15) / Star Trek: Discovery / 2017'
+		self.process(url, fulltitle)
 
 
 def run(settings):
@@ -280,6 +285,14 @@ if __name__ == '__main__':
 	settings.use_kinopoisk		= True
 	settings.use_worldart		= True
 
+	#settings.kinohd_4k				= False
+	#settings.kinohd_1080p			= False
+	#settings.kinohd_720p			= False
+	#settings.kinohd_3d				= False
+
 	path_out = []
-	#search_generate(None, 'tt0898266', settings, path_out)
+	#res = search_generate(None, 'tt0898266', settings, path_out)
 	run(settings)
+	#Process(settings).test()
+
+	pass

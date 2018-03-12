@@ -129,7 +129,7 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['thumbnail'] = s
 			debug(self._dict['thumbnail'])
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 				
 		return True
 
