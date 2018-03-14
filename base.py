@@ -356,11 +356,13 @@ def seeds_peers(item):
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'rutor', t_id + '.torrent')
 			return scrape_now(fn)
+		'''
 		elif 'kinohd'  in link:
 			part = self.url.split('/')[-1]
 			t_id = re.search(r'^(\d+)', part).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'kinohd', t_id + '.torrent')
 			return scrape_now(fn)
+		'''
 
 	except BaseException as e:
 		debug(str(e))

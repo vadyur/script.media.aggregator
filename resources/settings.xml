@@ -129,6 +129,9 @@
       <setting label="HD"       type="bool" id="kinohd_720p" default="true"/>
       <setting label="3D"       type="bool" id="kinohd_3d" default="true"/>
       <setting label="Сериалы"  type="bool" id="kinohd_serial" default="true"/>
+
+      <setting label="Дополнительно" type="lsep"/>
+      <setting label="Торрент проигрыватель" id="kinohd_torrent_player" type="select" values="Default|YATP|torrent2http|Ace Stream|Elementum" default="Default" />
     </category>
   
     <!--

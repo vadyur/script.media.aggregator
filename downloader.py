@@ -133,10 +133,13 @@ class TorrentDownloader(Downloader):
 				import kinohd
 				return kinohd.download_torrent(self.url, self.get_filename(), self.settings)
 
-		if dnl():
-			self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
-			self.saved_to = self.get_filename()
-			return True
+		try:
+			if dnl():
+				self.log('{} was downloaded to {}'.format(self.url, self.get_filename()))
+				self.saved_to = self.get_filename()
+				return True
+		except:
+			pass
 		
 		return False
 

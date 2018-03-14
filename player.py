@@ -124,7 +124,7 @@ def load_settings():
 
 
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
-	import filecmp
+	#import filecmp
 
 	def _debug(msg):
 		debug(u'play_torrent_variant: {}'.format(msg) )
@@ -152,6 +152,11 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	torrent_info = None
 	torrent_path = path
+
+	if 'kinohd' in path:
+		kinohd_torrent_player = getSetting('kinohd_torrent_player')
+		if kinohd_torrent_player and kinohd_torrent_player != 'Default':
+			settings.torrent_player = kinohd_torrent_player
 
 	from torrent2http import Error as TPError
 	try:
