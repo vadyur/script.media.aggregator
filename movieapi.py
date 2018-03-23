@@ -11,6 +11,18 @@ from bs4 import BeautifulSoup
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
 
+def copy_files(src, dst, pattern):
+	for ext in ['.strm', '.nfo', '.strm.alternative']:
+		src_file = filesystem.join(src, base.make_fullpath(pattern, ext))
+		if filesystem.exists(src_file):
+			dst_file = filesystem.join(dst, base.make_fullpath(pattern, ext))
+			filesystem.copyfile(src_file, dst_file)
+
+def make_imdb_path(path, imdb):
+	if imdb and imdb.startswith('tt'):
+		return filesystem.join(path, 'TTx' + imdb[3:5], imdb)
+	return path
+
 def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
@@ -18,18 +30,25 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 		debug('fulltitle: ' + fulltitle.encode('utf-8'))
 		debug('filename: ' + filename.encode('utf-8'))
 		debug('-------------------------------------------+')
+
+		imdb = parser.get_value('imdb_id')
+		new_path = make_imdb_path(path, imdb)
+
+		if new_path != path:
+			copy_files(path, new_path, filename)
+
 		from strmwriter import STRMWriter
-		STRMWriter(parser.link()).write(filename, path,
+		STRMWriter(parser.link()).write(filename, new_path,
 										parser=parser,
 										settings=settings)
 		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, path, skip_nfo_exists=skip_nfo_exists)
+		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, new_path, skip_nfo_exists=skip_nfo_exists)
 
 		if download_torrent:
 			from downloader import TorrentDownloader
 			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		return filesystem.relpath( filesystem.join(path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+		return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
 	else:
 		return None
 

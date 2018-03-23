@@ -66,9 +66,9 @@ BASE_PATH = 'special://database'
 class VideoDatabase(object):
 	@staticmethod
 	def find_last_version(name, path=BASE_PATH):
-		import re, xbmcvfs
+		import re, filesystem
 		try:
-			dirs, files = xbmcvfs.listdir(path)
+			files = filesystem.listdir(path)
 			matched_files = [f for f in files if bool(re.match(name, f, re.I))]  #f.startswith(name)]
 			versions = [int(os.path.splitext(f[len(name):])[0]) for f in matched_files]
 			if not versions:
@@ -118,7 +118,8 @@ class VideoDatabase(object):
 		except:
 			self.DB = 'sqlite'
 			import xbmc
-			self.db_dir = os.path.join(xbmc.translatePath(BASE_PATH), 'MyVideos%s.db' % VideoDatabase.find_last_version('MyVideos'))
+			db_path = xbmc.translatePath(BASE_PATH)
+			self.db_dir = filesystem.join(db_path, 'MyVideos%s.db' % VideoDatabase.find_last_version('MyVideos', db_path))
 			
 	def create_connection(self):
 		if self.DB == 'mysql':
@@ -154,6 +155,36 @@ def request(fn):
 			#for item in res:
 			#	result.append(item)
 			return result
+
+		finally:
+			self.db.close()
+	
+	return wrapper
+
+def request_dict(fn):
+	def wrapper(self, *args, **kwargs):
+		self.db = self.videoDB.create_connection()
+		try:
+			sql = fn(self, *args, **kwargs)
+
+			cur = self.db.cursor()
+			cur.execute(sql)
+			result = cur.fetchall()
+			self.db.commit()
+
+			keys = sql.replace('select', '')
+			keys = keys.split('from')[0]
+			keys = keys.split(',')
+			keys = [ k.strip() for k in keys ]
+
+			out = []
+			for res in result:
+				dct = {}
+				for i, k in enumerate(keys):
+					dct[k.strip()] = res[i]
+				out.append(dct.copy())
+
+			return out
 
 		finally:
 			self.db.close()
@@ -333,23 +364,33 @@ class MoreRequests(object):
 	def __init__(self):
 		self.videoDB = VideoDatabase()
 
-	@request
+	@request_dict
 	def get_movies_by_imdb(self, imdb):
 		""" return movie data by imdb """
 
-		sql = """select idMovie, idFile, c00, c22, uniqueid_value, c16, premiered
+		sql = """select idMovie, idFile, c00, c22, uniqueid_value, c16, premiered, playCount, lastPlayed, resumeTimeInSeconds
 				from movie_view
 				where uniqueid_value='{}'""".format(imdb)
 		#self.debug(sql, log.lineno())
 		return sql
 
 	@request
+	def update_movie_by_imdb(self, imdb, fields={}):
+		expression = ''
+		for k, v in fields.iteritems():
+			expression += "{}='{}'".format(k, v)
+
+		sql = """UPDATE movie_view
+				SET {}
+				WHERE uniqueid_value='{}'""".format(expression, imdb)
+
+	@request
 	def get_movie_duplicates(self):
-		sql = """select idMovie, idFile, c00, c22, uniqueid_value, COUNT(uniqueid_value)
-from movie_view
-where uniqueid_value like 'tt%'
-GROUP BY
-    uniqueid_value
-HAVING 
-    COUNT(uniqueid_value) > 1"""
+		sql = """SELECT idMovie, idFile, c00, c22, uniqueid_value, COUNT(uniqueid_value)
+				FROM movie_view
+				WHERE uniqueid_value like 'tt%'
+				GROUP BY
+				    uniqueid_value
+				HAVING 
+				    COUNT(uniqueid_value) > 1"""
 		return sql

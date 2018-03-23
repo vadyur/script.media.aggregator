@@ -640,15 +640,19 @@ def search_generate(what, imdb, settings, path_out):
 	return count
 
 if __name__ == '__main__':
+	import filesystem
+	settings = Settings(filesystem.join(filesystem.dirname(__file__), 'test', 'Videos'))
+
 	settings = Settings(r'c:\Users\vd\Videos')
-	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
+	settings.addon_data_path	= filesystem.join(test_dir, 'data')
+	settings.torrent_path		= filesystem.join(test_dir, 'torrents')
+	settings.torrent_player		= 'torrent2http'
+	settings.kp_googlecache		= False
+	settings.kp_usezaborona		= True
+	settings.use_kinopoisk		= True
+	settings.use_worldart		= True
+
 	settings.rutor_domain = 'new-rutor.org'
-	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
-	settings.torrent_player = 'torrent2http'
-	settings.kp_googlecache = True
-	settings.kp_usezaborona = True
-	settings.use_kinopoisk = False
-	settings.use_worldart = True
 
 	path_out = []
 	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
@@ -661,6 +665,9 @@ if __name__ == '__main__':
 	from log import dump_context
 	with dump_context('rutor.run'):
 		run(settings)
+
+	from backgrounds import clean_movies
+	clean_movies()
 
 	#recheck_torrent_if_need(from_time, settings)
 

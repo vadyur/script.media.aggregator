@@ -341,7 +341,9 @@ def add_media_process(title, imdb):
 # ------------------------------------------------------------------------------------------------------------------- #
 def clean_movies():
 	from kodidb import MoreRequests
-	ll = MoreRequests().get_movie_duplicates()
+	more_requests = MoreRequests()
+
+	ll = more_requests.get_movie_duplicates()
 
 	try:
 		from player import load_settings
@@ -362,7 +364,10 @@ def clean_movies():
 		else:
 			base_path = settings.movies_path()
 
-		mm = MoreRequests().get_movies_by_imdb(imdbid)
+		from movieapi import make_imdb_path
+		base_path = make_imdb_path(base_path, imdbid)
+
+		mm = more_requests.get_movies_by_imdb(imdbid)
 
 		from base import STRMWriterBase
 		from base import Informer
@@ -370,14 +375,33 @@ def clean_movies():
 		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
 
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
-		#alt_path = strm_path + '.alternative'
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
 
-		strm_data = filesystem.fopen(mm[0][3], 'r').read()
+		strm_data = filesystem.fopen(mm[0]['c22'], 'r').read()
 		alt_data = []
+
+		update_fields = {}
+
 		for m in mm:
-			links_with_ranks = STRMWriterBase.get_links_with_ranks(mm[0][3], settings, use_scrape_info=False)
+			links_with_ranks = STRMWriterBase.get_links_with_ranks(m['c22'], settings, use_scrape_info=False)
 			alt_data.extend(links_with_ranks)
+
+			# Sync playCount & resume time
+			if m['playCount']:
+				update_fields['playCount'] = int(update_fields.get('playCount')) + int(m['playCount'])
+
+			if m['lastPlayed'] and m['resumeTimeInSeconds']:
+				import datetime
+				dt = datetime.datetime.strptime
+				# 2017-11-30 02:29:57
+				fmt = '%Y-%m-%d %H:%M:%S'
+				if not update_fields.get('lastPlayed') \
+					or dt(m['lastPlayed'], fmt) > dt(update_fields.get('lastPlayed'), fmt):
+						update_fields['lastPlayed']				= m['lastPlayed']
+						update_fields['resumeTimeInSeconds']	= m['resumeTimeInSeconds']
+
+		if update_fields:
+			more_requests.update_movie_by_imdb(imdbid, update_fields)
 
 		alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
 		#alt_data = list(set(alt_data))
