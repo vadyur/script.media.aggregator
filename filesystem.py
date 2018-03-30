@@ -186,6 +186,8 @@ def normpath(path):
 	
 def fopen(path, mode):
 	try:
+		import xbmcvfs
+
 		from StringIO import StringIO
 		class File(StringIO):
 			def __enter__(self):

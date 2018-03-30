@@ -338,23 +338,38 @@ def add_media_process(title, imdb):
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
 
+def load_settings():
+	from player import load_settings as _load_settings
+	return _load_settings()
+
+def safe_remove(path):
+	import filesystem
+	if filesystem.exists(path):
+		filesystem.remove(path)
+
+def dt(ss):
+	import datetime
+	# 2017-11-30 02:29:57
+	fmt = '%Y-%m-%d %H:%M:%S'
+	try:
+		return datetime.datetime.strptime(ss, fmt)
+	except
+		return 0
+
+
 # ------------------------------------------------------------------------------------------------------------------- #
 def clean_movies():
 	from kodidb import MoreRequests
 	more_requests = MoreRequests()
 
-	ll = more_requests.get_movie_duplicates()
+	movie_duplicates_list = more_requests.get_movie_duplicates()
+	settings = load_settings()
 
-	try:
-		from player import load_settings
-		settings = load_settings()
-	except:
-		from settings import Settings
-		settings = Settings(filesystem.join(filesystem.dirname(__file__), 'test', 'Videos'))
+	watched_and_progress = {}
 	
 	import movieapi
 	from base import make_fullpath
-	def clean_movie_by_imdbid(imdbid):
+	def get_info_and_move_files(imdbid):
 		api = movieapi.MovieAPI(imdbid)
 		genre = api['genres']
 		if u'мультфильм' in genre:
@@ -367,7 +382,7 @@ def clean_movies():
 		from movieapi import make_imdb_path
 		base_path = make_imdb_path(base_path, imdbid)
 
-		mm = more_requests.get_movies_by_imdb(imdbid)
+		one_movie_duplicates = more_requests.get_movies_by_imdb(imdbid)
 
 		from base import STRMWriterBase
 		from base import Informer
@@ -376,44 +391,68 @@ def clean_movies():
 
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
-
-		strm_data = filesystem.fopen(mm[0]['c22'], 'r').read()
+		strm_data = filesystem.fopen(one_movie_duplicates[0]['c22'], 'r').read()
 		alt_data = []
 
 		update_fields = {}
 
-		for m in mm:
-			links_with_ranks = STRMWriterBase.get_links_with_ranks(m['c22'], settings, use_scrape_info=False)
+		for movie_duplicate in one_movie_duplicates:
+			links_with_ranks = STRMWriterBase.get_links_with_ranks(movie_duplicate['c22'], settings, use_scrape_info=False)
 			alt_data.extend(links_with_ranks)
 
 			# Sync playCount & resume time
-			if m['playCount']:
-				update_fields['playCount'] = int(update_fields.get('playCount')) + int(m['playCount'])
+			if movie_duplicate['playCount']:
+				update_fields['playcount '] = int(update_fields.get('playcount ', 0)) + int(movie_duplicate['playCount'])
 
-			if m['lastPlayed'] and m['resumeTimeInSeconds']:
+			if movie_duplicate['lastPlayed'] and movie_duplicate['resumeTimeInSeconds'] and movie_duplicate['totalTimeInSeconds']:
 				import datetime
 				dt = datetime.datetime.strptime
 				# 2017-11-30 02:29:57
 				fmt = '%Y-%m-%d %H:%M:%S'
-				if not update_fields.get('lastPlayed') \
-					or dt(m['lastPlayed'], fmt) > dt(update_fields.get('lastPlayed'), fmt):
-						update_fields['lastPlayed']				= m['lastPlayed']
-						update_fields['resumeTimeInSeconds']	= m['resumeTimeInSeconds']
+				if not update_fields.get('lastplayed ') \
+					or dt(movie_duplicate['lastPlayed']) > dt(update_fields.get('lastplayed ')):
+						update_fields['lastplayed ']	= movie_duplicate['lastPlayed']
+						update_fields['resume']			= movie_duplicate['resumeTimeInSeconds']
+						update_fields['total']			= movie_duplicate['totalTimeInSeconds']
 
-		if update_fields:
-			more_requests.update_movie_by_imdb(imdbid, update_fields)
-
-		alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
-		#alt_data = list(set(alt_data))
-		#alt_data.sort(key=operator.itemgetter('rank'))
 		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
+			alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
 			STRMWriterBase.write_alternative(strm_path, alt_data)
-		pass
+
+			last_strm_path = movie_duplicate['c22']
+			if last_strm_path != strm_path:
+				last_nfo_path = last_strm_path.replace('.strm', '.nfo')
+
+				filesystem.copyfile(last_strm_path, strm_path)
+				filesystem.copyfile(last_nfo_path, nfo_path)
+
+				#for movie_duplicate in one_movie_duplicates[:-1]:
+				#	safe_remove(movie_duplicate['c22'])
+				#	safe_remove(movie_duplicate['c22'].replace('.strm', '.nfo'))
+				#	safe_remove(movie_duplicate['c22'] + '.alternative')
+				#
+				#	remove_movie_by_id(movie_duplicate['idMovie'])
+
+		return update_fields
 
 
-	for m in ll:
+	# ----------------
+	# Get info & move files
+	for movie in movie_duplicates_list:
 		try:
-			clean_movie_by_imdbid(m[4])
-		except:
+			imdbid = movie[4]
+			watched_and_progress[imdbid] = get_info_and_move_files(imdbid)
+		except BaseException as e:
+			from log import print_tb
+			print_tb()
 			pass
 
+	# ----------------
+	# Clean & update Video library	
+	from jsonrpc_requests import VideoLibrary
+	VideoLibrary.Clean({'showdialogs': False})
+
+	# ----------------
+	# Apply watched & progress
+	for imdbid, update_data in watched_and_progress.iteritems():
+		pass

@@ -64,7 +64,7 @@ def get_tmdb_api_key():
 	key = 'ecbc86c92da237cb9faff6d3ddc4be6d'
 	host = 'api.tmdb.org'
 	try:
-		xml_path = filesystem.join(home_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
+		xml_path = filesystem.join(home_path, 'addons', 'metadata.common.themoviedb.org', 'tmdb.xml')
 		with filesystem.fopen(xml_path, 'r') as xml:
 			content = xml.read()
 			match = re.search(r'api_key=(\w+)', content)

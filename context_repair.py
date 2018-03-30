@@ -74,55 +74,6 @@ def debug_arr(a):
 		debug('{}: {}'.format(i, e))
 		i += 1
 
-def executeJSONRPC(q):
-	import json, xbmc
-	s = json.dumps(q)
-	res = xbmc.executeJSONRPC(s)
-	return json.loads(res)
-
-def get_tvshow(tvshow_id):
-	q = {	"jsonrpc": "2.0",
-			"method": "VideoLibrary.GetTVShowDetails", 
-			"params": {
-				"tvshowid": int(tvshow_id),
-				"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]},
-			"id": "tvshow"
-	}
-
-	try:
-		return executeJSONRPC(q)['result']['tvshowdetails']
-	except KeyError:
-		return {}
-
-def get_episodes(tvshow_id):
-	q = {	"jsonrpc": "2.0",
-			"method": "VideoLibrary.GetEpisodes", 
-			"params": {
-				"tvshowid": int(tvshow_id),
-				"properties": ["season", "episode", "file"]},
-			"id": "episodes"
-	}
-
-	try:
-		return executeJSONRPC(q)['result']['episodes']
-	except KeyError:
-		return []
-
-def get_tvshows(imdb_id):
-	q = {	"jsonrpc": "2.0",
-			"method": "VideoLibrary.GetTVShows", 
-			"params": {
-				"properties": ["imdbnumber"]},
-			"id": "tvshow"
-	}
-
-	r = executeJSONRPC(q)
-
-	for show in r['result']['tvshows']:
-		if show["imdbnumber"] == imdb_id:
-			yield show['tvshowid'] 
-
-
 def remove_tvshow(show_id):
 	pass
 
@@ -156,30 +107,12 @@ def get_tvshowapi_data(imdb_id):
 
 
 def update_episode(e, api_data):
-
-	"""
-	playcount, runtime, director, plot, rating, votes, lastplayed, writer,	firstaired, productioncode, season, episode, originaltitle, thumbnail,	fanart, art, resume, userrating, ratings, dateadded,
-	"""
-
 	if not user.ask_update():
 		return
 
-	params = {
-		'episodeid': e['episodeid']
-	}
+	from jsonrpc_requests import update_episode as _update_episode
+	_update_episode(e, api_data)
 
-	for key in ['title', 'plot']:
-		params[key] = api_data[key]
-
-	q = {
-		"jsonrpc": "2.0",
-		"method": 'VideoLibrary.SetEpisodeDetails',
-		'params': params,
-		"id": "episode_details"
-	}
-
-	r = executeJSONRPC(q)
-	pass
 
 def remove_files(path):
 	if path.endswith('.strm'):
@@ -200,29 +133,16 @@ def remove_files(path):
 		
 
 def remove_episode(e):
-	# VideoLibrary.RemoveEpisode
-	# http://kodi.wiki/view/JSON-RPC_API/v8#VideoLibrary.RemoveEpisode
+	from jsonrpc_requests import remove_episode as _remove_episode
+	_remove_episode(e)
 	
-	params = {
-		'episodeid': e['episodeid']
-	}
-
-	q = {
-		"jsonrpc": "2.0",
-		"method": 'VideoLibrary.RemoveEpisode',
-		'params': params,
-		"id": "episode_details"
-	}
-
-	r = executeJSONRPC(q)
-
 	if user.ask_files_remove():
 		remove_files(e["file"])
 
-	pass
-
 
 def repair(tvshow_id):
+
+	from jsonrpc_requests import get_tvshow, get_tvshows, get_episodes
 
 	tvshow = get_tvshow(tvshow_id)
 

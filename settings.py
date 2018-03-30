@@ -21,7 +21,7 @@ class FakeProgressDlg(object):
 
 _addon_name = '[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]'
 
-class Settings:
+class Settings(object):
 	# feed=dl&
 	
 	base_url 			= 'http://hdclub.org/rss.php'

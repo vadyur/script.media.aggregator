@@ -68,6 +68,9 @@ class VideoDatabase(object):
 	def find_last_version(name, path=BASE_PATH):
 		import re, filesystem
 		try:
+			if path.startswith('special://'):
+				import xbmc
+				path = xbmc.translatePath(path)
 			files = filesystem.listdir(path)
 			matched_files = [f for f in files if bool(re.match(name, f, re.I))]  #f.startswith(name)]
 			versions = [int(os.path.splitext(f[len(name):])[0]) for f in matched_files]
@@ -76,7 +79,7 @@ class VideoDatabase(object):
 			return max(versions)
 		except BaseException as e:
 			log.debug(e, log.lineno())
-			return 0
+			raise ValueError('find_last_version not detect')
 
 	@staticmethod
 	def get_db_version(name=None):
@@ -88,7 +91,7 @@ class VideoDatabase(object):
 				return ver
 
 			return VideoDatabase.find_last_version(name, 'special://home/dbversions')
-		except ImportError:
+		except (ImportError, ValueError):
 			return DB_VERSIONS['17']
 
 	def __init__(self):
@@ -155,6 +158,9 @@ def request(fn):
 			#for item in res:
 			#	result.append(item)
 			return result
+	
+		except BaseException as e:
+			pass
 
 		finally:
 			self.db.close()
@@ -368,22 +374,40 @@ class MoreRequests(object):
 	def get_movies_by_imdb(self, imdb):
 		""" return movie data by imdb """
 
-		sql = """select idMovie, idFile, c00, c22, uniqueid_value, c16, premiered, playCount, lastPlayed, resumeTimeInSeconds
+		sql = """select idMovie, idFile, c00, c22, uniqueid_value, c16, premiered, playCount, lastPlayed, resumeTimeInSeconds, totalTimeInSeconds
 				from movie_view
 				where uniqueid_value='{}'""".format(imdb)
-		#self.debug(sql, log.lineno())
+		self._log(sql)
 		return sql
 
+	def _log(self, s):
+		from log import debug
+		debug('MoreRequests: {}'.format(s))
+
 	@request
-	def update_movie_by_imdb(self, imdb, fields={}):
-		expression = ''
-		for k, v in fields.iteritems():
-			expression += "{}='{}'".format(k, v)
+	def update_movie_by_id(self, id, fields={}):
+		try:
+			expression = ''
+			for k, v in fields.iteritems():
+				if isinstance(v, unicode):
+					v = v.encode('utf-8')
+				expression += "{}='{}', ".format(k, v.replace("'", "''"))
 
-		sql = """UPDATE movie_view
-				SET {}
-				WHERE uniqueid_value='{}'""".format(expression, imdb)
+			sql = """UPDATE movie_view
+					SET {}
+					WHERE idMovie='{}'""".format(expression[:-2], id)
+			self._log(sql)
+			return sql
+		except BaseException as e:
+			pass
 
+	@request
+	def remove_movie_by_id(self, id):
+		sql = """DELETE FROM table_name
+				WHERE idMovie='{}'""".format(id)
+		self._log(sql)
+		return sql
+		
 	@request
 	def get_movie_duplicates(self):
 		sql = """SELECT idMovie, idFile, c00, c22, uniqueid_value, COUNT(uniqueid_value)
@@ -393,4 +417,5 @@ class MoreRequests(object):
 				    uniqueid_value
 				HAVING 
 				    COUNT(uniqueid_value) > 1"""
+		self._log(sql)
 		return sql
