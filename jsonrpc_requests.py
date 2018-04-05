@@ -6,21 +6,28 @@ def executeJSONRPC(q):
 	res = xbmc.executeJSONRPC(s)
 	return json.loads(res)
 
-class VideoLibrary(object):
-	@staticmethod
-	def __getattr__(name):
-		def run(params):
+class JSONRPC_API(object):
+	def __init__(self, name):
+		self.name = name
+
+	def __getattribute__(self, name):
+		__name = object.__getattribute__(self, 'name')
+		def run(params={}):
 			q = {	"jsonrpc": "2.0",
-					"method": "VideoLibrary." + name, 
+					"method": __name + "." + name, 
 					"params": params,
 					"id": "tvshow"
 			}
 
 			try:
-				return executeJSONRPC(q)['result']
+				res = executeJSONRPC(q)
+				return res['result']
 			except KeyError:
 				return {}
 		return run
+
+VideoLibrary = JSONRPC_API('VideoLibrary')
+JSONRPC = JSONRPC_API('JSONRPC')
 		
 def remove_movie_by_id(id):
 	r = VideoLibrary.RemoveMovie({'movieid': id})
