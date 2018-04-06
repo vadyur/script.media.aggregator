@@ -406,16 +406,10 @@ def clean_movies():
 			if movie_duplicate['playCount']:
 				update_fields['playcount '] = int(update_fields.get('playcount ', 0)) + int(movie_duplicate['playCount'])
 
-			if movie_duplicate['lastPlayed'] and movie_duplicate['resumeTimeInSeconds'] and movie_duplicate['totalTimeInSeconds']:
-				import datetime
-				dt = datetime.datetime.strptime
-				# 2017-11-30 02:29:57
-				fmt = '%Y-%m-%d %H:%M:%S'
-				if not update_fields.get('lastplayed ') \
-					or dt(movie_duplicate['lastPlayed']) > dt(update_fields.get('lastplayed ')):
-						update_fields['lastplayed ']	= movie_duplicate['lastPlayed']
-						update_fields['resume']			= movie_duplicate['resumeTimeInSeconds']
-						update_fields['total']			= movie_duplicate['totalTimeInSeconds']
+			if movie_duplicate['resumeTimeInSeconds'] and movie_duplicate['totalTimeInSeconds']:
+				update_fields['resume']			= {
+					'position': int(movie_duplicate['resumeTimeInSeconds']),
+					'total':	int(movie_duplicate['totalTimeInSeconds'])}
 
 		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
 			alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
@@ -428,12 +422,12 @@ def clean_movies():
 				filesystem.copyfile(last_strm_path, strm_path)
 				filesystem.copyfile(last_nfo_path, nfo_path)
 
-				for movie_duplicate in one_movie_duplicates[:-1]:
-					safe_remove(movie_duplicate['c22'])
-					safe_remove(movie_duplicate['c22'].replace('.strm', '.nfo'))
-					safe_remove(movie_duplicate['c22'] + '.alternative')
-				
-				#	remove_movie_by_id(movie_duplicate['idMovie'])
+			for movie_duplicate in one_movie_duplicates:
+				cur_strm_path = movie_duplicate['c22']
+				if cur_strm_path != strm_path:
+					safe_remove(cur_strm_path)
+					safe_remove(cur_strm_path.replace('.strm', '.nfo'))
+					safe_remove(cur_strm_path + '.alternative')
 
 		return update_fields
 
@@ -456,8 +450,8 @@ def clean_movies():
 	# Clean & update Video library	
 	from jsonrpc_requests import VideoLibrary, JSONRPC
 	if _debug:
-		ver = JSONRPC.Version()
-		VideoLibrary.Clean({'showdialogs': _debug})
+		#ver = JSONRPC.Version()
+		VideoLibrary.Clean(showdialogs=_debug)
 	else:
 		import xbmc
 		xbmc.executebuiltin('CleanLibrary("video")', wait=True)
@@ -466,4 +460,9 @@ def clean_movies():
 	# ----------------
 	# Apply watched & progress
 	for imdbid, update_data in watched_and_progress.iteritems():
+		if update_data:
+			movies = more_requests.get_movies_by_imdb(imdbid)
+			if movies:
+				movieid = movies[-1]['idMovie']
+				VideoLibrary.SetMovieDetails(movieid=movieid, **update_data)
 		pass
