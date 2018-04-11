@@ -50,13 +50,13 @@ def test_path(path):
 		pass
 	return path
 
-def _get_path(path):
+def _get_path(path, use_unc_path=True):
 	errors='strict'
 
 	try:
 		import xbmcvfs
 	except ImportError:
-		if path.startswith('smb://') and os.name == 'nt':
+		if path.startswith('smb://') and os.name == 'nt' and use_unc_path:
 			path = path.replace('smb://', r'\\').replace('/', '\\')
 
 	path = ensure_unicode(path)
@@ -255,7 +255,7 @@ def fopen(path, mode):
 
 	
 def join(path, *paths):
-	path = _get_path(path)
+	path = _get_path(path, use_unc_path=False)
 	fpaths = []
 	for p in paths:
 		fpaths.append( _get_path(p) )
@@ -326,11 +326,11 @@ def getctime(path):
 
 
 def dirname(path):
-	return ensure_unicode(os.path.dirname(get_path(path)))
+	return ensure_unicode(os.path.dirname(_get_path(path, use_unc_path=False)))
 
 
 def basename(path):
-	return ensure_unicode(os.path.basename(get_path(path)))
+	return ensure_unicode(os.path.basename(_get_path(path, use_unc_path=False)))
 
 
 def test():	

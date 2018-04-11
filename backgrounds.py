@@ -347,6 +347,16 @@ def safe_remove(path):
 	if filesystem.exists(path):
 		filesystem.remove(path)
 
+def safe_copyfile(src, dst):
+	import filesystem
+
+	dirname = filesystem.dirname(dst)
+	if not filesystem.exists(dirname):
+		filesystem.makedirs(dirname)
+
+	if filesystem.exists(src):
+		filesystem.copyfile(src, dst)
+
 def dt(ss):
 	import datetime
 	# 2017-11-30 02:29:57
@@ -368,6 +378,7 @@ def clean_movies():
 	settings = load_settings()
 
 	watched_and_progress = {}
+	update_paths = set()
 	
 	import movieapi
 	from base import make_fullpath
@@ -419,8 +430,10 @@ def clean_movies():
 			if last_strm_path != strm_path:
 				last_nfo_path = last_strm_path.replace('.strm', '.nfo')
 
-				filesystem.copyfile(last_strm_path, strm_path)
-				filesystem.copyfile(last_nfo_path, nfo_path)
+				safe_copyfile(last_strm_path, strm_path)
+				safe_copyfile(last_nfo_path, nfo_path)
+
+				update_paths.add(filesystem.dirname(strm_path))
 
 			for movie_duplicate in one_movie_duplicates:
 				cur_strm_path = movie_duplicate['c22']
@@ -448,13 +461,11 @@ def clean_movies():
 
 	# ----------------
 	# Clean & update Video library	
-	from jsonrpc_requests import VideoLibrary, JSONRPC
-	if _debug:
-		#ver = JSONRPC.Version()
-		VideoLibrary.Clean(showdialogs=_debug)
-	else:
-		import xbmc
-		xbmc.executebuiltin('CleanLibrary("video")', wait=True)
+	from jsonrpc_requests import VideoLibrary	#, JSONRPC
+	#ver = JSONRPC.Version()
+	for path in update_paths:
+		VideoLibrary.Scan(directory=path.encode('utf-8'))
+	VideoLibrary.Clean(showdialogs=_debug)
 
 
 	# ----------------
