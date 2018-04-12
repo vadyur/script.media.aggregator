@@ -12,11 +12,12 @@ from bs4 import BeautifulSoup
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
 
 def copy_files(src, dst, pattern):
+	from backgrounds import safe_copyfile
 	for ext in ['.strm', '.nfo', '.strm.alternative']:
 		src_file = filesystem.join(src, base.make_fullpath(pattern, ext))
 		if filesystem.exists(src_file):
 			dst_file = filesystem.join(dst, base.make_fullpath(pattern, ext))
-			filesystem.copyfile(src_file, dst_file)
+			safe_copyfile(src_file, dst_file)
 
 def make_imdb_path(path, imdb):
 	if imdb and imdb.startswith('tt'):
@@ -61,7 +62,7 @@ def get_tmdb_api_key():
 		cur = filesystem.dirname(__file__)
 		home_path = filesystem.join(cur, '../..')
 
-	key = 'ecbc86c92da237cb9faff6d3ddc4be6d'
+	key = '92db8778ccb39d825150332b0a46061d'
 	host = 'api.tmdb.org'
 	try:
 		xml_path = filesystem.join(home_path, 'addons', 'metadata.common.themoviedb.org', 'tmdb.xml')
@@ -994,8 +995,10 @@ class TMDB_API(object):
 				if url_:
 					self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
 					debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
+				else:
+					self.tmdb_data = None
 			except:
-				pass
+				self.tmdb_data = None
 
 	def year(self):
 		try:
@@ -1120,6 +1123,8 @@ class MovieAPI(object):
 			self.imdbapi = ImdbAPI(imdb_id)
 
 			self.providers = [self.tmdbapi, self.imdbapi]
+			if not self.tmdbapi.tmdb_data:
+				self.providers.remove(self.tmdbapi)
 
 		if kinopoisk:
 			if not settings or settings.use_kinopoisk:

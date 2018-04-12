@@ -41,6 +41,7 @@ VSDEV=1</Environment>
     <Compile Include="bb_test.py" />
     <Compile Include="bencode.py" />
     <Compile Include="bluebird.py" />
+    <Compile Include="complex_requests.py" />
     <Compile Include="context.py" />
     <Compile Include="context_get_sources.py" />
     <Compile Include="context_repair.py" />

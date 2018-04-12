@@ -118,8 +118,9 @@ def call_bg(action, params = {}):
 	for key, value in params.iteritems(): 
 		if isinstance(value, unicode):
 			params[key] = value.encode('utf-8')
-	url = 'plugin://script.media.aggregator/?' + urllib.urlencode(params)
-	xbmc.executebuiltin('RunPlugin("%s")' % url)
+
+	from plugin import RunPlugin
+	RunPlugin(**params)
 
 def update_case():
 	# Init
@@ -357,17 +358,12 @@ def add_media(title, imdb, settings):
 				if not xbmc.Player().isPlaying():
 					if count:
 						dlg.notification(_addon_name, u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
-
 						xbmc.executebuiltin('Container.Refresh')
 
-						url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
-							{'action': 'add_media',
-								'title': title.encode('utf-8'),
-								'imdb': imdb,
-								'strm': strm_path.encode('utf-8'),
-								'norecursive': True})
-
-						xbmc.executebuiltin('RunPlugin("%s")' % url)
+						from plugin import RunPlugin
+						RunPlugin(action='add_media', title=title.encode('utf-8'),
+								imdb=imdb, strm=strm_path.encode('utf-8'),
+								norecursive=True)
 					else:
 						dlg.notification(_addon_name,
 											u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,

@@ -26,3 +26,8 @@ def get_params():
 
 	# debug(param)
 	return param
+
+def RunPlugin(**kwargs):
+	import xbmc
+	url = make_url(kwargs)
+	xbmc.executebuiltin('RunPlugin("%s")' % url)

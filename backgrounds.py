@@ -152,9 +152,11 @@ def update_service(show_progress=False):
 	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable or kinohd_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video")')
+			xbmc.executebuiltin('UpdateLibrary("video")', wait=True)
 
 	recheck_torrent_if_need(from_time, settings)
+	from plugin import RunPlugin
+	RunPlugin(action='clean_movies')
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -324,11 +326,11 @@ def add_media_process(title, imdb):
 							else:
 								path_update = filesystem.join(src.path, filesystem.basename(path))
 						log.debug(path_update)
-						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'))
+						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'), wait=True)
 
 				#xbmc.executebuiltin('UpdateLibrary("video")')
 			else:
-				xbmc.executebuiltin('UpdateLibrary("video")')
+				xbmc.executebuiltin('UpdateLibrary("video")', wait=True)
 
 			xbmc.sleep(250)
 			while xbmc.getCondVisibility('Library.IsScanningVideo'):
@@ -337,6 +339,10 @@ def add_media_process(title, imdb):
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
+
+	from plugin import RunPlugin
+	RunPlugin(action='clean_movies')
+
 
 def load_settings():
 	from player import load_settings as _load_settings
@@ -369,7 +375,11 @@ def dt(ss):
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def clean_movies():
-	_debug = True
+	_debug = False
+
+	log.debug('*'*80)
+	log.debug('* Start cleaning movies')
+	log.debug('*'*80)
 
 	from kodidb import MoreRequests
 	more_requests = MoreRequests()
@@ -383,13 +393,19 @@ def clean_movies():
 	import movieapi
 	from base import make_fullpath
 	def get_info_and_move_files(imdbid):
-		api = movieapi.MovieAPI(imdbid)
-		genre = api['genres']
-		if u'мультфильм' in genre:
-			base_path = settings.animation_path()
-		elif u'документальный' in genre:
-			base_path = settings.documentary_path()
-		else:
+		def _log(s):
+			log.debug(u'    get_info_and_move_files: {}'.format(s))
+
+		try:
+			api = movieapi.MovieAPI(imdbid)
+			genre = api['genres']
+			if u'мультфильм' in genre:
+				base_path = settings.animation_path()
+			elif u'документальный' in genre:
+				base_path = settings.documentary_path()
+			else:
+				base_path = settings.movies_path()
+		except:
 			base_path = settings.movies_path()
 
 		from movieapi import make_imdb_path
@@ -401,9 +417,12 @@ def clean_movies():
 		from base import Informer
 
 		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
-
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
+
+		_log(u'title = ' + title)
+		_log(u'strm_path = ' + strm_path)
+
 		#strm_data = filesystem.fopen(one_movie_duplicates[0]['c22'], 'r').read()
 		alt_data = []
 
@@ -445,8 +464,8 @@ def clean_movies():
 		return update_fields
 
 
-	# ----------------
-	# Get info & move files
+	log.debug('# ----------------')
+	log.debug('# Get info & move files')
 	for movie in movie_duplicates_list:
 		try:
 			imdbid = movie[4]
@@ -459,17 +478,17 @@ def clean_movies():
 		if _debug:
 			break
 
-	# ----------------
-	# Clean & update Video library	
+	log.debug('# ----------------')
+	log.debug('# Clean & update Video library')
 	from jsonrpc_requests import VideoLibrary	#, JSONRPC
 	#ver = JSONRPC.Version()
 	for path in update_paths:
-		VideoLibrary.Scan(directory=path.encode('utf-8'))
+		VideoLibrary.Scan(directory=path)
 	VideoLibrary.Clean(showdialogs=_debug)
 
 
-	# ----------------
-	# Apply watched & progress
+	log.debug('# ----------------')
+	log.debug('# Apply watched & progress')
 	for imdbid, update_data in watched_and_progress.iteritems():
 		if update_data:
 			movies = more_requests.get_movies_by_imdb(imdbid)
@@ -477,3 +496,7 @@ def clean_movies():
 				movieid = movies[-1]['idMovie']
 				VideoLibrary.SetMovieDetails(movieid=movieid, **update_data)
 		pass
+
+	log.debug('*'*80)
+	log.debug('* End cleaning movies')
+	log.debug('*'*80)

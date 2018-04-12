@@ -858,14 +858,13 @@ def action_add_media(params, settings):
 		add_media(title, imdb, settings)
 		return
 	
-	import json
 	found = None
 
+	from jsonrpc_requests import VideoLibrary
 	if imdb.startswith('sm') and title:
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		result = VideoLibrary.GetTVShows(properties=["title", "originaltitle", "year", "file", "imdbnumber"])
 		try:
-			for r in result['result']['tvshows']:
+			for r in result['tvshows']:
 				if r['originaltitle'] == title:
 					found = 'tvshow'
 					break
@@ -873,23 +872,19 @@ def action_add_media(params, settings):
 			debug('KeyError: Animes not found')
 	
 	if not found:
-		#req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-		#result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
 		from complex_requests import get_movies_by_imdb
 		result = get_movies_by_imdb(imdb)
 		try:
-			for r in result['result']['movies']:
-				if r['imdbnumber'] == imdb:
-					found = 'movie'
-					break
+			if result:
+				r = result['movies'][0]
+				found = 'movie'
 		except KeyError:
 			debug('KeyError: Movies not found')
 	
 	if not found:
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		result = VideoLibrary.GetTVShows(properties=["title", "originaltitle", "year", "file", "imdbnumber"])
 		try:
-			for r in result['result']['tvshows']:
+			for r in result['tvshows']:
 				if r['imdbnumber'] == imdb:
 					found = 'tvshow'
 					break
@@ -899,8 +894,6 @@ def action_add_media(params, settings):
 	dialog = xbmcgui.Dialog()
 	if found == 'movie':
 		if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
-			#with filesystem.fopen(r['file'], 'r') as strm:
-			#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
 			xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
 	elif found == 'tvshow':
 		if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):

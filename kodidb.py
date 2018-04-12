@@ -367,8 +367,14 @@ class KodiDB(object):
 		return
 
 class MoreRequests(object):
-	def __init__(self):
-		self.videoDB = VideoDatabase()
+
+	_videoDB = None
+
+	@property
+	def videoDB(self):
+		if not self._videoDB:
+			self._videoDB = VideoDatabase()
+		return self._videoDB
 
 	@request_dict
 	def get_movies_by_imdb(self, imdb):
