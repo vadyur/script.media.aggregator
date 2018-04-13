@@ -38,20 +38,20 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 		if new_path != path:
 			copy_files(path, new_path, filename)
 
-		from strmwriter import STRMWriter
-		STRMWriter(parser.link()).write(filename, new_path,
-										parser=parser,
-										settings=settings)
-		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, new_path, skip_nfo_exists=skip_nfo_exists)
+		with filesystem.save_make_chdir_context(new_path, 'write_movie'):
+			from strmwriter import STRMWriter
+			STRMWriter(parser.link()).write(filename, new_path,
+											parser=parser,
+											settings=settings)
+			from nfowriter import NFOWriter
+			NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, new_path, skip_nfo_exists=skip_nfo_exists)
 
-		if download_torrent:
-			from downloader import TorrentDownloader
-			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
+			if download_torrent:
+				from downloader import TorrentDownloader
+				TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
-		return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
-	else:
-		return None
+			return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+
 
 def get_tmdb_api_key():
 	try:
