@@ -155,7 +155,6 @@ def update_service(show_progress=False):
 			from jsonrpc_requests import VideoLibrary
 			VideoLibrary.Scan()
 
-
 	recheck_torrent_if_need(from_time, settings)
 	clean_movies()
 
@@ -373,6 +372,9 @@ def dt(ss):
 # ------------------------------------------------------------------------------------------------------------------- #
 def clean_movies():
 	_debug = False
+
+	from kodidb import wait_for_update
+	wait_for_update()
 
 	log.debug('*'*80)
 	log.debug('* Start cleaning movies')
