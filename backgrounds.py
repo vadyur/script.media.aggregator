@@ -152,11 +152,12 @@ def update_service(show_progress=False):
 	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable or kinohd_enable:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video")', wait=True)
+			from jsonrpc_requests import VideoLibrary
+			VideoLibrary.Scan()
+
 
 	recheck_torrent_if_need(from_time, settings)
-	from plugin import RunPlugin
-	RunPlugin(action='clean_movies')
+	clean_movies()
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -303,6 +304,7 @@ def add_media_process(title, imdb):
 	if count:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+			from jsonrpc_requests import VideoLibrary
 			if p and p[0]:
 				path = p[0]
 				
@@ -317,31 +319,26 @@ def add_media_process(title, imdb):
 				srcs = Sources()
 				for src in srcs.get('video', normalize=False):
 					src_path_basename = filesystem.basename(src.path.rstrip('\\/'))
-					if src_path_basename == base_path:  #base_path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
-						path_update = src.path
+					if base_path.startswith(src_path_basename):
 						if type == 'tvshows':
+							path_update = src.path
 							if src.path.startswith('smb://'):
 								path_update = src.path
 								path_update = path_update.strip('\\/') + '/' + filesystem.basename(path)
 							else:
 								path_update = filesystem.join(src.path, filesystem.basename(path))
+						else:
+							path_update = filesystem.join( src.path, base_path[len(src_path_basename)+1:] )
 						log.debug(path_update)
-						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'), wait=True)
-
-				#xbmc.executebuiltin('UpdateLibrary("video")')
+						VideoLibrary.Scan(directory=path_update)
 			else:
-				xbmc.executebuiltin('UpdateLibrary("video")', wait=True)
+				VideoLibrary.Scan()
 
-			xbmc.sleep(250)
-			while xbmc.getCondVisibility('Library.IsScanningVideo'):
-				xbmc.sleep(100)
+	clean_movies()
 
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
-
-	from plugin import RunPlugin
-	RunPlugin(action='clean_movies')
 
 
 def load_settings():
@@ -434,7 +431,7 @@ def clean_movies():
 
 			# Sync playCount & resume time
 			if movie_duplicate['playCount']:
-				update_fields['playcount '] = int(update_fields.get('playcount ', 0)) + int(movie_duplicate['playCount'])
+				update_fields['playcount'] = int(update_fields.get('playcount', 0)) + int(movie_duplicate['playCount'])
 
 			if movie_duplicate['resumeTimeInSeconds'] and movie_duplicate['totalTimeInSeconds']:
 				update_fields['resume']			= {
