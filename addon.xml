@@ -6,7 +6,6 @@
     <import addon="script.module.torrent2http" optional="false"/>
     <import addon="script.module.torrent.ts" optional="true"/>
     <import addon="script.module.beautifulsoup4" version="4.3.0"/>
-    <import addon="script.module.urllib3" version="1.22"/>
     <import addon="script.module.requests" optional="false"/>
     <import addon="script.module.feedparser" optional="false"/>
     <import addon="script.module.myconnpy" optional="false"/>
