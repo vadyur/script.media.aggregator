@@ -235,6 +235,16 @@ def main():
 	vsdbg._attach(False)
 
 	global _addon
+
+	# write addon info to log
+	try:
+		log.debug('********* Starting Media Aggregator ********************')
+		version = xbmcaddon.Addon().getAddonInfo('version')
+		log.debug('* Version {}'.format(version))
+		log.debug('********************************************************')
+	except:
+		pass
+
 	_addon = AddonRO()
 	player._addon = _addon
 
