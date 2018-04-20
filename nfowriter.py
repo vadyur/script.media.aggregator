@@ -197,7 +197,11 @@ class NFOWriter:
 			pass
 
 	def write_title(self, root):
-		title = self.movie_api.get('title')
+		try:
+			title = self.movie_api.ru('title')
+		except AttributeError:
+			title = None
+
 		if not title and self.tvshow_api:
 			title = self.tvshow_api.Title()
 		if title:

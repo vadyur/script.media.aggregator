@@ -153,7 +153,7 @@ class Process(object):
 			parser.Dict()['title']			= parser.movie_api()['title']
 			parser.Dict()['originaltitle']	= parser.movie_api()['originaltitle']
 		except:
-			pass
+			None
 		if parser.parsed():
 			if 'sezon' in url or parser.movie_api().get('type') == 'tvshow':
 				return self.process_tvshow(url, parser)
@@ -252,6 +252,7 @@ def search_generate(what, imdb, settings, path_out):
 
 	enumerator = BaseEnumerator(res.content)
 	count = enumerator.size()
+	fails = 0
 
 	def urls():
 		indx = 0
@@ -265,9 +266,12 @@ def search_generate(what, imdb, settings, path_out):
 	process = Process(settings)
 	for href, fulltitle in urls():
 		result = process.process(href, fulltitle)
-		path_out.append(result) 
+		if result:
+			path_out.append(result) 
+		else:
+			fails += 1
 
-	return count
+	return count - fails
 
 
 if __name__ == '__main__':
@@ -285,13 +289,13 @@ if __name__ == '__main__':
 	settings.use_kinopoisk		= True
 	settings.use_worldart		= True
 
-	#settings.kinohd_4k				= False
+	settings.kinohd_4k				= False
 	#settings.kinohd_1080p			= False
 	#settings.kinohd_720p			= False
-	#settings.kinohd_3d				= False
+	settings.kinohd_3d				= False
 
 	path_out = []
-	#res = search_generate(None, 'tt0898266', settings, path_out)
+	res = search_generate(None, 'tt0898266', settings, path_out)
 	run(settings)
 	#Process(settings).test()
 

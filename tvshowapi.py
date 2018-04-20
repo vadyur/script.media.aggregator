@@ -331,8 +331,9 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 		kp_id = parser.get('kp_id', None)
 		tvshow_api = TVShowAPI.get_by(originaltitle, title, imdb_id, kp_id)
 
-		api_title = parser.movie_api().get('title')
-		if not api_title:
+		try:
+			api_title = parser.movie_api().imdbapi.title()
+		except AttributeError:
 			api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
 		debug(tvshow_path)
