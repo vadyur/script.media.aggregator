@@ -395,7 +395,7 @@ def clean_movies():
 		def _log(s):
 			log.debug(u'    get_info_and_move_files: {}'.format(s))
 
-		api = movieapi.MovieAPI.get_by(imdb_id=imdbid)
+		api = movieapi.MovieAPI.get_by(imdb_id=imdbid)[0]
 
 		try:
 			genre = api['genres']
