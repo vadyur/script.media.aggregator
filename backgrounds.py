@@ -155,7 +155,7 @@ def update_service(show_progress=False):
 			from jsonrpc_requests import VideoLibrary
 			VideoLibrary.Scan()
 
-	recheck_torrent_if_need(from_time, settings)
+	#recheck_torrent_if_need(from_time, settings)
 	clean_movies()
 
 
@@ -388,6 +388,7 @@ def clean_movies():
 
 	watched_and_progress = {}
 	update_paths = set()
+	clean_ids = []
 	
 	import movieapi
 	from base import make_fullpath
@@ -461,6 +462,8 @@ def clean_movies():
 					safe_remove(cur_strm_path.replace('.strm', '.nfo'))
 					safe_remove(cur_strm_path + '.alternative')
 
+					clean_ids.append(movie_duplicate['idMovie'])
+
 		return update_fields
 
 
@@ -479,16 +482,17 @@ def clean_movies():
 			break
 
 	log.debug('# ----------------')
-	log.debug('# Clean & update Video library')
+	log.debug('# Update Video library')
 	from jsonrpc_requests import VideoLibrary	#, JSONRPC
 	from kodidb import wait_for_update
 	#ver = JSONRPC.Version()
 	for path in update_paths:
+		log.debug(u'Scan for: {}'.format(path))
 		VideoLibrary.Scan(directory=path)
 		wait_for_update()
 
-	res = VideoLibrary.Clean(showdialogs=_debug)
-	log.debug(unicode(res))
+	#res = VideoLibrary.Clean(showdialogs=_debug)
+	#log.debug(unicode(res))
 
 	log.debug('# ----------------')
 	log.debug('# Apply watched & progress')
@@ -497,8 +501,16 @@ def clean_movies():
 			movies = more_requests.get_movies_by_imdb(imdbid)
 			if movies:
 				movieid = movies[-1]['idMovie']
+				log.debug(u'Process {}'.format(movies[-1]['c22']))
+				log.debug(unicode(update_data))
 				VideoLibrary.SetMovieDetails(movieid=movieid, **update_data)
 		pass
+
+	log.debug('# ----------------')
+	log.debug('# Clean movies')
+	for idMovie in clean_ids:
+		log.debug('remove movie: {}'.format(idMovie))
+		VideoLibrary.RemoveMovie(movieid=idMovie)
 
 	log.debug('*'*80)
 	log.debug('* End cleaning movies')

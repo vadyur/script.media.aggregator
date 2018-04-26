@@ -431,8 +431,8 @@ def wait_for_update():
 		import xbmc
 		count = 1000
 		while not xbmc.abortRequested and xbmc.getCondVisibility('Library.IsScanningVideo') and count:
-			log.debug('Library Scanning Video - wait')
-			xbmc.sleep(100)
+			log.debug('Library Scanning Video - wait ({})'.format(count/2))
+			xbmc.sleep(500)
 			count -= 1
 	except:
 		import time
