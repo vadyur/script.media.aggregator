@@ -25,11 +25,16 @@ class DescriptionParser(DescriptionParserBase, soup_base):
 	def parse(self):
 		import re
 		imdb = self.soup.find('img', class_="imdb_informer")
-		if imdb:
-			self._dict['imdb_id'] = re.search('(tt\d+)', imdb['src']).group(1)
+		if imdb and imdb.get('src'):
+			m = re.search('(tt\d+)', imdb['src'])
+			if m:
+				self._dict['imdb_id'] = m.group(1)
 		kp_a = self.soup.select('a[href*="/class/goo.php?url=http://www.kinopoisk.ru/film/"]')
 		if kp_a:
-			self._dict['kp_id'] = kp_a[0]['href'].split('url=')[-1]
+			try:
+				self._dict['kp_id'] = kp_a[0]['href'].split('url=')[-1]
+			except:
+				pass
 
 		from bs4 import NavigableString
 		tag = None
@@ -113,7 +118,10 @@ class Process(object):
 		import filesystem
 
 		api = parser.movie_api()
-		genre = api['genres']
+		try:
+			genre = api['genres']
+		except:
+			genre = []
 		if u'мультфильм' in genre:
 			if not self.settings.animation_save:
 				return
@@ -135,7 +143,10 @@ class Process(object):
 		import filesystem
 
 		api = parser.movie_api()
-		genre = api['genres']
+		try:
+			genre = api['genres']
+		except:
+			genre = []
 		if u'мультфильм' in genre:
 			if not self.settings.animation_tvshows_save:
 				return

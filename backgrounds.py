@@ -149,11 +149,15 @@ def update_service(show_progress=False):
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable or kinohd_enable:
-		import xbmc
-		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			from jsonrpc_requests import VideoLibrary
-			VideoLibrary.Scan()
+	if settings.update_paths:
+		from kodidb import wait_for_update
+		wait_for_update()
+
+		from jsonrpc_requests import VideoLibrary
+
+		for p in settings.update_paths:
+			VideoLibrary.Scan(directory=p)
+			wait_for_update()
 
 	#recheck_torrent_if_need(from_time, settings)
 	clean_movies()
@@ -238,7 +242,7 @@ def add_media_process(title, imdb):
 	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
-	soap4me_enable		= getSetting('soap4me_enable') == 'true'
+	soap4me_enable		= False
 	kinohd_enable		= getSetting('kinohd_enable') == 'true'
 
 	class RemoteDialogProgress:

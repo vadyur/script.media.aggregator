@@ -386,6 +386,8 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 
 						STRMWriter(parser.link()).write(filename, season_path, index=f['index'], settings=settings, parser=parser)
 						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename, season_path, skip_nfo_exists=skip_nfo_exists)
+
+			settings.update_paths.add(tvshow_path)
 			return tvshow_path
 					# end for
 		else:

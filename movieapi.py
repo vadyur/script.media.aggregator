@@ -50,6 +50,7 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 				from downloader import TorrentDownloader
 				TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
+			settings.update_paths.add(new_path)
 			return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
 
 

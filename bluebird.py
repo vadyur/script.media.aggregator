@@ -149,12 +149,21 @@ def write_movie(item, settings, path):
 		if not filename:
 			return
 		
+		from movieapi import make_imdb_path, copy_files
+		imdb = parser.get_value('imdb_id')
+		new_path = make_imdb_path(path, imdb)
+
+		if new_path != path:
+			copy_files(path, new_path, filename)
+
 		debug('filename: ' + filename.encode('utf-8'))
-		STRMWriter(origin_url(item.link)).write(filename, path, parser=parser, settings=settings)
-		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, path)
+		STRMWriter(origin_url(item.link)).write(filename, new_path, parser=parser, settings=settings)
+		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, new_path)
 		if settings.bluebird_preload_torrents:
 			from downloader import TorrentDownloader
 			TorrentDownloader(item.link, settings.torrents_path(), settings).download()
+
+		settings.update_paths.add(new_path)
 	else:
 		skipped(item)
 		

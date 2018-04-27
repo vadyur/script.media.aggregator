@@ -255,6 +255,7 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 		debug(tvshow_path)
 
 		path_out.append(tvshow_path)
+		settings.update_paths.add(tvshow_path)
 
 		with filesystem.save_make_chdir_context(tvshow_path):
 			tvshow_api = TVShowAPI.get_by(originaltitle, title)
