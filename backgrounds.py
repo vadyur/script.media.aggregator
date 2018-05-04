@@ -156,6 +156,7 @@ def update_service(show_progress=False):
 		from jsonrpc_requests import VideoLibrary
 
 		for p in settings.update_paths:
+			log.debug(u'Scan for: {}'.format(p))
 			VideoLibrary.Scan(directory=p)
 			wait_for_update()
 

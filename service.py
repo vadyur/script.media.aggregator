@@ -225,6 +225,8 @@ def add_media_case():
 							break
 					except BaseException as e:
 						log.print_tb(e)
+		except BaseException as e:
+			log.print_tb(e)
 		finally:
 			filesystem.remove(path)
 
@@ -262,6 +264,9 @@ def main():
 			scrape_case()
 			update_case()
 			add_media_case()
+
+		except BaseException as e:
+			log.print_tb(e)
 
 		finally:
 			sleep(1)
