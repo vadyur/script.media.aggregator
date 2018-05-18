@@ -247,13 +247,19 @@ def main():
 	except:
 		pass
 
+	#from plugin import UpdateVideoLibrary
+	#UpdateVideoLibrary('smb://VD/D/Animation', wait=True)
+	#UpdateVideoLibrary('smb://VD/D/Movies', wait=True)
+	#log.debug('********************************************************')
+
 	_addon = AddonRO()
 	player._addon = _addon
 
 	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
 		log.debug('User action!!! update_library_next_start')
-		xbmc.executebuiltin('UpdateLibrary("video")')
+		from plugin import UpdateVideoLibrary
+		UpdateVideoLibrary()
 		filesystem.remove(path)
 
 

@@ -150,18 +150,20 @@ def update_service(show_progress=False):
 		info_dialog.close()
 
 	if settings.update_paths:
-		from kodidb import wait_for_update
-		wait_for_update()
-
+		#from plugin import wait_for_update
 		from jsonrpc_requests import VideoLibrary
+		from plugin import UpdateVideoLibrary, ScanMonitor
 
-		for p in settings.update_paths:
-			log.debug(u'Scan for: {}'.format(p))
-			VideoLibrary.Scan(directory=p)
-			wait_for_update()
+		monitor = ScanMonitor()
+		UpdateVideoLibrary()
+		while not monitor.abortRequested():
+			if monitor.waitForAbort(1):
+				return
+			if monitor.do_exit:
+				clean_movies()
+				break
 
 	#recheck_torrent_if_need(from_time, settings)
-	clean_movies()
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -309,6 +311,7 @@ def add_media_process(title, imdb):
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			from jsonrpc_requests import VideoLibrary
+			from plugin import UpdateVideoLibrary
 			if p and p[0]:
 				path = p[0]
 				
@@ -334,9 +337,10 @@ def add_media_process(title, imdb):
 						else:
 							path_update = filesystem.join( src.path, base_path[len(src_path_basename)+1:] )
 						log.debug(path_update)
-						VideoLibrary.Scan(directory=path_update)
+						#VideoLibrary.Scan(directory=path_update)
+						UpdateVideoLibrary(path=path_update)
 			else:
-				VideoLibrary.Scan()
+				UpdateVideoLibrary()
 
 	clean_movies()
 
@@ -378,7 +382,7 @@ def dt(ss):
 def clean_movies():
 	_debug = False
 
-	from kodidb import wait_for_update
+	from plugin import wait_for_update
 	wait_for_update()
 
 	log.debug('*'*80)
@@ -458,7 +462,7 @@ def clean_movies():
 				safe_copyfile(last_strm_path, strm_path)
 				safe_copyfile(last_nfo_path, nfo_path)
 
-			update_paths.add(filesystem.dirname(strm_path))
+				update_paths.add(filesystem.dirname(strm_path))
 
 			for movie_duplicate in one_movie_duplicates:
 				cur_strm_path = movie_duplicate['c22']
@@ -489,12 +493,14 @@ def clean_movies():
 	log.debug('# ----------------')
 	log.debug('# Update Video library')
 	from jsonrpc_requests import VideoLibrary	#, JSONRPC
-	from kodidb import wait_for_update
+	from plugin import wait_for_update, UpdateVideoLibrary
+
 	#ver = JSONRPC.Version()
 	for path in update_paths:
 		log.debug(u'Scan for: {}'.format(path))
-		VideoLibrary.Scan(directory=path)
-		wait_for_update()
+		#VideoLibrary.Scan(directory=path)
+		#wait_for_update()
+		UpdateVideoLibrary(path=path, wait=True)
 
 	#res = VideoLibrary.Clean(showdialogs=_debug)
 	#log.debug(unicode(res))

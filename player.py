@@ -420,7 +420,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
 		_debug(UpdateLibrary_path)
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
+			from plugin import UpdateVideoLibrary
+			UpdateVideoLibrary(UpdateLibrary_path)
 
 	except TPError as e:
 		_debug(e)
@@ -812,8 +813,8 @@ def show_list(listing):
 
 
 def force_library_update(settings, params):
-	xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % '/fake_path')
-	xbmc.sleep(500)
+	from plugin import UpdateVideoLibrary
+	UpdateVideoLibrary(path='/fake_path', wait=True)
 
 
 menu_items = [u'Генерировать .strm и .nfo файлы',
