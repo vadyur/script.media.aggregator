@@ -63,7 +63,7 @@ def get_tmdb_api_key():
 		cur = filesystem.dirname(__file__)
 		home_path = filesystem.join(cur, '../..')
 
-	key = '92db8778ccb39d825150332b0a46061d'
+	key = '45ab4cebe57ae11c2ee50c87005ddfe8'
 	host = 'api.tmdb.org'
 	try:
 		xml_path = filesystem.join(home_path, 'addons', 'metadata.common.themoviedb.org', 'tmdb.xml')
@@ -1197,11 +1197,15 @@ class MovieAPI(object):
 		return self._actors
 
 	def __getitem__(self, key):
-		res = self.__getattr__(key)
-		if callable(res):
-			return res()
-		else:
-			raise AttributeError
+		for api in self.providers:
+			try:
+				res = api.__getattribute__(key)
+				if res:
+					return res()
+			except BaseException as e:
+				continue
+
+		raise AttributeError
 
 	def get(self, key, default=None):
 		try:
