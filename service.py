@@ -233,9 +233,9 @@ def main():
 	import vsdbg
 	vsdbg._attach(False)
 
-	global _addon
-	_addon = AddonRO()
-	player._addon = _addon
+	#global _addon
+	#_addon = AddonRO()
+	#player._addon = _addon
 
 	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
