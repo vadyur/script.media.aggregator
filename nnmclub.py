@@ -26,7 +26,7 @@ _BASE_URL = 'http://nnm-club.me/forum/'
 _NEXT_PAGE_SUFFIX = '&start='
 
 tvshow_ids = '1140,1141,1142,1144,1195,1196,1242,1265,1288,1289,1290,1300,768,770,771,772,773,774,775,776,777,778,779,782,783,784,785,786,787,788,803,804,922'
-movie_ids = '1296,227,954'
+movie_ids = '270,218,219,954,888,1293,320,677,1177,319,678,885,908,909,910,911,912,221,222,882,889,225,226,227,1296,891,1299,682,694,884,1211,693,228,1150,321,255,906,905,731,733'
 
 def real_url(url, settings):
 
@@ -669,7 +669,7 @@ def download_torrent(url, path, settings):
 		if len(a) > 0:
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
 	else:
-		href = linkd
+		href = link
 		response = urllib2.urlopen(real_url(link, settings))
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
@@ -713,7 +713,7 @@ def download_torrent(url, path, settings):
 
 def make_search_url(what, IDs):
 	url = u'http://nnm-club.me/forum/tracker.php'
-	url += '?f=' + str(IDs)
+	url += '?f=' + str(IDs)+'&s=2&o=10'
 	url += '&nm=' + urllib2.quote(what.encode('utf-8'))
 	return url
 
@@ -729,12 +729,12 @@ def search_generate(what, imdb, settings, path_out):
 		count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
 	if settings.animation_save and count == 0:
-		url = make_search_url(what, '661')
+		url = make_search_url(what, '')
 		result2 = search_results(imdb, session, settings, url)
 		count += make_search_strms(result2, settings, 'movie', settings.animation_path(), path_out)
 
 	if settings.animation_tvshows_save and count == 0:
-		url = make_search_url(what, '232')
+		url = make_search_url(what, '658,232,623,622,621,632,627,626,625,644,635,634,638,646')
 		result3 = search_results(imdb, session, settings, url, 'tvshow')
 		count += make_search_strms(result3, settings, 'tvshow', settings.animation_tvshow_path(), path_out)
 
@@ -780,6 +780,7 @@ def search_results(imdb, session, settings, url, type='movie'):
 	result = []
 	for post in enumerator.items():
 		if 'seeds' in post and int(post['seeds']) < 5:
+			debug('skip')
 			continue
 
 		if type=='movie':
