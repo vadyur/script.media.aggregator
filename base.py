@@ -507,7 +507,7 @@ class Informer(object):
 		elif title != '' and originaltitle == '':
 			filename = title
 		else:
-			filename = title + ' # ' + originaltitle
+			filename = originaltitle
 
 		if year != None or year != '' or year != 0:
 			filename += ' (' + str(year) + ')'
