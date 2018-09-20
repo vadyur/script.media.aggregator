@@ -172,6 +172,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		elif settings.torrent_player == 'Elementum':
 			import elementumplayer
 			player = elementumplayer.ElementumPlayer()
+		elif settings.torrent_player == 'TorrServer':
+			import torrserverplayer
+			player = torrserverplayer.TorrServerPlayer(settings)
 
 
 		_debug('------------ Open torrent: ' + path)

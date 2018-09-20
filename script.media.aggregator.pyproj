@@ -84,6 +84,7 @@ VSDEV=1</Environment>
     <Compile Include="sources_test.py" />
     <Compile Include="strmwriter.py" />
     <Compile Include="torrent2httpplayer.py" />
+    <Compile Include="torrserverplayer.py" />
     <Compile Include="tvshowapi.py" />
     <Compile Include="yatpplayer.py" />
   </ItemGroup>
