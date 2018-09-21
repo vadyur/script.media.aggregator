@@ -65,7 +65,8 @@ class TorrServerPlayer(TorrentPlayer):
 		with filesystem.fopen(path, 'r') as f:
 			import torrserve_stream
 			from log import debug
-			self.engine = torrserve_stream.Engine(data=f.read(), log=debug)
+			s = torrserve_stream.Settings()
+			self.engine = torrserve_stream.Engine(data=f.read(), log=debug, host=s.host, port=s.port)
 		
 	def updateCheckingProgress(self, progressBar):
 		pass
@@ -96,3 +97,10 @@ class TorrServerPlayer(TorrentPlayer):
 			pass
 			
 		return None
+
+	def close(self):
+		if self.engine:
+			try:
+				self.engine.rem()
+			except:
+				self._log(dir(self.engine))
