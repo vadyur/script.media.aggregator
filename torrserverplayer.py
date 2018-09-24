@@ -77,9 +77,9 @@ class TorrServerPlayer(TorrentPlayer):
 		if ti:
 			dialogText = u'Загружено: {} MB / {} MB'.format(ti['downloaded'], ti['size'])
 			peersText = u' [{}: {}; {}: {}]'.format(u'Сидов', ti['num_seeds'], u'Пиров', ti['num_peers'])
-			speedsText = u'{}: {} Mbit/s; {}: {} Mbit/s'.format(
-				u'Загрузка', ti['dl_speed'] / 1024 * 8,
-				u'Отдача', ti['ul_speed'] / 1024 * 8)
+			speedsText = u'{}: {} КБ/с; {}: {} КБ/с'.format(
+				u'Загрузка', ti['dl_speed'],
+				u'Отдача', ti['ul_speed'])
 			progressBar.update(progress, dialogText + '          ' + peersText, speedsText)
 		
 	def GetTorrentInfo(self):
@@ -88,8 +88,8 @@ class TorrServerPlayer(TorrentPlayer):
 		try:
 			return { 	'downloaded' : 	int(st['LoadedSize'] / 1024 / 1024),
 						'size' : 		int(st['FileStats'][self.file_id]['Length'] / 1024 / 1024),
-						'dl_speed' : 	int(st['DownloadSpeed']),
-						'ul_speed' :	int(st['UploadSpeed']),
+						'dl_speed' : 	int(st['DownloadSpeed'] / 1024),
+						'ul_speed' :	int(st['UploadSpeed'] / 1024),
 						'num_seeds' :	st['ConnectedSeeders'], 
 						'num_peers' :	st['ActivePeers']
 					}
