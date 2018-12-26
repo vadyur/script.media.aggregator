@@ -153,6 +153,10 @@ def write_movie(item, settings, path):
 		imdb = parser.get_value('imdb_id')
 		new_path = make_imdb_path(path, imdb)
 
+		if not filesystem.exists(new_path):
+			with filesystem.save_make_chdir_context(new_path):
+				pass
+
 		if new_path != path:
 			copy_files(path, new_path, filename)
 

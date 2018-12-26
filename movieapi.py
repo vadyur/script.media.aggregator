@@ -55,16 +55,25 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 
 
 def get_tmdb_api_key():
+	key = 'f090bb54758cabf231fb605d3e3e0468'
+	host = 'api.tmdb.org'
+
+	import filesystem
+
 	try:
-		import filesystem
 		import xbmc
 		home_path = xbmc.translatePath('special://home').decode('utf-8')
-	except ImportError:
-		cur = filesystem.dirname(__file__)
-		home_path = filesystem.join(cur, '../..')
+		major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
 
-	key = '45ab4cebe57ae11c2ee50c87005ddfe8'
-	host = 'api.tmdb.org'
+		if int(major) > 17:
+			return {'host': host, 'key': key }
+
+	except ImportError:
+		# cur = filesystem.dirname(__file__)
+		# home_path = filesystem.join(cur, '../..')
+
+		return {'host': host, 'key': key }
+
 	try:
 		xml_path = filesystem.join(home_path, 'addons', 'metadata.common.themoviedb.org', 'tmdb.xml')
 		with filesystem.fopen(xml_path, 'r') as xml:

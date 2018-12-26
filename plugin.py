@@ -115,6 +115,20 @@ def UpdateVideoLibrary(path=None, wait=False):
 
 		wait_for_update(monitor=monitor)
 
+def kodi_ver():
+	import xbmc
+	BuildVersions = xbmc.getInfoLabel("System.BuildVersion").split("-")[0].split(".")
+
+	# import log
+	# log.debug(BuildVersions)
+
+	res = {}
+	res['major'] = int(BuildVersions[0])
+	res['minor'] = int(BuildVersions[1])
+	return res
+
+	
+
 def RunPlugin(**kwargs):
 	import xbmc
 	url = make_url(kwargs)

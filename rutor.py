@@ -130,7 +130,7 @@ class DescriptionParser(DescriptionParserBase):
 
 			r = requests.get(real_url(self._link, self.settings))
 			if r.status_code == requests.codes.ok:
-				return self.parse_description(r.text)
+				return self.parse_description(r.content)
 
 		return False
 
@@ -239,8 +239,13 @@ class DescriptionParser(DescriptionParserBase):
 					if '/torrent/' in a['href']:
 						parts = a['href'].split('/')
 						href = parts[0] + '/' + parts[1] + '/' + parts[2]
-						html = urllib2.urlopen(real_url(href, self.settings))
-						soup = BeautifulSoup(clean_html(html.read()), 'html.parser')
+
+						r = requests.get(real_url(href, self.settings))
+						if r.status_code != requests.codes.ok:
+							break
+
+						html = r.content
+						soup = BeautifulSoup(clean_html(html), 'html.parser')
 
 						for a in soup.select('a[href*="www.imdb.com/title/"]'):
 							try:
@@ -443,7 +448,7 @@ def run(settings):
 def get_magnet_link(url):
 	r = requests.get(real_url(url, settings))
 	if r.status_code == requests.codes.ok:
-		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
+		soup = BeautifulSoup(clean_html(r.content), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
 			debug(a['href'])
 			return a['href']
@@ -459,7 +464,7 @@ def download_torrent(url, path, settings):
 
 	page = requests.get(real_url(url, settings))
 
-	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+	soup = BeautifulSoup(clean_html(page.content), 'html.parser')
 	a = soup.select('#download > a')
 	if len(a) > 1:
 		link = a[1]['href']
@@ -529,7 +534,7 @@ class PostsEnumerator(object):
 		except requests.exceptions.ConnectionError:
 			return
 
-		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
+		self.soup = BeautifulSoup(clean_html(request.content), 'html.parser')
 		debug(url)
 
 		indx = self.soup.find('div', attrs={'id': 'index'})
@@ -652,7 +657,7 @@ if __name__ == '__main__':
 	settings.use_kinopoisk		= True
 	settings.use_worldart		= True
 
-	settings.rutor_domain = 'new-rutor.org'
+	settings.rutor_domain = 'rutor.is'
 
 	path_out = []
 	#search_generate(u'Ольга', 'tt6481562', settings, path_out)

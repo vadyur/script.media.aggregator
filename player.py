@@ -673,15 +673,22 @@ def dialog_action(action, settings, params=None):
 		"""
 
 	if action == dialog_action_case.search:
+		s = None
 		if not 'keyword' in params:
 			dlg = xbmcgui.Dialog()
 			s = dlg.input(u'Введите поисковую строку')
 			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
-			xbmc.executebuiltin(b'Container.Update(\"%s\")' % command)
-			debug('No keyword param. Return')
-			return False
+			debug('Run command: {0}'.format(command))
+			xbmc.executebuiltin('Container.Update("{0}")'.format(command))
 
-		s = urllib.unquote(params.get('keyword'))
+			from plugin import kodi_ver
+
+			if kodi_ver()['major'] < 18:
+				debug('No keyword param. Return')
+				return False
+		else:
+			s = urllib.unquote(params.get('keyword'))
+
 		if s:
 			from movieapi import TMDB_API
 
@@ -880,8 +887,9 @@ def action_add_media(params, settings):
 		result = get_movies_by_imdb(imdb)
 		try:
 			if result:
-				r = result['movies'][0]
-				found = 'movie'
+				if len(result['movies']) > 0:
+					r = result['movies'][0]
+					found = 'movie'
 		except KeyError:
 			debug('KeyError: Movies not found')
 	
