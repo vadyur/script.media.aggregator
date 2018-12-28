@@ -121,6 +121,7 @@
       <setting label="Исключать SD-контент" type="bool" id="rutor_nosd" default="true"/>
     </category>
 
+    <!--
     <category label="KinoHD">
       <setting label="Использовать" type="bool" id="kinohd_enable" default="false"/>
       <setting label="Категории" type="lsep"/>
@@ -133,6 +134,7 @@
       <setting label="Дополнительно" type="lsep"/>
       <setting label="Торрент проигрыватель" id="kinohd_torrent_player" type="select" values="Default|YATP|torrent2http|Ace Stream|Elementum" default="Default" />
     </category>
+    -->
   
     <!--
     <category label="soap4.me">
