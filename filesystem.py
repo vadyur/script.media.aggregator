@@ -50,13 +50,13 @@ def test_path(path):
 		pass
 	return path
 
-def _get_path(path):
+def _get_path(path, use_unc_path=True):
 	errors='strict'
 
 	try:
 		import xbmcvfs
 	except ImportError:
-		if path.startswith('smb://') and os.name == 'nt':
+		if path.startswith('smb://') and os.name == 'nt' and use_unc_path:
 			path = path.replace('smb://', r'\\').replace('/', '\\')
 
 	path = ensure_unicode(path)
@@ -81,17 +81,27 @@ def xbmcvfs_path(path):
 		return xbmc.translatePath(os.path.join(_cwd.encode('utf-8'), u8path))
 
 def exists(path):
-	try:
-		if '://' in path or ( not _is_abs_path(path) and '://' in _cwd ):
-			import stat
-			if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
-				return True
+	def xbmcvfs_exists(path):
+		import stat
+		if stat.S_ISDIR(xbmcvfs.Stat(xbmcvfs_path(path)).st_mode()):
+			return True
+		return xbmcvfs.exists(xbmcvfs_path(path))
 
-			return xbmcvfs.exists(xbmcvfs_path(path))
-		else:
-			return os.path.exists(get_path(path))
-	except BaseException as e:
+	def os_path_exists(path):
+		if path.startswith('smb://') and os.name == 'nt':
+			path = path.replace('smb://', r'\\').replace('/', '\\')
 		return os.path.exists(get_path(path))
+
+	try:
+		if path.startswith('smb://') and os.name == 'nt':
+			return os_path_exists(path)
+		elif '://' in path or ( not _is_abs_path(path) and '://' in _cwd ):
+			return xbmcvfs_exists(path)
+		else:
+			return os_path_exists(path)
+
+	except BaseException as e:
+		return False
 
 
 def getcwd():
@@ -186,6 +196,8 @@ def normpath(path):
 	
 def fopen(path, mode):
 	try:
+		import xbmcvfs
+
 		from StringIO import StringIO
 		class File(StringIO):
 			def __enter__(self):
@@ -253,7 +265,7 @@ def fopen(path, mode):
 
 	
 def join(path, *paths):
-	path = _get_path(path)
+	path = _get_path(path, use_unc_path=False)
 	fpaths = []
 	for p in paths:
 		fpaths.append( _get_path(p) )
@@ -274,7 +286,7 @@ def listdir(path):
 	except:
 		path = get_path(path)
 		if path.startswith(r'\\'):
-			with save_make_chdir_context(path):
+			with save_make_chdir_context(path, 'filesystem'):
 				for p in os.listdir('.'):
 					ld.append(ensure_unicode(p))
 		else:
@@ -324,11 +336,11 @@ def getctime(path):
 
 
 def dirname(path):
-	return ensure_unicode(os.path.dirname(get_path(path)))
+	return ensure_unicode(os.path.dirname(_get_path(path, use_unc_path=False)))
 
 
 def basename(path):
-	return ensure_unicode(os.path.basename(get_path(path)))
+	return ensure_unicode(os.path.basename(_get_path(path, use_unc_path=False)))
 
 
 def test():	

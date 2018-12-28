@@ -22,7 +22,7 @@ try:
 except:
 	_addondir = u''
 
-debug(_addondir.encode('utf-8'))
+debug(_addondir)
 
 from plugin import make_url
 
@@ -106,18 +106,25 @@ def load_settings():
 	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
 	settings.copy_torrent_path		= getSetting('copy_torrent_path').decode('utf-8')
 
-	settings.use_kinopoisk			= getSetting('use_kinopoisk') == 'true'
-	settings.use_worldart			= getSetting('use_worldart') == 'true'
-	settings.kp_googlecache			= getSetting('kp_googlecache') == 'true'
-	settings.kp_usezaborona			= getSetting('kp_usezaborona') == 'true'
+	settings.use_kinopoisk			= getSetting('use_kinopoisk')	== 'true'
+	settings.use_worldart			= getSetting('use_worldart')	== 'true'
+	settings.kp_googlecache			= getSetting('kp_googlecache')	== 'true'
+	settings.kp_usezaborona			= getSetting('kp_usezaborona')	== 'true'
 
-	settings.show_sources			= getSetting('show_sources') == 'true'
+	settings.show_sources			= getSetting('show_sources')	== 'true'
+
+	settings.kinohd_enable			= getSetting('kinohd_enable')	== 'true'
+	settings.kinohd_4k				= getSetting('kinohd_4k')		== 'true'
+	settings.kinohd_1080p			= getSetting('kinohd_1080p')	== 'true'
+	settings.kinohd_720p			= getSetting('kinohd_720p')		== 'true'
+	settings.kinohd_3d				= getSetting('kinohd_3d')		== 'true'
+	settings.kinohd_serial			= getSetting('kinohd_serial')	== 'true'
 
 	return settings
 
 
 def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, params, downloader):
-	import filecmp
+	#import filecmp
 
 	def _debug(msg):
 		debug(u'play_torrent_variant: {}'.format(msg) )
@@ -145,6 +152,11 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	torrent_info = None
 	torrent_path = path
+
+	if 'kinohd' in path:
+		kinohd_torrent_player = getSetting('kinohd_torrent_player')
+		if kinohd_torrent_player and kinohd_torrent_player != 'Default':
+			settings.torrent_player = kinohd_torrent_player
 
 	from torrent2http import Error as TPError
 	try:
@@ -411,7 +423,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
 		_debug(UpdateLibrary_path)
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % UpdateLibrary_path)
+			from plugin import UpdateVideoLibrary
+			UpdateVideoLibrary(UpdateLibrary_path)
 
 	except TPError as e:
 		_debug(e)
@@ -486,7 +499,7 @@ def play_torrent(settings, params):
 	strmFilename = nfoFullPath.replace('.nfo', '.strm')
 	nfoReader = NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
-	debug(strmFilename.encode('utf-8'))
+	debug(strmFilename)
 	
 	from base import STRMWriterBase
 	links_with_ranks = STRMWriterBase.get_links_with_ranks(strmFilename, settings, use_scrape_info=True)
@@ -497,6 +510,7 @@ def play_torrent(settings, params):
 	nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
+	kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
 
 	onlythis = False
 	if 'onlythis' in params and params['onlythis'] == 'true':
@@ -517,6 +531,9 @@ def play_torrent(settings, params):
 			links_with_ranks.remove(v)
 		if not soap4me_enable and 'soap4.me' in v['link']:
 			links_with_ranks.remove(v)
+		if not kinohd_enable and 'kinohd' in v['link']:
+			links_with_ranks.remove(v)
+
 
 	debug('links_with_ranks: ' + str(links_with_ranks))
 
@@ -619,8 +636,9 @@ def dialog_action(action, settings, params=None):
 		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
 		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
 		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
+		kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
 
-		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable):
+		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable or kinohd_enable):
 			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:
@@ -655,15 +673,22 @@ def dialog_action(action, settings, params=None):
 		"""
 
 	if action == dialog_action_case.search:
+		s = None
 		if not 'keyword' in params:
 			dlg = xbmcgui.Dialog()
 			s = dlg.input(u'Введите поисковую строку')
 			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
-			xbmc.executebuiltin(b'Container.Update(\"%s\")' % command)
-			debug('No keyword param. Return')
-			return False
+			debug('Run command: {0}'.format(command))
+			xbmc.executebuiltin('Container.Update("{0}")'.format(command))
 
-		s = urllib.unquote(params.get('keyword'))
+			from plugin import kodi_ver
+
+			if kodi_ver()['major'] < 18:
+				debug('No keyword param. Return')
+				return False
+		else:
+			s = urllib.unquote(params.get('keyword'))
+
 		if s:
 			from movieapi import TMDB_API
 
@@ -798,8 +823,8 @@ def show_list(listing):
 
 
 def force_library_update(settings, params):
-	xbmc.executebuiltin('UpdateLibrary("video", "%s", "false")' % '/fake_path')
-	xbmc.sleep(500)
+	from plugin import UpdateVideoLibrary
+	UpdateVideoLibrary(path='/fake_path', wait=True)
 
 
 menu_items = [u'Генерировать .strm и .nfo файлы',
@@ -844,14 +869,13 @@ def action_add_media(params, settings):
 		add_media(title, imdb, settings)
 		return
 	
-	import json
 	found = None
 
+	from jsonrpc_requests import VideoLibrary
 	if imdb.startswith('sm') and title:
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		result = VideoLibrary.GetTVShows(properties=["title", "originaltitle", "year", "file", "imdbnumber"])
 		try:
-			for r in result['result']['tvshows']:
+			for r in result['tvshows']:
 				if r['originaltitle'] == title:
 					found = 'tvshow'
 					break
@@ -859,23 +883,20 @@ def action_add_media(params, settings):
 			debug('KeyError: Animes not found')
 	
 	if not found:
-		#req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovies", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libMovies"}
-		#result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
 		from complex_requests import get_movies_by_imdb
 		result = get_movies_by_imdb(imdb)
 		try:
-			for r in result['result']['movies']:
-				if r['imdbnumber'] == imdb:
+			if result:
+				if len(result['movies']) > 0:
+					r = result['movies'][0]
 					found = 'movie'
-					break
 		except KeyError:
 			debug('KeyError: Movies not found')
 	
 	if not found:
-		req = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShows", "params": {"properties": ["title", "originaltitle", "year", "file", "imdbnumber"]}, "id": "libTvShows"}
-		result = json.loads(xbmc.executeJSONRPC(json.dumps(req)))
+		result = VideoLibrary.GetTVShows(properties=["title", "originaltitle", "year", "file", "imdbnumber"])
 		try:
-			for r in result['result']['tvshows']:
+			for r in result['tvshows']:
 				if r['imdbnumber'] == imdb:
 					found = 'tvshow'
 					break
@@ -885,8 +906,6 @@ def action_add_media(params, settings):
 	dialog = xbmcgui.Dialog()
 	if found == 'movie':
 		if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
-			#with filesystem.fopen(r['file'], 'r') as strm:
-			#	xbmc.executebuiltin('RunPlugin("%s")' % strm.read())
 			xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
 	elif found == 'tvshow':
 		if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):

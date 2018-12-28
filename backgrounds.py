@@ -70,7 +70,7 @@ def recheck_torrent_if_need(from_time, settings):
 # ------------------------------------------------------------------------------------------------------------------- #
 def update_service(show_progress=False):
 
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
 
 	from player import _addon
 
@@ -80,6 +80,8 @@ def update_service(show_progress=False):
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
 	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
+	kinohd_enable		= _addon.getSetting('kinohd_enable') == 'true'
+
 
 	from player import load_settings
 	settings = load_settings()
@@ -112,6 +114,10 @@ def update_service(show_progress=False):
 	if rutor_enable:
 		with dump_context('rutor.run'):
 			rutor.run(settings)
+
+	if kinohd_enable:
+		with dump_context('kinohd.run'):
+			kinohd.run(settings)
 
 	if nnmclub_enable:
 		from service import Addon
@@ -146,12 +152,21 @@ def update_service(show_progress=False):
 		info_dialog.update(0, '', '')
 		info_dialog.close()
 
-	if anidub_enable or nnmclub_enable or rutor_enable or soap4me_enable or bluebird_enable:
-		import xbmc
-		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			xbmc.executebuiltin('UpdateLibrary("video")')
+	if settings.update_paths:
+		#from plugin import wait_for_update
+		from jsonrpc_requests import VideoLibrary
+		from plugin import UpdateVideoLibrary, ScanMonitor
 
-	recheck_torrent_if_need(from_time, settings)
+		monitor = ScanMonitor()
+		UpdateVideoLibrary()
+		while not monitor.abortRequested():
+			if monitor.waitForAbort(1):
+				return
+			if monitor.do_exit:
+				clean_movies()
+				break
+
+	#recheck_torrent_if_need(from_time, settings)
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -224,7 +239,7 @@ def add_media_process(title, imdb):
 	count = 0
 
 	from player import getSetting, load_settings
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird
+	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
 
 	settings = load_settings()
 
@@ -233,7 +248,8 @@ def add_media_process(title, imdb):
 	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
-	soap4me_enable		= getSetting('soap4me_enable') == 'true'
+	soap4me_enable		= False
+	kinohd_enable		= getSetting('kinohd_enable') == 'true'
 
 	class RemoteDialogProgress:
 		progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
@@ -273,6 +289,11 @@ def add_media_process(title, imdb):
 				with dump_context('rutor.search_generate'):
 					c = rutor.search_generate(title, imdb, settings, p)
 					count += c
+			if kinohd_enable:
+				with dump_context('kinohd.search_generate'):
+					c = kinohd.search_generate(title, imdb, settings, p)
+					count += c
+
 			if nnmclub_enable:
 				with dump_context('nnmclub.search_generate'):
 					c = nnmclub.search_generate(title, imdb, settings, p)
@@ -292,6 +313,8 @@ def add_media_process(title, imdb):
 	if count:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
+			from jsonrpc_requests import VideoLibrary
+			from plugin import UpdateVideoLibrary
 			if p and p[0]:
 				path = p[0]
 				
@@ -306,81 +329,203 @@ def add_media_process(title, imdb):
 				srcs = Sources()
 				for src in srcs.get('video', normalize=False):
 					src_path_basename = filesystem.basename(src.path.rstrip('\\/'))
-					if src_path_basename == base_path:  #base_path.lower().replace('\\', '/') in src.path.lower().replace('\\', '/'):
-						path_update = src.path
+					if base_path.startswith(src_path_basename):
 						if type == 'tvshows':
+							path_update = src.path
 							if src.path.startswith('smb://'):
 								path_update = src.path
 								path_update = path_update.strip('\\/') + '/' + filesystem.basename(path)
 							else:
 								path_update = filesystem.join(src.path, filesystem.basename(path))
+						else:
+							path_update = filesystem.join( src.path, base_path[len(src_path_basename)+1:] )
 						log.debug(path_update)
-						xbmc.executebuiltin('UpdateLibrary("video","%s")' % path_update.encode('utf-8'))
-
-				#xbmc.executebuiltin('UpdateLibrary("video")')
+						#VideoLibrary.Scan(directory=path_update)
+						UpdateVideoLibrary(path=path_update)
 			else:
-				xbmc.executebuiltin('UpdateLibrary("video")')
+				UpdateVideoLibrary()
 
-			xbmc.sleep(250)
-			while xbmc.getCondVisibility('Library.IsScanningVideo'):
-				xbmc.sleep(100)
+	clean_movies()
 
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
 		f.write(str(count))
 
+
+def load_settings():
+	from player import load_settings as _load_settings
+	return _load_settings()
+
+def safe_remove(path):
+	import filesystem
+	if filesystem.exists(path):
+		filesystem.remove(path)
+
+def safe_copyfile(src, dst):
+	import filesystem
+
+	dirname = filesystem.dirname(dst)
+	if not filesystem.exists(dirname):
+		filesystem.makedirs(dirname)
+
+	if filesystem.exists(src):
+		filesystem.copyfile(src, dst)
+
+def dt(ss):
+	import datetime
+	# 2017-11-30 02:29:57
+	fmt = '%Y-%m-%d %H:%M:%S'
+	try:
+		return datetime.datetime.strptime(ss, fmt)
+	except:
+		return 0
+
+
 # ------------------------------------------------------------------------------------------------------------------- #
 def clean_movies():
-	from kodidb import MoreRequests
-	ll = MoreRequests().get_movie_duplicates()
+	_debug = False
 
-	try:
-		from player import load_settings
-		settings = load_settings()
-	except:
-		from settings import Settings
-		settings = Settings(filesystem.join(filesystem.dirname(__file__), 'test', 'Videos'))
+	from plugin import wait_for_update
+	wait_for_update()
+
+	log.debug('*'*80)
+	log.debug('* Start cleaning movies')
+	log.debug('*'*80)
+
+	from kodidb import MoreRequests
+	more_requests = MoreRequests()
+
+	movie_duplicates_list = more_requests.get_movie_duplicates()
+	settings = load_settings()
+
+	watched_and_progress = {}
+	update_paths = set()
+	clean_ids = []
 	
 	import movieapi
 	from base import make_fullpath
-	def clean_movie_by_imdbid(imdbid):
-		api = movieapi.MovieAPI(imdbid)
-		genre = api['genres']
-		if u'мультфильм' in genre:
-			base_path = settings.animation_path()
-		elif u'документальный' in genre:
-			base_path = settings.documentary_path()
-		else:
+	def get_info_and_move_files(imdbid):
+		def _log(s):
+			log.debug(u'    get_info_and_move_files: {}'.format(s))
+
+		api = movieapi.MovieAPI.get_by(imdb_id=imdbid)[0]
+
+		try:
+			genre = api['genres']
+			if u'мультфильм' in genre:
+				base_path = settings.animation_path()
+			elif u'документальный' in genre:
+				base_path = settings.documentary_path()
+			else:
+				base_path = settings.movies_path()
+		except:
 			base_path = settings.movies_path()
 
-		mm = MoreRequests().get_movies_by_imdb(imdbid)
+		from movieapi import make_imdb_path
+		base_path = make_imdb_path(base_path, imdbid)
+
+		one_movie_duplicates = more_requests.get_movies_by_imdb(imdbid)
 
 		from base import STRMWriterBase
 		from base import Informer
 
 		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
-
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
-		#alt_path = strm_path + '.alternative'
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
 
-		strm_data = filesystem.fopen(mm[0][3], 'r').read()
+		_log(u'title = ' + title)
+		_log(u'strm_path = ' + strm_path)
+
+		#strm_data = filesystem.fopen(one_movie_duplicates[0]['c22'], 'r').read()
 		alt_data = []
-		for m in mm:
-			links_with_ranks = STRMWriterBase.get_links_with_ranks(mm[0][3], settings, use_scrape_info=False)
+
+		update_fields = {}
+
+		for movie_duplicate in one_movie_duplicates:
+			links_with_ranks = STRMWriterBase.get_links_with_ranks(movie_duplicate['c22'], settings, use_scrape_info=False)
 			alt_data.extend(links_with_ranks)
 
-		alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
-		#alt_data = list(set(alt_data))
-		#alt_data.sort(key=operator.itemgetter('rank'))
+			# Sync playCount & resume time
+			if movie_duplicate['playCount']:
+				update_fields['playcount'] = int(update_fields.get('playcount', 0)) + int(movie_duplicate['playCount'])
+
+			if movie_duplicate['resumeTimeInSeconds'] and movie_duplicate['totalTimeInSeconds']:
+				update_fields['resume']			= {
+					'position': int(movie_duplicate['resumeTimeInSeconds']),
+					'total':	int(movie_duplicate['totalTimeInSeconds'])}
+
 		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
+			alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
 			STRMWriterBase.write_alternative(strm_path, alt_data)
-		pass
+
+			last_strm_path = movie_duplicate['c22']
+			if last_strm_path != strm_path:
+				last_nfo_path = last_strm_path.replace('.strm', '.nfo')
+
+				safe_copyfile(last_strm_path, strm_path)
+				safe_copyfile(last_nfo_path, nfo_path)
+
+				update_paths.add(filesystem.dirname(strm_path))
+
+			for movie_duplicate in one_movie_duplicates:
+				cur_strm_path = movie_duplicate['c22']
+				if cur_strm_path != strm_path:
+					safe_remove(cur_strm_path)
+					safe_remove(cur_strm_path.replace('.strm', '.nfo'))
+					safe_remove(cur_strm_path + '.alternative')
+
+					clean_ids.append(movie_duplicate['idMovie'])
+
+		return update_fields
 
 
-	for m in ll:
+	log.debug('# ----------------')
+	log.debug('# Get info & move files')
+	for movie in movie_duplicates_list:
 		try:
-			clean_movie_by_imdbid(m[4])
-		except:
+			imdbid = movie[4]
+			watched_and_progress[imdbid] = get_info_and_move_files(imdbid)
+		except BaseException as e:
+			from log import print_tb
+			print_tb()
 			pass
 
+		if _debug:
+			break
+
+	log.debug('# ----------------')
+	log.debug('# Update Video library')
+	from jsonrpc_requests import VideoLibrary	#, JSONRPC
+	from plugin import wait_for_update, UpdateVideoLibrary
+
+	#ver = JSONRPC.Version()
+	for path in update_paths:
+		log.debug(u'Scan for: {}'.format(path))
+		#VideoLibrary.Scan(directory=path)
+		#wait_for_update()
+		UpdateVideoLibrary(path=path, wait=True)
+
+	#res = VideoLibrary.Clean(showdialogs=_debug)
+	#log.debug(unicode(res))
+
+	log.debug('# ----------------')
+	log.debug('# Apply watched & progress')
+	for imdbid, update_data in watched_and_progress.iteritems():
+		if update_data:
+			movies = more_requests.get_movies_by_imdb(imdbid)
+			if movies:
+				movieid = movies[-1]['idMovie']
+				log.debug(u'Process {}'.format(movies[-1]['c22']))
+				log.debug(unicode(update_data))
+				VideoLibrary.SetMovieDetails(movieid=movieid, **update_data)
+		pass
+
+	log.debug('# ----------------')
+	log.debug('# Clean movies')
+	for idMovie in clean_ids:
+		log.debug('remove movie: {}'.format(idMovie))
+		VideoLibrary.RemoveMovie(movieid=idMovie)
+
+	log.debug('*'*80)
+	log.debug('* End cleaning movies')
+	log.debug('*'*80)

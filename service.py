@@ -118,8 +118,9 @@ def call_bg(action, params = {}):
 	for key, value in params.iteritems(): 
 		if isinstance(value, unicode):
 			params[key] = value.encode('utf-8')
-	url = 'plugin://script.media.aggregator/?' + urllib.urlencode(params)
-	xbmc.executebuiltin('RunPlugin("%s")' % url)
+
+	from plugin import RunPlugin
+	RunPlugin(**params)
 
 def update_case():
 	# Init
@@ -224,6 +225,8 @@ def add_media_case():
 							break
 					except BaseException as e:
 						log.print_tb(e)
+		except BaseException as e:
+			log.print_tb(e)
 		finally:
 			filesystem.remove(path)
 
@@ -234,13 +237,29 @@ def main():
 	vsdbg._attach(False)
 
 	#global _addon
+
+	# write addon info to log
+	try:
+		log.debug('********* Starting Media Aggregator ********************')
+		version = xbmcaddon.Addon().getAddonInfo('version')
+		log.debug('* Version {}'.format(version))
+		log.debug('********************************************************')
+	except:
+		pass
+
+	#from plugin import UpdateVideoLibrary
+	#UpdateVideoLibrary('smb://VD/D/Animation', wait=True)
+	#UpdateVideoLibrary('smb://VD/D/Movies', wait=True)
+	#log.debug('********************************************************')
+
 	#_addon = AddonRO()
 	#player._addon = _addon
 
 	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
 		log.debug('User action!!! update_library_next_start')
-		xbmc.executebuiltin('UpdateLibrary("video")')
+		from plugin import UpdateVideoLibrary
+		UpdateVideoLibrary()
 		filesystem.remove(path)
 
 
@@ -251,6 +270,9 @@ def main():
 			scrape_case()
 			update_case()
 			add_media_case()
+
+		except BaseException as e:
+			log.print_tb(e)
 
 		finally:
 			sleep(1)
@@ -357,17 +379,12 @@ def add_media(title, imdb, settings):
 				if not xbmc.Player().isPlaying():
 					if count:
 						dlg.notification(_addon_name, u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
-
 						xbmc.executebuiltin('Container.Refresh')
 
-						url = 'plugin://script.media.aggregator/?' + urllib.urlencode(
-							{'action': 'add_media',
-								'title': title.encode('utf-8'),
-								'imdb': imdb,
-								'strm': strm_path.encode('utf-8'),
-								'norecursive': True})
-
-						xbmc.executebuiltin('RunPlugin("%s")' % url)
+						from plugin import RunPlugin
+						RunPlugin(action='add_media', title=title.encode('utf-8'),
+								imdb=imdb, strm=strm_path.encode('utf-8'),
+								norecursive=True)
 					else:
 						dlg.notification(_addon_name,
 											u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
@@ -386,7 +403,7 @@ def add_media(title, imdb, settings):
 def save_dbs():
 	path = filesystem.join(_addondir, 'dbversions')
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'service.save_dbs'):
 
 		for fn in filesystem.listdir(path):
 			filesystem.remove(fn)

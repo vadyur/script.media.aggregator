@@ -225,7 +225,7 @@ class DescriptionParser(DescriptionParserBase):
 		if kp:
 			self._dict['kp_id'] = kp['href']
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 
 		return True
 
@@ -381,7 +381,7 @@ def write_movie(post, settings, tracker):
 
 def write_movies(content, path, settings, tracker=False):
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_movies'):
 		# ---------------------------------------------
 		if tracker:
 			_ITEMS_ON_PAGE = 50
@@ -431,7 +431,7 @@ def title(rss_url):
 def write_tvshows(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_tvshows'):
 		r = settings.session.get(rss_url)
 		if not r.ok:
 			return
@@ -461,7 +461,7 @@ def write_movies_rss(rss_url, path, settings):
 
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_movies_rss'):
 		r = settings.session.get(rss_url)
 		if not r.ok:
 			return
@@ -713,7 +713,7 @@ def download_torrent(url, path, settings):
 
 def make_search_url(what, IDs):
 	url = u'http://nnm-club.me/forum/tracker.php'
-	url += '?f=' + str(IDs)
+	url += '?f=' + str(IDs)+'&s=2'
 	url += '&nm=' + urllib2.quote(what.encode('utf-8'))
 	return url
 

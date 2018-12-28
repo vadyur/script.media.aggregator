@@ -130,7 +130,7 @@ class DescriptionParser(DescriptionParserBase):
 
 			r = requests.get(real_url(self._link, self.settings))
 			if r.status_code == requests.codes.ok:
-				return self.parse_description(r.text)
+				return self.parse_description(r.content)
 
 		return False
 
@@ -239,8 +239,13 @@ class DescriptionParser(DescriptionParserBase):
 					if '/torrent/' in a['href']:
 						parts = a['href'].split('/')
 						href = parts[0] + '/' + parts[1] + '/' + parts[2]
-						html = urllib2.urlopen(real_url(href, self.settings))
-						soup = BeautifulSoup(clean_html(html.read()), 'html.parser')
+
+						r = requests.get(real_url(href, self.settings))
+						if r.status_code != requests.codes.ok:
+							break
+
+						html = r.content
+						soup = BeautifulSoup(clean_html(html), 'html.parser')
 
 						for a in soup.select('a[href*="www.imdb.com/title/"]'):
 							try:
@@ -280,7 +285,7 @@ class DescriptionParser(DescriptionParserBase):
 		for kp_id in self.soup.select('a[href*="www.kinopoisk.ru/"]'):
 			self._dict['kp_id'] = kp_id['href']
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 
 		return True
 
@@ -363,7 +368,7 @@ def get_source_url(link):
 def write_tvshows(rss_url, path, settings):
 	debug('------------------------- Rutor: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'rutor.write_tvshows'):
 		d = feedparser.parse(real_url(rss_url, settings))
 
 		cnt = 0
@@ -393,7 +398,7 @@ def write_movies_rss(rss_url, path, settings):
 
 	debug('------------------------- Rutor: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'rutor.write_movies_rss'):
 		d = feedparser.parse(real_url(rss_url, settings))
 
 		cnt = 0
@@ -443,7 +448,7 @@ def run(settings):
 def get_magnet_link(url):
 	r = requests.get(real_url(url, settings))
 	if r.status_code == requests.codes.ok:
-		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
+		soup = BeautifulSoup(clean_html(r.content), 'html.parser')
 		for a in soup.select('a[href*="magnet:"]'):
 			debug(a['href'])
 			return a['href']
@@ -459,7 +464,7 @@ def download_torrent(url, path, settings):
 
 	page = requests.get(real_url(url, settings))
 
-	soup = BeautifulSoup(clean_html(page.text), 'html.parser')
+	soup = BeautifulSoup(clean_html(page.content), 'html.parser')
 	a = soup.select('#download > a')
 	if len(a) > 1:
 		link = a[1]['href']
@@ -529,7 +534,7 @@ class PostsEnumerator(object):
 		except requests.exceptions.ConnectionError:
 			return
 
-		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
+		self.soup = BeautifulSoup(clean_html(request.content), 'html.parser')
 		debug(url)
 
 		indx = self.soup.find('div', attrs={'id': 'index'})
@@ -640,15 +645,19 @@ def search_generate(what, imdb, settings, path_out):
 	return count
 
 if __name__ == '__main__':
-	settings = Settings(r'c:\Users\vd\Videos')
-	settings.addon_data_path = u"c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator\\"
-	settings.rutor_domain = 'new-rutor.org'
-	settings.torrent_path = u'c:\\Users\\vd\\AppData\\Roaming\\Kodi\\userdata\\addon_data\\script.media.aggregator'
-	settings.torrent_player = 'torrent2http'
-	settings.kp_googlecache = True
-	settings.kp_usezaborona = True
-	settings.use_kinopoisk = False
-	settings.use_worldart = True
+	import filesystem
+
+	test_dir = filesystem.join(filesystem.dirname(__file__), 'test')
+	settings = Settings( filesystem.join(test_dir, 'Videos') )
+	settings.addon_data_path	= filesystem.join(test_dir, 'data')
+	settings.torrent_path		= filesystem.join(test_dir, 'torrents')
+	settings.torrent_player		= 'torrent2http'
+	settings.kp_googlecache		= False
+	settings.kp_usezaborona		= True
+	settings.use_kinopoisk		= True
+	settings.use_worldart		= True
+
+	settings.rutor_domain = 'rutor.is'
 
 	path_out = []
 	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
@@ -663,5 +672,6 @@ if __name__ == '__main__':
 		run(settings)
 
 	#recheck_torrent_if_need(from_time, settings)
+	search_generate(None, 'tt2948356', settings, path_out)
 
-	#search_generate(None, 'tt2948356', settings)
+	pass

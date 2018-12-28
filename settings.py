@@ -21,7 +21,7 @@ class FakeProgressDlg(object):
 
 _addon_name = '[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]'
 
-class Settings:
+class Settings(object):
 	# feed=dl&
 	
 	base_url 			= 'http://hdclub.org/rss.php'
@@ -117,6 +117,15 @@ class Settings:
 		self.rutor_nosd				= rutor_nosd
 
 		self.progress_dialog		= FakeProgressDlg()
+		self.update_paths			= set()
+
+		self.kinohd_enable			= False
+		self.kinohd_4k				= True
+		self.kinohd_1080p			= True
+		self.kinohd_720p			= True
+		self.kinohd_3d				= True
+		self.kinohd_serial			= True
+
 		
 	def __repr__(self):
 		attrs = vars(self)

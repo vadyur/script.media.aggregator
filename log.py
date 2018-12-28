@@ -79,7 +79,10 @@ class dump_context:
 		name = self.module + self.timestamp() + '.log'
 		try:
 			from xbmc import translatePath
-			_filename = 'special://logpath/' + name
+			path = translatePath('special://logpath/MA_logs/')
+			if not filesystem.exists(path):
+				filesystem.makedirs(path)
+			_filename = filesystem.join(path, name)
 		except ImportError:
 			_filename = filesystem.abspath(filesystem.join( __file__ ,'../../..', name))
 		return _filename

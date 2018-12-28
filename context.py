@@ -39,6 +39,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 					s += '[rutor] '
 				elif 'soap4' in link:
 					s += '[soap4me] '
+				elif 'kinohd' in link:
+					s += '[KinoHD] '
 				s += '[/B][/COLOR]'
 			except:
 				pass

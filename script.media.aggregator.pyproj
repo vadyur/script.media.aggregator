@@ -5,9 +5,9 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{a1163bd6-35d4-47e7-908b-be0a65c3f951}</ProjectGuid>
     <ProjectHome />
-    <StartupFile>nnmclub_test.py</StartupFile>
+    <StartupFile>bb_test.py</StartupFile>
     <SearchPath>..\script.module.feedparser\lib;..\script.module.pyxbmct\lib</SearchPath>
-    <WorkingDirectory>c:\Users\vd\AppData\Roaming\Kodi\addons\script.media.aggregator\</WorkingDirectory>
+    <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <ProjectTypeGuids>{888888a0-9f3d-457c-b088-3a5042f75d52}</ProjectTypeGuids>
     <LaunchProvider>Standard Python launcher</LaunchProvider>
@@ -41,6 +41,7 @@ VSDEV=1</Environment>
     <Compile Include="bb_test.py" />
     <Compile Include="bencode.py" />
     <Compile Include="bluebird.py" />
+    <Compile Include="complex_requests.py" />
     <Compile Include="context.py" />
     <Compile Include="context_get_sources.py" />
     <Compile Include="context_repair.py" />
@@ -50,11 +51,14 @@ VSDEV=1</Environment>
     <Compile Include="countries.py" />
     <Compile Include="downloader.py" />
     <Compile Include="downloader_test.py" />
+    <Compile Include="duplicates_test.py" />
     <Compile Include="elementumplayer.py" />
     <Compile Include="filesystem.py" />
     <Compile Include="hdclub.py" />
     <Compile Include="hdclub_test.py" />
+    <Compile Include="jsonrpc_requests.py" />
     <Compile Include="jsonrpc_test.py" />
+    <Compile Include="kinohd.py" />
     <Compile Include="kodidb.py" />
     <Compile Include="log.py" />
     <Compile Include="dispatcher.py">
@@ -75,6 +79,7 @@ VSDEV=1</Environment>
     <Compile Include="settings.py" />
     <Compile Include="soap4me.py" />
     <Compile Include="soap4me_test.py" />
+    <Compile Include="soup_base.py" />
     <Compile Include="sources.py" />
     <Compile Include="sources_test.py" />
     <Compile Include="strmwriter.py" />

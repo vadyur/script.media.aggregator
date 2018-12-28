@@ -11,6 +11,19 @@ from bs4 import BeautifulSoup
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
 
+def copy_files(src, dst, pattern):
+	from backgrounds import safe_copyfile
+	for ext in ['.strm', '.nfo', '.strm.alternative']:
+		src_file = filesystem.join(src, base.make_fullpath(pattern, ext))
+		if filesystem.exists(src_file):
+			dst_file = filesystem.join(dst, base.make_fullpath(pattern, ext))
+			safe_copyfile(src_file, dst_file)
+
+def make_imdb_path(path, imdb):
+	if imdb and imdb.startswith('tt'):
+		return filesystem.join(path, 'TTx' + imdb[3:5], imdb)
+	return path
+
 def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
@@ -18,34 +31,51 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 		debug('fulltitle: ' + fulltitle.encode('utf-8'))
 		debug('filename: ' + filename.encode('utf-8'))
 		debug('-------------------------------------------+')
-		from strmwriter import STRMWriter
-		STRMWriter(parser.link()).write(filename, path,
-										parser=parser,
-										settings=settings)
-		from nfowriter import NFOWriter
-		NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, path, skip_nfo_exists=skip_nfo_exists)
 
-		if download_torrent:
-			from downloader import TorrentDownloader
-			TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
+		imdb = parser.get_value('imdb_id')
+		new_path = make_imdb_path(path, imdb)
 
-		return filesystem.relpath( filesystem.join(path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
-	else:
-		return None
+		if new_path != path:
+			copy_files(path, new_path, filename)
+
+		with filesystem.save_make_chdir_context(new_path, 'movieaip.write_movie'):
+			from strmwriter import STRMWriter
+			STRMWriter(parser.link()).write(filename, new_path,
+											parser=parser,
+											settings=settings)
+			from nfowriter import NFOWriter
+			NFOWriter(parser, movie_api = parser.movie_api()).write_movie(filename, new_path, skip_nfo_exists=skip_nfo_exists)
+
+			if download_torrent:
+				from downloader import TorrentDownloader
+				TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
+
+			settings.update_paths.add(new_path)
+			return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+
 
 def get_tmdb_api_key():
+	key = 'f090bb54758cabf231fb605d3e3e0468'
+	host = 'api.tmdb.org'
+
+	import filesystem
+
 	try:
-		import filesystem
 		import xbmc
 		home_path = xbmc.translatePath('special://home').decode('utf-8')
-	except ImportError:
-		cur = filesystem.dirname(__file__)
-		home_path = filesystem.join(cur, '../..')
+		major = xbmc.getInfoLabel("System.BuildVersion").split(".")[0]
 
-	key = 'ecbc86c92da237cb9faff6d3ddc4be6d'
-	host = 'api.tmdb.org'
+		if int(major) > 17:
+			return {'host': host, 'key': key }
+
+	except ImportError:
+		# cur = filesystem.dirname(__file__)
+		# home_path = filesystem.join(cur, '../..')
+
+		return {'host': host, 'key': key }
+
 	try:
-		xml_path = filesystem.join(home_path, 'addons/metadata.common.themoviedb.org/tmdb.xml')
+		xml_path = filesystem.join(home_path, 'addons', 'metadata.common.themoviedb.org', 'tmdb.xml')
 		with filesystem.fopen(xml_path, 'r') as xml:
 			content = xml.read()
 			match = re.search(r'api_key=(\w+)', content)
@@ -115,21 +145,7 @@ class IDs(object):
 		kp_id = IDs.id_by_kp_url(kp_url)
 		return kp_id in IDs.imdb_by_kp
 
-class soup_base(object):
-	def __init__(self, url, headers=None):
-		self.url = url
-		self._soup = None
-		self._request = None
-		self._headers = headers
-
-	@property
-	def soup(self):
-		if not self._soup:
-			r = requests.get(self.url, headers=self._headers)
-			self._soup = BeautifulSoup(r.content, 'html.parser')
-			self._request = r
-
-		return self._soup
+from soup_base import soup_base
 
 class world_art_soup(soup_base):
 	headers = {
@@ -351,6 +367,13 @@ class world_art(world_art_soup):
 
 	#def trailer(self):
 	#	info = self.info
+	def director(self):
+		try:
+			result = self.info.director
+			result = result.replace(u'и другие', '')
+			return [d.strip() for d in result.split(',')]
+		except:
+			return []
 
 	def actors(self):
 		try:
@@ -460,7 +483,7 @@ class KinopoiskAPI(object):
 
 	def __init__(self, kinopoisk_url = None, settings = None):
 		from settings import Settings
-		self.settings = settings if settings else Settings()
+		self.settings = settings if settings else Settings('')
 		self.kinopoisk_url = kinopoisk_url
 		self.soup = None
 		self._actors = None
@@ -542,8 +565,10 @@ class KinopoiskAPI(object):
 		if self.kinopoisk_url and self.soup is None:
 			r = self._http_get(self.kinopoisk_url)
 			if r.status_code == requests.codes.ok:
-				text = base.clean_html(r.text)
+				text = base.clean_html(r.content)
 				self.soup = BeautifulSoup(text, 'html.parser')
+			else:
+				pass
 
 	def title(self):
 		title = None
@@ -572,6 +597,15 @@ class KinopoiskAPI(object):
 			for a in self.soup.find_all('a'):
 				if '/lists/m_act%5Byear%5D/' in a.get('href', ''):
 					return a.get_text()
+		raise AttributeError
+
+	def director(self):
+		self.makeSoup()
+		if self.soup:
+			#<td itemprop="director"><a href="/name/535852/" data-popup-info="enabled">Роар Утхауг</a></td>
+			td = self.soup.find('td', attrs={"itemprop": "director"})
+			if td:
+				return [ a.get_text() for a in td.find_all('a') if '/name' in a['href'] ]
 		raise AttributeError
 
 	def plot(self):
@@ -750,6 +784,13 @@ class ImdbAPI(object):
 
 		raise AttributeError
 
+	def type(self):
+		# <div class="bp_heading">Episode Guide</div>
+		for div in self.page.find_all('div', class_="bp_heading"):
+			if div.get_text() == 'Episode Guide':
+				return 'tvshow'
+
+		return 'movie'
 
 
 class KinopoiskAPI2(KinopoiskAPI):
@@ -970,8 +1011,30 @@ class TMDB_API(object):
 				if url_:
 					self.tmdb_data 	= json.load(urllib2.urlopen( url_ ))
 					debug('tmdb_data (' + url_ + ') \t\t\t[Ok]')
+				else:
+					self.tmdb_data = None
 			except:
-				pass
+				self.tmdb_data = None
+
+	def title(self):
+		try:
+			if 'title' in self.tmdb_data:
+				return self.tmdb_data['title']
+			if 'name' in self.tmdb_data:
+				return self.tmdb_data['name']
+		except:
+			pass
+		raise AttributeError
+
+	def originaltitle(self):
+		try:
+			if 'original_title' in self.tmdb_data:
+				return self.tmdb_data['original_title']
+			if 'original_name' in self.tmdb_data:
+				return self.tmdb_data['original_name']
+		except:
+			pass
+		raise AttributeError
 
 	def year(self):
 		try:
@@ -1028,6 +1091,15 @@ class TMDB_API(object):
 	def genres(self):
 		ll = [g['name'] for g in self.tmdb_data['genres']]
 		return ll
+
+	def countries(self):
+		from countries import ru
+		cc = [c['iso_3166_1'] for c in self.tmdb_data['production_countries']]
+		return [ru(c) for c in cc]
+	
+	def studios(self):
+		ss = [ s['name'] for s in self.tmdb_data['production_companies']]
+		return ss
 
 class MovieAPI(object):
 
@@ -1087,6 +1159,8 @@ class MovieAPI(object):
 			self.imdbapi = ImdbAPI(imdb_id)
 
 			self.providers = [self.tmdbapi, self.imdbapi]
+			if not self.tmdbapi.tmdb_data:
+				self.providers.remove(self.tmdbapi)
 
 		if kinopoisk:
 			if not settings or settings.use_kinopoisk:
@@ -1096,7 +1170,12 @@ class MovieAPI(object):
 		if imdb_id or kinopoisk:
 			if not settings or settings.use_worldart:
 				if not orig:
-					orig = self.originaltitle()
+					for api in self.providers:
+						try:
+							orig = api.originaltitle()
+							break
+						except:
+							pass
 				try:
 					self.worldartapi = world_art(orig, imdbid=imdb_id, kp_url=kinopoisk)
 					self.providers.append(self.worldartapi)
@@ -1131,11 +1210,15 @@ class MovieAPI(object):
 		return self._actors
 
 	def __getitem__(self, key):
-		res = self.__getattr__(key)
-		if callable(res):
-			return res()
-		else:
-			raise AttributeError
+		for api in self.providers:
+			try:
+				res = api.__getattribute__(key)
+				if res:
+					return res()
+			except BaseException as e:
+				continue
+
+		raise AttributeError
 
 	def get(self, key, default=None):
 		try:
@@ -1160,6 +1243,9 @@ class MovieAPI(object):
 
 	def ru(self, name):
 		def ru_text(text):
+			if not text:
+				return False
+
 			r = 0
 			nr = 0
 			for ch in text:
@@ -1171,13 +1257,23 @@ class MovieAPI(object):
 					nr += 1
 			return r > nr
 
+		def ru_list(ll):
+			for l in ll:
+				if ru_text(l):
+					return True
+			return False
+
 		for api in self.providers:
 			try:
 				res = api.__getattribute__(name)
 				if res and callable(res):
 					value = res()
-					if ru_text(value):
-						return value
+					if isinstance(value, list):
+						if ru_list(value):
+							return value
+					else:
+						if ru_text(value):
+							return value
 
 			except AttributeError:
 				continue

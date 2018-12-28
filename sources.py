@@ -38,7 +38,7 @@ def create(settings):
 	need_restart = False
 	sources = Sources()
 
-	with filesystem.save_make_chdir_context(settings.base_path()):
+	with filesystem.save_make_chdir_context(settings.base_path(), 'sources.create'):
 
 		if settings.anime_save:
 			path = settings.anime_tvshow_path()

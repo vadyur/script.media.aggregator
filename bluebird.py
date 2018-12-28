@@ -129,7 +129,7 @@ class DescriptionParser(DescriptionParserBase):
 			self._dict['thumbnail'] = s
 			debug(self._dict['thumbnail'])
 
-		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), self.settings)
+		self.make_movie_api(self.get_value('imdb_id'), self.get_value('kp_id'), settings=self.settings)
 				
 		return True
 
@@ -149,19 +149,33 @@ def write_movie(item, settings, path):
 		if not filename:
 			return
 		
+		from movieapi import make_imdb_path, copy_files
+		imdb = parser.get_value('imdb_id')
+		new_path = make_imdb_path(path, imdb)
+
+		if not filesystem.exists(new_path):
+			with filesystem.save_make_chdir_context(new_path, 'BluebirdHD.write_movie'):
+				pass
+
+		if new_path != path:
+			copy_files(path, new_path, filename)
+
 		debug('filename: ' + filename.encode('utf-8'))
-		STRMWriter(origin_url(item.link)).write(filename, path, parser=parser, settings=settings)
-		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, path)
+		STRMWriter(origin_url(item.link)).write(filename, new_path, parser=parser, settings=settings)
+		NFOWriter(parser, movie_api=parser.movie_api()).write_movie(filename, new_path)
 		if settings.bluebird_preload_torrents:
 			from downloader import TorrentDownloader
 			TorrentDownloader(item.link, settings.torrents_path(), settings).download()
+
+		settings.update_paths.add(new_path)
 	else:
 		skipped(item)
 		
 	del parser
 		
 def write_movies(rss_url, path, settings):
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'BluebirdHD.write_movies'):
+
 		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
@@ -195,7 +209,7 @@ def write_tvshows(rss_url, path, settings):
 
 	return	# TODO: Later
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'BluebirdHD.write_tvshows'):
 		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0

@@ -132,7 +132,7 @@ def FileNamesPrepare(filename):
 	except:
 		pass
 
-	urls = [r's(\d+)e(\d+)', r's(\d+) e(\d+)', r'(\d+)[x|-](\d+)', r'E(\d+)', r'Ep(\d+)', r'\((\d+)\)']
+	urls = [r's(\d+)e(\d+)', r's(\d+) e(\d+)', r'(\d+)[x|-](\d+)', r'E(\d+)', r'Ep(\d+)', r'\((\d+)\)', r'S(\d+)e(\d+)', r'S(\d+)E(\d+)', r'S(\d+)\.E(\d+)',r'S(\d+)\.e(\d+)' ,r's(\d+)\.e(\d+)']
 	for file in urls:
 		match = re.compile(file, re.DOTALL | re.I | re.IGNORECASE).findall(filename)
 		if match:
@@ -323,23 +323,24 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 		files = parse_torrent(content, season_from_title(fulltitle))
 
 		title = parser.get_value('title')
-		debug(title.encode('utf-8'))
+		debug(title)
 		originaltitle = parser.get_value('originaltitle')
-		debug(originaltitle.encode('utf-8'))
+		debug(originaltitle)
 
 		imdb_id = parser.get('imdb_id', None)
 		kp_id = parser.get('kp_id', None)
 		tvshow_api = TVShowAPI.get_by(originaltitle, title, imdb_id, kp_id)
 
-		api_title = parser.movie_api().get('title')
-		if not api_title:
+		try:
+			api_title = parser.movie_api().imdbapi.title()
+		except AttributeError:
 			api_title = tvshow_api.Title()
 		tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
-		debug(tvshow_path.encode('utf-8'))
+		debug(tvshow_path)
 
 		if tvshow_path:
 			tvshow_path = filesystem.join(path, tvshow_path)
-			with filesystem.save_make_chdir_context(tvshow_path):
+			with filesystem.save_make_chdir_context(tvshow_path, 'tvshowapi.write_tvshow'):
 
 				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo(tvshow_path)
 
@@ -364,7 +365,7 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 						continue
 
 					season_path = filesystem.join(tvshow_path, season_path)
-					with filesystem.save_make_chdir_context(season_path):
+					with filesystem.save_make_chdir_context(season_path, 'tvshowapi.write_tvshow2'):
 
 						results = filter(lambda x: x['season'] == s_num and x['episode'] == f['episode'], files)
 						if len(results) > 1:	# Has duplicate episodes
@@ -385,6 +386,8 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 
 						STRMWriter(parser.link()).write(filename, season_path, index=f['index'], settings=settings, parser=parser)
 						NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_episode(episode, filename, season_path, skip_nfo_exists=skip_nfo_exists)
+
+			settings.update_paths.add(tvshow_path)
 			return tvshow_path
 					# end for
 		else:

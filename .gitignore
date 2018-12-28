@@ -7,3 +7,4 @@ standalone.py
 .vs/
 ptvsd/
 rpdb2.py
+test/
