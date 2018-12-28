@@ -518,7 +518,10 @@ class Informer(object):
 		if self.__movie_api:
 			title 			= self.__movie_api.imdbapi.title()
 			originaltitle	= self.__movie_api.imdbapi.originaltitle()
-			year			= self.__movie_api['year']
+			try:
+				year		= self.__movie_api['year']
+			except AttributeError:
+				year = None
 
 			return self.filename_with(title, originaltitle, year)
 
