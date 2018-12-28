@@ -867,8 +867,12 @@ class TMDB_API(object):
 
 		result = tmdb_query_result()
 		try:
+			debug('Request is: ' + url)
 			data = json.load(urllib2.urlopen(url))
-		except urllib2.HTTPError:
+			debug(u'data is: ' + unicode(data))
+		except urllib2.HTTPError as e:
+			debug('Error TMDB request')
+			debug(e)
 			return tmdb_query_result()
 
 		if "total_pages" in data:
