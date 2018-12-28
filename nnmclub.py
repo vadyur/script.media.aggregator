@@ -381,7 +381,7 @@ def write_movie(post, settings, tracker):
 
 def write_movies(content, path, settings, tracker=False):
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_movies'):
 		# ---------------------------------------------
 		if tracker:
 			_ITEMS_ON_PAGE = 50
@@ -431,7 +431,7 @@ def title(rss_url):
 def write_tvshows(rss_url, path, settings):
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_tvshows'):
 		r = settings.session.get(rss_url)
 		if not r.ok:
 			return
@@ -461,7 +461,7 @@ def write_movies_rss(rss_url, path, settings):
 
 	debug('------------------------- NNM Club: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'nnm.write_movies_rss'):
 		r = settings.session.get(rss_url)
 		if not r.ok:
 			return

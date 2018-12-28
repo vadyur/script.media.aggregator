@@ -368,7 +368,7 @@ def get_source_url(link):
 def write_tvshows(rss_url, path, settings):
 	debug('------------------------- Rutor: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'rutor.write_tvshows'):
 		d = feedparser.parse(real_url(rss_url, settings))
 
 		cnt = 0
@@ -398,7 +398,7 @@ def write_movies_rss(rss_url, path, settings):
 
 	debug('------------------------- Rutor: %s -------------------------' % rss_url)
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'rutor.write_movies_rss'):
 		d = feedparser.parse(real_url(rss_url, settings))
 
 		cnt = 0

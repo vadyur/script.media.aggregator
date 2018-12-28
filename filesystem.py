@@ -286,7 +286,7 @@ def listdir(path):
 	except:
 		path = get_path(path)
 		if path.startswith(r'\\'):
-			with save_make_chdir_context(path):
+			with save_make_chdir_context(path, 'filesystem'):
 				for p in os.listdir('.'):
 					ld.append(ensure_unicode(p))
 		else:

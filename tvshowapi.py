@@ -340,7 +340,7 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 
 		if tvshow_path:
 			tvshow_path = filesystem.join(path, tvshow_path)
-			with filesystem.save_make_chdir_context(tvshow_path):
+			with filesystem.save_make_chdir_context(tvshow_path, 'tvshowapi.write_tvshow'):
 
 				NFOWriter(parser, tvshow_api=tvshow_api, movie_api=parser.movie_api()).write_tvshow_nfo(tvshow_path)
 
@@ -365,7 +365,7 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 						continue
 
 					season_path = filesystem.join(tvshow_path, season_path)
-					with filesystem.save_make_chdir_context(season_path):
+					with filesystem.save_make_chdir_context(season_path, 'tvshowapi.write_tvshow2'):
 
 						results = filter(lambda x: x['season'] == s_num and x['episode'] == f['episode'], files)
 						if len(results) > 1:	# Has duplicate episodes

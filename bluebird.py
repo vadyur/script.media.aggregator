@@ -154,7 +154,7 @@ def write_movie(item, settings, path):
 		new_path = make_imdb_path(path, imdb)
 
 		if not filesystem.exists(new_path):
-			with filesystem.save_make_chdir_context(new_path):
+			with filesystem.save_make_chdir_context(new_path, 'BluebirdHD.write_movie'):
 				pass
 
 		if new_path != path:
@@ -174,7 +174,8 @@ def write_movie(item, settings, path):
 	del parser
 		
 def write_movies(rss_url, path, settings):
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'BluebirdHD.write_movies'):
+
 		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0
@@ -208,7 +209,7 @@ def write_tvshows(rss_url, path, settings):
 
 	return	# TODO: Later
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'BluebirdHD.write_tvshows'):
 		d = feedparser.parse(real_url(rss_url))
 
 		cnt = 0

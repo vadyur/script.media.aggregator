@@ -220,7 +220,7 @@ def write_tvshow_nfo(parser, tvshow_api, tvshow_path):
 
 ###################################################################################################
 def write_tvshow(content, path, settings):
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'Anidub.write_tvshow'):
 		d = feedparser.parse(content)
 
 		cnt = 0
@@ -257,14 +257,14 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 		path_out.append(tvshow_path)
 		settings.update_paths.add(tvshow_path)
 
-		with filesystem.save_make_chdir_context(tvshow_path):
+		with filesystem.save_make_chdir_context(tvshow_path, 'Anidub.write_tvshow_item'):
 			tvshow_api = TVShowAPI.get_by(originaltitle, title)
 			write_tvshow_nfo(parser, tvshow_api, tvshow_path)
 
 		season_path = filesystem.join(tvshow_path, u'Season ' + unicode(season))
 		debug(season_path)
 
-		with filesystem.save_make_chdir_context(season_path):
+		with filesystem.save_make_chdir_context(season_path, 'Anidub.write_tvshow_item_2'):
 
 			episodes = tvshow_api.episodes(season)
 
@@ -377,7 +377,7 @@ def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = N
 			self.link = link
 			self.title = title
 	
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'Anidub.write_pages'):
 		while True:
 			if params:
 				selector = soup.select('div.search_post > div.text > h2 > a')

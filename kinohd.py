@@ -135,7 +135,7 @@ class Process(object):
 				return
 			base_path = self.settings.movies_path()
 
-		with filesystem.save_make_chdir_context(base_path, 'kinohd_movies'):
+		with filesystem.save_make_chdir_context(base_path, 'kinohd.movies'):
 			return movieapi.write_movie(parser.get_value('full_title'), url, self.settings, parser, path=base_path)
 
 	def process_tvshow(self, url, parser):
@@ -155,7 +155,7 @@ class Process(object):
 			if not self.settings.tvshows_save:
 				return
 			base_path = self.settings.tvshow_path()
-		with filesystem.save_make_chdir_context(base_path, 'kinohd_tvshow'):
+		with filesystem.save_make_chdir_context(base_path, 'kinohd.tvshow'):
 			return tvshowapi.write_tvshow(parser.get_value('full_title'), url, self.settings, parser, path=base_path)
 
 	def process(self, url, fulltitle):

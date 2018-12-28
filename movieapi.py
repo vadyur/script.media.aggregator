@@ -38,7 +38,7 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 		if new_path != path:
 			copy_files(path, new_path, filename)
 
-		with filesystem.save_make_chdir_context(new_path, 'write_movie'):
+		with filesystem.save_make_chdir_context(new_path, 'movieaip.write_movie'):
 			from strmwriter import STRMWriter
 			STRMWriter(parser.link()).write(filename, new_path,
 											parser=parser,

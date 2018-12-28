@@ -403,7 +403,7 @@ def add_media(title, imdb, settings):
 def save_dbs():
 	path = filesystem.join(_addondir, 'dbversions')
 
-	with filesystem.save_make_chdir_context(path):
+	with filesystem.save_make_chdir_context(path, 'service.save_dbs'):
 
 		for fn in filesystem.listdir(path):
 			filesystem.remove(fn)
