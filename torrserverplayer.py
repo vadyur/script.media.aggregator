@@ -23,6 +23,9 @@ class TorrServerPlayer(TorrentPlayer):
 
 	def StartBufferFile(self, fileIndex):
 		self._AddTorrent(self.path)
+		
+		fileIndex = self.engine.id_to_files_index(fileIndex)
+		
 		self.engine.start(fileIndex)
 		self.file_id = fileIndex
 
