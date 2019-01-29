@@ -333,13 +333,15 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			def __init__(self):
 				xbmc.Player.__init__(self)
 				self.show_overlay = False
+				self.time_started = time.time()
+				self.download_started = None
 				
 				self.fs_video = xbmcgui.Window(12005)
 
 				x = 20
 				y = int(getSetting('dnl_progress_offset', 120))
 				w = self.fs_video.getWidth()
-				h = 100
+				h = 130
 
 				self.info_label = xbmcgui.ControlLabel(x, y, w, h, '', textColor='0xFF00EE00', font='font16')
 				self.info_label_bg = xbmcgui.ControlLabel(x+2, y+2, w, h, '', textColor='0xAA000000', font='font16')
@@ -364,24 +366,40 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					self.show_overlay = False
 
 			def UpdateProgress(self):
-				#debug('UpdateProgress')
 				if self.show_overlay:
 					info = player.GetTorrentInfo()
-					#debug(info)
-					percent = float(info['downloaded']) * 100 / info['size'];
-					#debug(percent)
+					percent = float(info['downloaded']) * 100 / info['size']
 					if percent >= 0:
 						heading = u"{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + r'%' + '\n'
 						if percent < 100:
+
 							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
+
+							this_time = time.time()
+							time_passed = (this_time - self.time_started)
+
+							if time_passed > 10:
+								if not self.download_started:
+									self.download_started = info['downloaded']
+								average_speed = float((info['downloaded'] - self.download_started) / (time_passed - 10))
+		
+								seconds = (info['size'] - info['downloaded']) / average_speed if average_speed != 0 else -1
+								# _debug('seconds: {}'.format(seconds))
+								if seconds > 0:
+									heading += u"Осталось: {} мин {} сек\n".format(int(seconds / 60), int(seconds % 60))
+
 							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
-						#debug(heading)
+
 						self.info_label.setLabel(heading)
 						self.info_label_bg.setLabel(heading)
 					
 			def __del__(self):				self._hide_progress()
-			def onPlayBackPaused(self):		self._show_progress()
-			def onPlayBackResumed(self):	self._hide_progress()
+			def onPlayBackPaused(self):
+				self._show_progress()
+				self.is_playing = False
+			def onPlayBackResumed(self):
+				self._hide_progress()
+				self.is_playing = True
 			def onPlayBackEnded(self):		self._hide_progress()
 			def onPlayBackStopped(self):	self._hide_progress()
 
