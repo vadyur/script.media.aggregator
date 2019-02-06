@@ -497,27 +497,46 @@ def main(settings=None, path=None, name=None, run=None):
 	with filesystem.fopen(path.decode('utf-8'), 'r') as strm:
 		src_link = strm.read()
 		debug(src_link)
-		pattern = 'torrent=(.+?)&'
-		match = re.search(pattern, str(link))
-		if not match:
-			pattern2 = 'torrent=(.+)'
-			match = re.search(pattern2, str(link))
 
-		if match:
-			torr = match.group(1)
-			dst_link = re.sub(pattern, 'torrent=' + torr + '&', str(src_link)) + '&onlythis=true'
-			debug(dst_link)
+		dst_link = str(link)
 
-			if selected_file:
-				dst_link += '&index=' + str(selected_file)
+		src_link_params = src_link.split('?')[1]
+		src_link_params = src_link_params.split('&')
 
-			if run:
-				if selected_file:				
-					run(torr, int(selected_file))
-				else:
-					run(torr)
+		alt_link_params = dst_link.split('?')[1]
+		alt_link_params = alt_link_params.split('&')
+
+		dst_link = dst_link.split('?')[0] + '?'
+		dst_link_params = list()
+
+		for param in alt_link_params:
+			key = param.split('=')[0]
+			if key in ('index', 'cutName', 'episodeNumber', 'seasonNumber'):
+				if not selected_file:
+					dst_link_params.append(param)
 			else:
-				xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
+				dst_link_params.append(param)
+
+		for param in src_link_params:
+			key = param.split('=')[0]
+			if key in ('nfo', 'path'):
+				dst_link_params.append(param)
+
+		if selected_file:
+			dst_link_params.append('index={}'.format(selected_file))
+
+		dst_link_params.append('onlythis=true')
+
+		dst_link += '&'.join(dst_link_params)
+		debug(dst_link)
+
+		if run:
+			if selected_file:				
+				run(torr, int(selected_file))
+			else:
+				run(torr)
+		else:
+			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
 	if tempPath in path:
 		xbmcvfs.delete(path)
@@ -526,6 +545,6 @@ def main(settings=None, path=None, name=None, run=None):
 	return True
 
 if __name__ == '__main__':
-	#import vsdbg
-	#vsdbg._bp()
+	import vsdbg
+	vsdbg._bp()
 	main()
