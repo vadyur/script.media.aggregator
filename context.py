@@ -531,10 +531,11 @@ def main(settings=None, path=None, name=None, run=None):
 		debug(dst_link)
 
 		if run:
-			if selected_file:				
-				run(torr, int(selected_file))
-			else:
-				run(torr)
+			run_params = dict()
+			for item in dst_link_params:
+				k, v = item.split('=')
+				run_params[k]=v
+			run(run_params)
 		else:
 			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
 
