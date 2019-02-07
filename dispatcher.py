@@ -29,12 +29,8 @@ def dispatch():
 			path = filesystem.join(settings.base_path(), rel_path, filename)
 			debug(path)
 
-			def run(torr, index=None):
-				params['onlythis'] = 'true'
-				params['torrent'] = torr
-				if index is not None:
-					params['index'] = index
-				play_torrent(settings=settings, params=params)
+			def run(run_params):
+				play_torrent(settings=settings, params=run_params)
 
 			import context
 			res = context.main(settings, path.encode('utf-8'), filename.encode('utf-8'), run)
