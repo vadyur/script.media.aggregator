@@ -208,7 +208,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			return play_torrent_variant.resultTryNext
 
 		files = player.GetLastTorrentData()['files']
-		_debug(files)
+		#_debug(files)
 
 		if 'cutName' not in params:
 			if 'index' not in params:
@@ -216,8 +216,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					files.sort(key=operator.itemgetter('name'))
 				else:
 					files.sort(key=operator.itemgetter('size'), reverse=True)
-				_debug('sorted_files:')
-				_debug(files)
+				#_debug('sorted_files:')
+				#_debug(files)
 
 		try:		
 			if 'cutName' not in params:
@@ -553,7 +553,7 @@ def play_torrent(settings, params):
 			links_with_ranks.remove(v)
 
 
-	debug('links_with_ranks: ' + str(links_with_ranks))
+	# debug('links_with_ranks: ' + str(links_with_ranks))
 
 	play_torrent_variant_result = None
 	if len(links_with_ranks) == 0 or onlythis:
@@ -573,7 +573,7 @@ def play_torrent(settings, params):
 
 			if tryCount > 1:
 				info_dialog.update(0, settings.addon_name, 'Попытка #%d' % tryCount)
-			debug(variant)
+			# debug(variant)
 
 			torrent_source = variant['link']
 			try:
@@ -594,6 +594,9 @@ def play_torrent(settings, params):
 				import urlparse
 				dct = urlparse.parse_qs(variant['link'])
 				torr_params['index'] = dct['index'][0]
+				torr_params.pop('cutName', None)
+
+				debug('Remove "cutName"')
 			except:
 				pass
 
