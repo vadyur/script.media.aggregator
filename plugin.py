@@ -115,9 +115,17 @@ def UpdateVideoLibrary(path=None, wait=False):
 
 		wait_for_update(monitor=monitor)
 
+def string_to_ver(s):
+	import re
+
+	m = re.search(r'(\d+)\.(\d+)', s)
+	if m:
+		return ( m.group(1), m.group(2) )
+
 def kodi_ver():
 	import xbmc
-	BuildVersions = xbmc.getInfoLabel("System.BuildVersion").split("-")[0].split(".")
+	bv = xbmc.getInfoLabel("System.BuildVersion")
+	BuildVersions = string_to_ver(bv)
 
 	# import log
 	# log.debug(BuildVersions)
@@ -138,3 +146,7 @@ def RunPluginSync(**kwargs):
 	import xbmc
 	url = make_url(kwargs)
 	xbmc.executebuiltin('RunPlugin("%s")' % url, wait=True)
+
+
+if __name__ == "__main__":
+	r = string_to_ver('18.0 Git:20190128-d81c34c465')
