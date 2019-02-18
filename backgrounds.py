@@ -424,12 +424,16 @@ def clean_movies():
 		from movieapi import make_imdb_path
 		base_path = make_imdb_path(base_path, imdbid)
 
-		one_movie_duplicates = more_requests.get_movies_by_imdb(imdbid)
+		one_movie_duplicates = filter(lambda x: x['c22'].endswith('.strm'), more_requests.get_movies_by_imdb(imdbid))
 
 		from base import STRMWriterBase
 		from base import Informer
 
-		title = Informer().filename_with(api['title'], api['originaltitle'], api['year'])
+		try:
+			title = Informer().filename_with(api.title(), api.originaltitle(), api['year'])
+		except AttributeError:
+			title = Informer().filename_with(api.title(), api.originaltitle(), None)
+			
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
 
