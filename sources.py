@@ -211,16 +211,19 @@ class VideoDB(kodidb.VideoDatabase):
 
 	def update_path(self, path, content, scan_recursive=False, use_folder_names=False, no_update=False):
 		scan_recursive = 2147483647 if scan_recursive else 0
+		c = self.conn.cursor()
 		if self.path_exists(path):
-			self.conn.execute(self.sql_request(
+			c.execute(self.sql_request(
 				"UPDATE path SET strContent=?, strScraper=?, scanRecursive=?, "
 				"useFolderNames=?, strSettings=?, noUpdate=?, exclude=0 WHERE strPath=?"),
 				(content, 'metadata.local', scan_recursive, use_folder_names, '', no_update, path))
 		else:
-			self.conn.execute(self.sql_request(
+			now_func = 'NOW()' if self.DB == 'mysql' else "DATETIME('now')"
+		
+			c.execute(self.sql_request(
 				"INSERT INTO path (strPath, strContent, strScraper, scanRecursive, "
 				"useFolderNames, strSettings, noUpdate, exclude, dateAdded) "
-				"VALUES (?, ?, ?, ?, ?, ?, ?, 0, DATETIME('now'))"),
+				"VALUES (?, ?, ?, ?, ?, ?, ?, 0, " + now_func + ")"),
 				(path, content, 'metadata.local', scan_recursive, use_folder_names, '', no_update))
 
 		self.conn.commit()
