@@ -267,9 +267,10 @@ class world_art_info(world_art_soup):
 	@property
 	def imdb(self):
 		a = self.soup.select('a[href*=imdb.com]')
-		for part in a[0]['href'].split('/'):
-			if part.startswith('tt'):
-				return part
+		if a:
+			for part in a[0]['href'].split('/'):
+				if part.startswith('tt'):
+					return part
 
 	@property
 	def kp_url(self):
