@@ -17,6 +17,9 @@ def dispatch():
 		from player import play_torrent
 
 		settings = load_settings()
+
+		skip_show_sources = False
+
 		if settings.show_sources and 'onlythis' not in params:
 			import filesystem, urllib
 
@@ -31,6 +34,16 @@ def dispatch():
 
 			def run(run_params):
 				play_torrent(settings=settings, params=run_params)
+
+			if settings.skip_show_sources:
+				from base import STRMWriterBase
+				links_with_ranks = STRMWriterBase.get_links_with_ranks(path, settings)
+
+				from base import is_torrent_remembed
+				for v in links_with_ranks:
+					if is_torrent_remembed(v, settings):
+						play_torrent(settings=settings, params=params)
+						return
 
 			import context
 			res = context.main(settings, path.encode('utf-8'), filename.encode('utf-8'), run)
