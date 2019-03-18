@@ -9,9 +9,9 @@
         <setting label="Аниме" 			type="bool"   id="anime_save" 		default="true"/>
         <setting label="Сериалы" 		type="bool"   id="tvshows_save" 		default="true"/>
         <setting label="Анимационные сериалы" 	type="bool"   id="animation_tvshows_save" 	default="true"/>
-      <setting label="Первая помощь" type="lsep"/>
+<!--      <setting label="Первая помощь" type="lsep"/>
         <setting label="Очистка дубликатов фильмов" type="action" action="RunPlugin(plugin://script.media.aggregator/?action=clean_movies)"/>
-    </category>
+-->    </category>
 
     <category label="Дополнительно">
       <setting label="Роль медиацентра" type="select" id="role" values="одиночный|сервер|клиент" default="одиночный"/>
@@ -123,6 +123,7 @@
       <setting label="Исключать SD-контент" type="bool" id="rutor_nosd" default="true"/>
     </category>
 
+    <!--
     <category label="KinoHD">
       <setting label="Использовать" type="bool" id="kinohd_enable" default="false"/>
       <setting label="Категории" type="lsep"/>
@@ -135,6 +136,7 @@
       <setting label="Дополнительно" type="lsep"/>
       <setting label="Торрент проигрыватель" id="kinohd_torrent_player" type="select" values="Default|YATP|torrent2http|Ace Stream|Elementum" default="Default" />
     </category>
+    -->
   
     <!--
     <category label="soap4.me">

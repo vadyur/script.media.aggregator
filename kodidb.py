@@ -60,7 +60,7 @@ DB_VERSIONS = {
 	'15': '93',
 	'16': '99',
 	'17': '107',
-	'18': '112'
+	'18': '116'
 	# https://raw.githubusercontent.com/xbmc/xbmc/master/xbmc/video/VideoDatabase.cpp - CVideoDatabase::GetSchemaVersion()
 }
 

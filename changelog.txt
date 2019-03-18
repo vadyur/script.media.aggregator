@@ -1,3 +1,58 @@
+0.17.0
+- много чего, всего не упомнишь, лог коммитов далее:
+	Fix connection error
+	Fixes + context menu
+	Search episodes
+	rutor+++
+	nnm-club.ws not responsible
+	try fixes
+	skip without fanart
+	preload by copy torrent
+	download torrent fix #2
+	restore KP tvshow title s
+	cashing KP Actors request
+	Fix generate
+	Fix freezes generate
+	fix kinopoisk request fails
+	small fix
+	t2h remote support
+	fix
+	+<premiered> in tvshow.nfo
+	Video codec in calculate rank
+	fix index error crash
+	Color title
+	fix missing storage path for afteractions
+	some statistic
+	show similar improve
+	show similar context menu item
+	Notify about find sources for generate strms
+	year for tvshows
+	Add context search option to external list items
+	tvshows: search & go
+	+catalog
+	search option
+	encoding fix
+	Move all episodes after watch season from torrent
+	copy full dowloaded torrent
+	remove if exists
+	add tracker option
+	actions++
+	fix use shared path for torrents
+	t2h: fix use network windows path for torrent files
+	fix using path substitute 2
+	+os.path.join
+	fix using path substitute
+	Capturing beautifulsoup HTMLParseError exception
+	find imdb id in alternative sources
+	create torrents dir if not exists
+	create sources.xml if not exists
+	fix log_dir
+	+rutor
+	print traceback for exceptions + detect encoding in torrent file
+	check nnm is ok
+	fix create sources
+	fix double call
+
 0.10.0 (29-03-2016)
 - создание источников для медиа библиотеки
 
