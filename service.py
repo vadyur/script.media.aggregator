@@ -129,6 +129,9 @@ def update_case():
 		update_case.first_start_time = time()
 		update_case.prev_generate_time = update_case.first_start_time
 
+	if not hasattr(update_case, 'last_scheduled_day'):
+		update_case.last_scheduled_day = None
+
 	try:
 		every = int(_addon.getSetting('service_generate_persistent_every')) * 3600 # seconds
 		delay_startup = int(_addon.getSetting('delay_startup')) * 60
@@ -176,6 +179,25 @@ def update_case():
 			finally:
 				update_case.first_start = False
 
+	# Schedule
+	if _addon.getSetting('service_generate_schedule') == 'true':
+		try:
+			schedule_hour = _addon.getSetting('service_generate_schedule_time').split(':')[0]
+		except:
+			schedule_hour = None
+
+		import datetime
+		now = datetime.datetime.now()
+		if str(now.hour) == schedule_hour and update_case.last_scheduled_day != now.day:
+			try:
+				update_case.prev_generate_time = time()
+				update_case.last_scheduled_day = now.day
+				call_bg('update_service', {'show_progress': False})
+				log.debug('Update scheduled at %s' % asctime(localtime(update_case.prev_generate_time)))
+			except BaseException as e:
+				log.print_tb(e)
+			finally:
+				update_case.first_start = False
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def scrape_case():
@@ -246,14 +268,6 @@ def main():
 		log.debug('********************************************************')
 	except:
 		pass
-
-	#from plugin import UpdateVideoLibrary
-	#UpdateVideoLibrary('smb://VD/D/Animation', wait=True)
-	#UpdateVideoLibrary('smb://VD/D/Movies', wait=True)
-	#log.debug('********************************************************')
-
-	#_addon = AddonRO()
-	#player._addon = _addon
 
 	path = filesystem.join(addon_data_path(), 'update_library_next_start')
 	if filesystem.exists(path):
