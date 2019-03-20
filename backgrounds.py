@@ -108,9 +108,6 @@ def update_service(show_progress=False):
 		with dump_context('bluebird.run'):
 			bluebird.run(settings)
 
-	if bluebird_enable:
-		bluebird.run(settings)
-
 	if rutor_enable:
 		with dump_context('rutor.run'):
 			rutor.run(settings)

@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="script.media.aggregator" version="2.0.10" name="[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]" provider-name="-=Vd=-">
+<addon id="script.media.aggregator" version="2.1.1" name="[COLOR=FF008000]Media[/COLOR] [COLOR=FFA0522D]Aggregator[/COLOR]" provider-name="-=Vd=-">
   <requires>
     <import addon="xbmc.python" version="2.1.0"/>
     <import addon="plugin.video.yatp" optional="true"/>
-    <import addon="script.module.torrent2http"/>
+    <import addon="script.module.torrent2http" optional="false"/>
     <import addon="script.module.torrent.ts" optional="true"/>
-    <import addon="script.module.torrserver"/>
-    <import addon="script.module.beautifulsoup4"/>
-    <import addon="script.module.requests"/>
-    <import addon="script.module.feedparser"/>
-    <import addon="script.module.myconnpy"/>
-    <import addon="script.module.pyxbmct"/>
+    <import addon="script.module.torrserver" optional="false"/>
+    <import addon="script.module.beautifulsoup4" version="4.3.0"/>
+    <!--<import addon="script.module.urllib3" version="1.22"/>-->
+    <import addon="script.module.requests" optional="false"/>
+    <import addon="script.module.feedparser" optional="false"/>
+    <import addon="script.module.myconnpy" optional="false"/>
+    <import addon="script.module.pyxbmct" version="1.1.4"/>
     <import addon="script.module.chardet"/>
     <import addon="script.module.shikimori.core" optional="true"/>
     <import addon="script.module.vsdbg"/>
@@ -71,7 +72,7 @@
   <extension point="xbmc.addon.metadata">
     <platform>all</platform>
     <summary lang="ru">Создавайте свою онлайн медиатеку</summary>
-    <description lang="ru">Media Aggregator загружает данные раздач (bluebird-hd.org, tr.anidub.com, nnm-club.name, rutor.info) и создаёт локальную онлайн библиотеку</description>
+    <description lang="ru">Media Aggregator загружает данные раздач (elitehd.org, tr.anidub.com, nnm-club.me) и создаёт .strm и .nfo файлы</description>
     <forum>http://xbmc.ru/forum/showthread.php?t=10592</forum>
   </extension>
   <extension point="xbmc.service" library="service.py"/>

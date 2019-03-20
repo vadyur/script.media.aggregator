@@ -38,6 +38,10 @@ class Runner(object):
 			if filesystem.exists(self.videofile):
 				filesystem.remove(self.videofile)
 
+		if settings.remeber_watched and float(self.downloaded) > 99:
+			choice_path = torrent_path.replace('.torrent', '.choice')
+			filesystem.touch(choice_path)
+
 		if float(self.downloaded) > 99 and self.all_torrent_files_exists():
 
 			if settings.move_video and settings.copy_video_path and filesystem.exists(settings.copy_video_path):

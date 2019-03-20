@@ -99,6 +99,8 @@ def load_settings():
 	settings.run_script				= getSetting('run_script') == 'true'
 	settings.script_params			= getSetting('script_params').decode('utf-8')
 
+	settings.remeber_watched		= getSetting('remeber_watched') == 'true'
+
 	settings.move_video				= getSetting('action_files').decode('utf-8') == u'переместить'
 	settings.remove_files			= getSetting('action_files').decode('utf-8') == u'удалить'
 	settings.copy_video_path		= getSetting('copy_video_path').decode('utf-8')
@@ -112,6 +114,7 @@ def load_settings():
 	settings.kp_usezaborona			= getSetting('kp_usezaborona')	== 'true'
 
 	settings.show_sources			= getSetting('show_sources')	== 'true'
+	settings.skip_show_sources		= getSetting('skip_show_sources')	== 'true'
 
 	settings.kinohd_enable			= getSetting('kinohd_enable')	== 'true'
 	settings.kinohd_4k				= getSetting('kinohd_4k')		== 'true'
@@ -458,7 +461,11 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		_debug('FINALLY')
 		player.close()
 
-	if settings.run_script or settings.remove_files or settings.move_video or settings.copy_torrent:
+	if settings.run_script \
+	  or settings.remove_files \
+	  or settings.move_video \
+	  or settings.copy_torrent \
+	  or settings.remeber_watched:
 		import afteractions
 		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)
 

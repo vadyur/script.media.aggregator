@@ -343,6 +343,11 @@ def basename(path):
 	return ensure_unicode(os.path.basename(_get_path(path, use_unc_path=False)))
 
 
+def touch(path):
+	with fopen(path, 'w'):
+		pass
+
+
 def test():	
 	log.debug('Filesystem encoding: %s' % get_filesystem_encoding())
 	log.debug('getcwd(): %s' % getcwd().encode('utf-8'))
