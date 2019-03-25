@@ -30,6 +30,7 @@ def dispatch():
 			debug(filename)
 
 			path = filesystem.join(settings.base_path(), rel_path, filename)
+			path = filesystem.normseps(path)
 			debug(path)
 
 			def run(run_params):
