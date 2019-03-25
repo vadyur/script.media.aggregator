@@ -347,8 +347,29 @@ def touch(path):
 	with fopen(path, 'w'):
 		pass
 
+def normseps(path):
+	import re
+
+	if os.name == 'nt':
+		if path.startswith(r'\\') or re.match(r'\w:', path):
+			return path.replace('/', '\\')
+
+	if '://' in path or path.startswith('/'):
+		return path.replace('\\', '/')
+
+	return path
 
 def test():	
+
+	tst_name = u'/storage/mnt/D/MA/Videos/TVShows/Звездный путь Дискавери\\Season 2\\10. episode_s02e10.strm'
+	tst_nam2 = u'd:/mnt/D/MA/Videos/TVShows/Звездный путь Дискавери\\Season 2\\10. episode_s02e10.strm'
+	tst_nam3 = u'\\\\media\mnt/D/MA/Videos/TVShows/Звездный путь Дискавери\\Season 2\\10. episode_s02e10.strm'
+	
+	tst_name = normseps(tst_name)
+	tst_nam2 = normseps(tst_nam2)
+	tst_nam3 = normseps(tst_nam3)
+	
+
 	log.debug('Filesystem encoding: %s' % get_filesystem_encoding())
 	log.debug('getcwd(): %s' % getcwd().encode('utf-8'))
 	log.debug('relpath(getcwd(), ".."): %s' % relpath(getcwd(), "..").encode('utf-8'))
