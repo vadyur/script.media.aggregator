@@ -418,7 +418,7 @@ class MoreRequests(object):
 		
 	@request
 	def get_movie_duplicates(self):
-		sql = """SELECT idMovie, idFile, c00, c22, uniqueid_value, COUNT(uniqueid_value)
+		sql = """SELECT uniqueid_value, COUNT(uniqueid_value)
 				FROM movie_view
 				WHERE uniqueid_value like 'tt%'
 				GROUP BY
