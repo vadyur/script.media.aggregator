@@ -484,7 +484,7 @@ def clean_movies():
 	log.debug('# Get info & move files')
 	for movie in movie_duplicates_list:
 		try:
-			imdbid = movie[4]
+			imdbid = movie[0]
 			watched_and_progress[imdbid] = get_info_and_move_files(imdbid)
 		except BaseException as e:
 			from log import print_tb
