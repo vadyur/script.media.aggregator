@@ -433,6 +433,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		_debug('!!!!!!!!!!!!!!!!! END PLAYING !!!!!!!!!!!!!!!!!!!!!')
 
 		xbmc.sleep(1000)
+		
+		del xbmc_player
 
 		k_db.PlayerPostProccessing()
 
@@ -1050,8 +1052,12 @@ def action_show_library(params):
 
 
 		def listing(self):
+		
+			r = self.req()
+			if 'result' not in r:
+				return
 
-			result = self.req()['result']
+			result = r['result']
 			plot_enable = True
 	
 			isFolder = False
