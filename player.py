@@ -130,7 +130,13 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	#import filecmp
 
 	def _debug(msg):
-		debug(u'play_torrent_variant: {}'.format(msg) )
+		try:
+			if isinstance(msg, str):
+				msg = msg.decode('utf-8')
+		
+			debug(u'play_torrent_variant: {}'.format(msg) )
+		except:
+			debug('_debug raised exception')
 
 	play_torrent_variant. resultOK 		= 'OK'
 	play_torrent_variant. resultCancel 	= 'Cancel'
@@ -155,6 +161,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 	torrent_info = None
 	torrent_path = path
+	xbmc_player = None
 
 	if 'kinohd' in path:
 		kinohd_torrent_player = getSetting('kinohd_torrent_player')
@@ -360,11 +367,16 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					return
 
 				if not self.show_overlay:
+					_debug('addControls')
 					self.fs_video.addControls([self.info_label_bg, self.info_label])
 					self.show_overlay = True
 
 			def _hide_progress(self):
 				if self.show_overlay:
+					_debug('removeControls')
+					self.info_label.setLabel('')
+					self.info_label_bg.setLabel('')
+					
 					self.fs_video.removeControls([self.info_label_bg, self.info_label])
 					self.show_overlay = False
 
@@ -396,7 +408,12 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 						self.info_label.setLabel(heading)
 						self.info_label_bg.setLabel(heading)
 					
-			def __del__(self):				self._hide_progress()
+			def __del__(self):
+				_debug('__del__')
+				self._hide_progress()
+				del self.info_label
+				del self.info_label_bg
+				
 			def onPlayBackPaused(self):
 				self._show_progress()
 				self.is_playing = False
@@ -405,6 +422,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 				self.is_playing = True
 			def onPlayBackEnded(self):		self._hide_progress()
 			def onPlayBackStopped(self):	self._hide_progress()
+			def onPlayBackError(self):		self._hide_progress()
 
 		xbmc_player = OurPlayer()
 
@@ -447,6 +465,14 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			from plugin import UpdateVideoLibrary
 			UpdateVideoLibrary(UpdateLibrary_path)
 
+		if settings.run_script \
+		  or settings.remove_files \
+		  or settings.move_video \
+		  or settings.copy_torrent \
+		  or settings.remeber_watched:
+			import afteractions
+			afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)			
+
 	except TPError as e:
 		_debug(e)
 		print_tb()
@@ -455,26 +481,19 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 	except BaseException as e:
 		_debug(e)
 		print_tb()
-		return play_torrent_variant.resultTryNext
 
 	finally:
-		_debug('FINALLY')
+		_debug('player.close()')
 		player.close()
-
-	if settings.run_script \
-	  or settings.remove_files \
-	  or settings.move_video \
-	  or settings.copy_torrent \
-	  or settings.remeber_watched:
-		import afteractions
-		afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)
+		if xbmc_player:
+			del xbmc_player
 
 	return play_torrent_variant.resultOK
 
 
 def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
-	
+
 	from downloader import TorrentDownloader
 	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
 
@@ -617,7 +636,11 @@ def play_torrent(settings, params):
 				break
 
 	info_dialog.update(0, '', '')
+	
+	debug('info_dialog.close')
 	info_dialog.close()
+	
+	del info_dialog
 
 	try:
 		if play_torrent_variant_result == play_torrent_variant.resultTryNext and not onlythis:
@@ -1050,8 +1073,12 @@ def action_show_library(params):
 
 
 		def listing(self):
+		
+			r = self.req()
+			if 'result' not in r:
+				return
 
-			result = self.req()['result']
+			result = r['result']
 			plot_enable = True
 	
 			isFolder = False
