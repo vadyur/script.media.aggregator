@@ -11,12 +11,13 @@
     <import addon="script.module.feedparser"/>
     <import addon="script.module.myconnpy"/>
     <import addon="script.module.pyxbmct"/>
+	<import addon="script.module.simpleplugin"/>
     <import addon="script.module.chardet"/>
     <import addon="script.module.shikimori.core" optional="true"/>
     <import addon="script.module.vsdbg"/>
 	
   </requires>
-  <extension point="xbmc.python.pluginsource" library="player.py">
+  <extension point="xbmc.python.pluginsource" library="gui.py">
     <provides>video</provides>
   </extension>
   <extension point="kodi.context.item">

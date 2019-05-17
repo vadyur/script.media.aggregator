@@ -204,7 +204,7 @@ class Torrent2HTTPPlayer(TorrentPlayer):
 		percents = int(status.progress * 100)
 		if percents > 99:
 			percents = 99
-		progressBar.update(percents, u'Media Aggregator: проверка файлов...', ' ', ' ')
+		progressBar.update(percents, u'Проверка файлов...', ' ', ' ')
 
 	def updateDialogInfo(self, progress, progressBar):
 		f_status = self.engine.file_status(self.file_id)

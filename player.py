@@ -272,14 +272,14 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		player.StartBufferFile(index)
 
 		if not player.CheckTorrentAdded():
-			info_dialog.update(0, 'Media Aggregator: проверка файлов')
+			info_dialog.update(0, 'Проверка файлов')
 
 		while not info_dialog.iscanceled() and not player.CheckTorrentAdded():
 			xbmc.sleep(1000)
 			start_time = time.time()
 			player.updateCheckingProgress(info_dialog)
 
-		info_dialog.update(0, 'Media Aggregator: буфферизация')
+		info_dialog.update(0, 'Буфферизация')
 
 		while not info_dialog.iscanceled():
 			if player.CheckBufferComplete():
@@ -459,7 +459,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		info_hash = player.GetLastTorrentData()['info_hash']
 
 		xbmc.executebuiltin('Container.Refresh')
-		UpdateLibrary_path = filesystem.join(settings.base_path(), rel_path).encode('utf-8')
+		UpdateLibrary_path = filesystem.normseps(filesystem.join(settings.base_path(), rel_path)).encode('utf-8')
+
 		_debug(UpdateLibrary_path)
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
 			from plugin import UpdateVideoLibrary
@@ -471,7 +472,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 		  or settings.copy_torrent \
 		  or settings.remeber_watched:
 			import afteractions
-			afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)			
+			afteractions.Runner(settings, params, playable_item, torrent_info, torrent_path, info_hash)
 
 	except TPError as e:
 		_debug(e)
@@ -649,176 +650,47 @@ def play_torrent(settings, params):
 	except:
 		pass
 
+def action_play(params):
+	if 'torrent' in params:
+		from log import debug
 
-restart_msg = u'Чтобы изменения вступили в силу, нужно перезапустить KODI. Перезапустить?'
-
-
-def check_sources(settings):
-	import sources
-	if sources.need_create(settings):
-		dialog = xbmcgui.Dialog()
-		if dialog.yesno(settings.addon_name, u'Источники категорий не созданы. Создать?'):
-			if sources.create(settings):
-				if dialog.yesno(settings.addon_name, restart_msg):
-					xbmc.executebuiltin('Quit')
-			return True
-		else:
-			return False
-
-	return True
-
-
-class dialog_action_case:
-	generate = 0
-	sources = 1
-	settings = 2
-	search = 3
-	catalog = 4
-	medialibrary = 5
-	exit = 6
-
-
-def dialog_action(action, settings, params=None):
-
-	if action == dialog_action_case.generate:
-		anidub_enable = _addon.getSetting('anidub_enable') == 'true'
-		hdclub_enable = False
-		bluebird_enable = _addon.getSetting('bluebird_enable') == 'true'
-		nnmclub_enable = _addon.getSetting('nnmclub_enable') == 'true'
-		rutor_enable = _addon.getSetting('rutor_enable') == 'true'
-		soap4me_enable = _addon.getSetting('soap4me_enable') == 'true'
-		kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
-
-		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable or kinohd_enable):
-			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
-			action = dialog_action_case.settings
-		else:
-			from service import start_generate
-			# if check_sources(settings):
-			start_generate()
-			return True
-
-	if action == dialog_action_case.sources:
-		import sources
-
-		dialog = xbmcgui.Dialog()
-		if sources.create(settings):
-			if dialog.yesno(settings.addon_name, restart_msg):
-				from service import update_library_next_start
-
-				update_library_next_start()
-				xbmc.executebuiltin('Quit')
-
-	if action == dialog_action_case.settings:
-		save_nnmclub_login = settings.nnmclub_login
-		save_nnmclub_password = settings.nnmclub_password
-		_addon.openSettings()
 		settings = load_settings()
 
-		"""
-		if save_nnmclub_login != settings.nnmclub_login or save_nnmclub_password != settings.nnmclub_password:
-			from nnmclub import get_passkey
-			passkey = get_passkey(settings=settings)
-			_addon.setSetting('nnmclub_passkey', passkey)
-			settings.nnmclub_passkey = passkey
-		"""
+		skip_show_sources = False
 
-	if action == dialog_action_case.search:
-		s = None
-		if not 'keyword' in params:
-			dlg = xbmcgui.Dialog()
-			s = dlg.input(u'Введите поисковую строку')
-			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
-			debug('Run command: {0}'.format(command))
-			xbmc.executebuiltin('Container.Update("{0}")'.format(command))
+		if settings.show_sources and 'onlythis' not in params:
+			import filesystem, urllib
 
-			from plugin import kodi_ver
+			rel_path = urllib.unquote(params['path']).decode('utf-8')
+			debug(rel_path)
 
-			if kodi_ver()['major'] < 18:
-				debug('No keyword param. Return')
-				return False
+			filename = urllib.unquote(params['nfo']).decode('utf-8').replace(u'.nfo', u'.strm')
+			debug(filename)
+
+			path = filesystem.join(settings.base_path(), rel_path, filename)
+			path = filesystem.normseps(path)
+			debug(path)
+
+			def run(run_params):
+				play_torrent(settings=settings, params=run_params)
+
+			if settings.skip_show_sources:
+				from base import STRMWriterBase
+				links_with_ranks = STRMWriterBase.get_links_with_ranks(path, settings)
+
+				from base import is_torrent_remembed
+				for v in links_with_ranks:
+					if is_torrent_remembed(v, settings):
+						play_torrent(settings=settings, params=params)
+						return
+
+			import context
+			res = context.main(settings, path.encode('utf-8'), filename.encode('utf-8'), run)
+			if not res:
+				play_torrent(settings=settings, params=params)
 		else:
-			s = urllib.unquote(params.get('keyword'))
-
-		if s:
-			from movieapi import TMDB_API
-
-			debug('Keyword is: ' + s)
-			show_list(TMDB_API.search(s.decode('utf-8')))
-
-	if action == dialog_action_case.catalog:
-		addon_handle = int(sys.argv[1])
-		xbmcplugin.setContent(addon_handle, 'movies')
-
-		listing = [
-
-			('popular', u'Популярные'),
-			('top_rated', u'Рейтинговые'),
-			('popular_tv', u'Популярные сериалы'),
-			('top_rated_tv', u'Рейтинговые сериалы')
-		]
-
-		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
-			listing.append(('anime', u'Аниме (Shikimori.org)' ), )
-
-		for l in listing:
-			li = xbmcgui.ListItem(l[1])
-			li.setProperty("folder", "true")
-			li.setProperty('IsPlayable', 'false')
-
-			url = 'plugin://script.media.aggregator/?action=show_category&category=' + l[0]
-			debug(url)
-			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
-
-		xbmcplugin.endOfDirectory(addon_handle)
-
-	if action == dialog_action_case.medialibrary:
-		addon_handle = int(sys.argv[1])
-		xbmcplugin.setContent(addon_handle, 'movies')
-
-		listing = [
-
-			('anime_top', u'Аниме: популярное'),
-			('anime_recomended', u'Аниме: текущее'),
-			('anime_last', u'Аниме: последнее'),
-
-			('animation_top', u'Мультфильмы: популярное'),
-			('animation_recomended', u'Мультфильмы: текущее'),
-			('animation_last', u'Мультфильмы: последнее'),
-
-			('animtv_top', u'Мультсериалы: популярное'),
-			('animtv_recomended', u'Мультсериалы: текущее'),
-			('animtv_last', u'Мультсериалы: последнее'),
-
-			('documentary_top', u'Документальные фильмы: популярное'),
-			('documentary_recomended', u'Документальные фильмы: текущее'),
-			('documentary_last', u'Документальные фильмы: последнее'),
-
-			('movie_top', u'Художественные фильмы: популярное'),
-			('movie_recomended', u'Художественные фильмы: текущее'),
-			('movie_last', u'Художественные фильмы: последнее'),
-
-			('tvshow_top', u'Сериалы: популярное'),
-			('tvshow_recomended', u'Сериалы: текущее'),
-			('tvshow_last', u'Сериалы: последнее'),
-
-		]
-
-		for l in listing:
-			li = xbmcgui.ListItem(l[1])
-			li.setProperty("folder", "true")
-			li.setProperty('IsPlayable', 'false')
-
-			url = 'plugin://script.media.aggregator/?action=show_library&category=' + l[0]
-			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
-
-		xbmcplugin.endOfDirectory(addon_handle)
-
-
-	if action > dialog_action_case.settings or action < dialog_action_case.generate:
-		return True
-
-	return False
+			play_torrent(settings=settings, params=params)
+		
 
 def next_item(total_pages):
 	'''	returns True if current listing is next page
@@ -887,7 +759,7 @@ menu_items = [u'Генерировать .strm и .nfo файлы',
 ]
 
 menu_actions = ['generate',
-		        'sources',
+				'sources',
 				'settings',
 				'search',
 				'catalog',
@@ -977,7 +849,6 @@ def action_show_category(params):
 	page = params.get('page', 1)
 
 	import vsdbg
-	#vsdbg._bp()
 
 	from movieapi import TMDB_API
 	if params.get('category') == 'popular':
@@ -1323,14 +1194,10 @@ def action_show_library(params):
 		'recenttvshows': recenttvshows()
 	}
 
-	import vsdbg
-	vsdbg._bp()
-
 	for q, l in ldp_query.iteritems():
 		if params.get('category') in l.items:
 			l.category = params.get('category')
 			l.full_listing()
-		
 
 def action_search_context(params):
 	from movieapi import TMDB_API

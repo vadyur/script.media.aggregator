@@ -425,13 +425,13 @@ def save_dbs():
 		log_dir = xbmc.translatePath('special://logpath').decode('utf-8')
 		log_path = filesystem.join(log_dir, 'kodi.log')
 		log.debug(log_path)
-		with filesystem.fopen(log_path, 'r') as lf:
-			for line in lf.readlines():
-				if 'Running database version' in line:
-					log.debug(line)
-					name = line.split(' ')[-1].strip('\r\n\t ').decode('utf-8')
-					with filesystem.fopen(name, 'w'):
-						pass
+		if filesystem.exists(log_path):
+			with filesystem.fopen(log_path, 'r') as lf:
+				for line in lf.readlines():
+					if 'Running database version' in line:
+						log.debug(line)
+						name = line.split(' ')[-1].strip('\r\n\t ').decode('utf-8')
+						filesystem.touch(name)
 
 
 # ------------------------------------------------------------------------------------------------------------------- #

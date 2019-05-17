@@ -56,7 +56,7 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 
 def get_tmdb_api_key():
 	key = 'f090bb54758cabf231fb605d3e3e0468'
-	host = 'api.tmdb.org'
+	host = 'api.themoviedb.org'
 
 	import filesystem
 
@@ -954,6 +954,16 @@ class TMDB_API(object):
 		return TMDB_API.tmdb_query(url)
 
 	@staticmethod
+	def popular_by_genre(genre, page=1):
+		url = 'http://%s/3/discover/movie?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
+		#url += '&sort_by=popularity.desc'
+		#url += '&sort_by=vote_average.desc&vote_count.gte=50'
+		url += 'with_release_type=4|5|6'
+		url += '&with_genres={}'.format(genre)
+		url += '&page={}'.format(page)
+		return TMDB_API.tmdb_query(url)
+
+	@staticmethod
 	def popular_tv(page=1):
 		url = 'http://%s/3/tv/popular?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
 		url += '&page={}'.format(page)
@@ -1004,6 +1014,17 @@ class TMDB_API(object):
 			print_tb(e)
 
 		return None
+
+	@staticmethod
+	def genres_list():
+		# &language=ru
+		_ = TMDB_API.tmdb_api_key
+		url = 'http://{}/3/genre/movie/list?api_key={}'.format(_['host'], _['key'])
+
+		en = requests.get(url + '&language=en').json()['genres']
+		ru = requests.get(url + '&language=ru').json()['genres']
+
+		return [ { 'id': item[0]['id'], 'en_name': item[0]['name'], 'ru_name': item[1]['name'] } for item in zip(en, ru) ]
 
 	def __init__(self, imdb_id = None):
 		if imdb_id:
