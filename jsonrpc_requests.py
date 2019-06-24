@@ -49,6 +49,9 @@ def update_movie_by_id(self, id, fields={}):
 def get_tvshow(tvshow_id):
 	res = VideoLibrary.GetTVShowDetails(tvshowid=int(tvshow_id), 
 				properties=["title", "originaltitle", "year", "file", "imdbnumber"])
+				
+	if 'tvshowdetails' in res:
+		return res['tvshowdetails']
 	return res
 
 def get_episodes(tvshow_id):
