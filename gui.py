@@ -5,6 +5,7 @@ import filesystem
 import xbmc, xbmcgui
 
 from player import load_settings
+import vsdbg; vsdbg._bp()
 
 plugin = Plugin()
 
@@ -23,6 +24,20 @@ def action_debug(func):
 		
 	inner_func.__name__ = func.__name__
 	return inner_func
+
+
+def TMDB_API_search(s):
+	from movieapi import TMDB_API
+	return TMDB_API.search(s.decode('utf-8'))
+
+@plugin.mem_cached(30)
+def TMDB_API_genres_list():
+	from movieapi import TMDB_API
+	return TMDB_API.genres_list()
+
+def TMDB_API_popular_by_genre(genre, page):
+	from movieapi import TMDB_API
+	return TMDB_API.popular_by_genre(genre, page)
 	
 def add_next_item(listing, list_items):
 	total_pages = listing.total_pages
@@ -126,6 +141,7 @@ def menu_generate(params):
 @plugin.action()
 def menu_sources(params):
 	import sources
+	settings = load_settings()
 
 	dialog = xbmcgui.Dialog()
 	if sources.create(settings):
@@ -138,8 +154,6 @@ def menu_sources(params):
 
 @plugin.action()
 def menu_settings(params):
-	save_nnmclub_login = settings.nnmclub_login
-	save_nnmclub_password = settings.nnmclub_password
 	plugin.addon.openSettings()
 
 @plugin.action()
@@ -162,10 +176,8 @@ def menu_search(params):
 		s = params.get('keyword')
 
 	if s:
-		from movieapi import TMDB_API
-
 		_debug('Keyword is: ' + s)
-		return show_tmdb_list(TMDB_API.search(s.decode('utf-8')))
+		return show_tmdb_list(TMDB_API_search(s))
 
 	
 @plugin.action()
@@ -198,8 +210,7 @@ def menu_catalog(params):
 @plugin.action()
 def genres(params):
 	# import vsdbg; vsdbg._bp()
-	from movieapi import TMDB_API
-	for genre in TMDB_API.genres_list():
+	for genre in TMDB_API_genres_list():
 		yield {
 			'label': genre['ru_name'],
 			'is_folder': True,
@@ -209,10 +220,9 @@ def genres(params):
 
 @plugin.action()
 def genre_top(params):
-	from movieapi import TMDB_API
 	page = params.get('page', 1)
 	genre = params['id']
-	return show_tmdb_list(TMDB_API.popular_by_genre(genre, page))
+	return show_tmdb_list(TMDB_API_popular_by_genre(genre, page))
 
 @plugin.action()
 def show_category(params):
@@ -333,4 +343,4 @@ def add_media(params):
 
 
 if __name__ == '__main__':
-    plugin.run()  # Start plugin
+	plugin.run()  # Start plugin
