@@ -9,6 +9,16 @@ import vsdbg; vsdbg._bp()
 
 plugin = Plugin()
 
+def my_get_url(plugin_url='', **kwargs):
+	def to_u8(v):
+		if isinstance(v, unicode):
+			v = v.encode('utf-8')
+		return v
+
+	kwargs_ = { k: to_u8(v) for k, v in kwargs.items() }
+
+	return plugin.get_url(plugin_url, **kwargs_)
+
 def _debug(s):
 	import log
 	log.debug('MAGUI: ' + str(s))
@@ -46,7 +56,7 @@ def add_next_item(listing, list_items):
 		page = int(params.get('page', 1))
 		if page < total_pages:
 			params['page'] = page + 1
-			params['url'] = plugin.get_url(**params)
+			params['url'] = my_get_url(**params)
 			params['label'] = u'[Далее]'
 			list_items.append(params)
 		return page > 1
@@ -55,8 +65,8 @@ def add_next_item(listing, list_items):
 def get_tmdb_list_item(item):
 	info = item.get_info()
 	
-	url_search = plugin.get_url(action='add_media', title=info['title'], imdb=item.imdb())
-	url_similar = plugin.get_url(action='show_similar', type=item.type, tmdb=item.tmdb_id())
+	url_search = my_get_url(action='add_media', title=info['title'], imdb=item.imdb())
+	url_similar = my_get_url(action='show_similar', type=item.type, tmdb=item.tmdb_id())
 	
 	art = item.get_art()
 	
@@ -106,7 +116,7 @@ def root(params):
 	addon_handle = int(sys.argv[1])
 	for menu, title in menu_items:
 		yield { 'label': title,
-				'url': plugin.get_url(action='menu_' + menu),
+				'url': my_get_url(action='menu_' + menu),
 				'is_folder': indx > dialog_action_case.settings
 				}
 		
@@ -163,7 +173,7 @@ def menu_search(params):
 	if not 'keyword' in params:
 		dlg = xbmcgui.Dialog()
 		s = dlg.input(u'Введите поисковую строку')
-		command = plugin.get_url(keyword=s, **params)
+		command = my_get_url(keyword=s, **params)
 		_debug('Run command: {0}'.format(command))
 		xbmc.executebuiltin('Container.Update("{0}")'.format(command))
 
@@ -197,14 +207,14 @@ def menu_catalog(params):
 			'label': l[1],
 			'is_folder': True,
 			'is_playable': False,
-			'url': plugin.get_url(action='show_category', category=l[0])
+			'url': my_get_url(action='show_category', category=l[0])
 		}
 
 	yield {
 		'label': u'Жанры',
 		'is_folder': True,
 		'is_playable': False,
-		'url': plugin.get_url(action='genres', category=l[0])
+		'url': my_get_url(action='genres', category=l[0])
 	}
 
 @plugin.action()
@@ -215,7 +225,7 @@ def genres(params):
 			'label': genre['ru_name'],
 			'is_folder': True,
 			'is_playable': False,
-			'url': plugin.get_url(action='genre_top', **genre)
+			'url': my_get_url(action='genre_top', **genre)
 		}
 
 @plugin.action()
@@ -277,7 +287,7 @@ def menu_medialibrary(params):
 			'label': l[1],
 			'is_folder': True,
 			'is_playable': False,
-			'url': plugin.get_url(action='show_library', category=l[0])
+			'url': my_get_url(action='show_library', category=l[0])
 		}
 
 @plugin.action()

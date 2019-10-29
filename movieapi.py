@@ -961,7 +961,7 @@ class TMDB_API(object):
 		url = 'http://%s/3/discover/movie?api_key=' % TMDB_API.tmdb_api_key['host'] + TMDB_API.tmdb_api_key['key'] + '&language=ru'
 		#url += '&sort_by=popularity.desc'
 		#url += '&sort_by=vote_average.desc&vote_count.gte=50'
-		url += 'with_release_type=4|5|6'
+		url += '&with_release_type=4|5|6'
 		url += '&with_genres={}'.format(genre)
 		url += '&page={}'.format(page)
 		return TMDB_API.tmdb_query(url)

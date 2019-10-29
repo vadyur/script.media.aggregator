@@ -3,7 +3,6 @@
 import log
 from log import debug
 
-
 import re
 import urllib2, urlparse
 
