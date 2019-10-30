@@ -245,7 +245,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 							playable_item = item
 							index = playable_item.get('index')
 			else:
-				cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
+				cutName = params['cutName'].decode('utf-8').lower()
 				index = -1
 				for item in files:
 					name = item['name'].lower()
@@ -328,8 +328,8 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		_debug('ListItem created')
 
-		rel_path = urllib.unquote(params['path']).decode('utf-8')
-		filename = urllib.unquote(params['nfo']).decode('utf-8')
+		rel_path = params['path'].decode('utf-8')
+		filename = params['nfo'].decode('utf-8')
 
 		from kodidb import KodiDB
 		k_db = KodiDB(filename.replace(u'.nfo', u'.strm'), \
@@ -538,8 +538,8 @@ def play_torrent(settings, params):
 
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	base_path = settings.base_path().encode('utf-8')
-	rel_path = urllib.unquote(params.get('path', ''))
-	nfoFilename = urllib.unquote(params.get('nfo', ''))
+	rel_path = params.get('path', '')
+	nfoFilename = params.get('nfo', '')
 	nfoFullPath = NFOReader.make_path(base_path, rel_path, nfoFilename)
 	strmFilename = nfoFullPath.replace('.nfo', '.strm')
 	nfoReader = NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
@@ -661,10 +661,10 @@ def action_play(params):
 		if settings.show_sources and 'onlythis' not in params:
 			import filesystem, urllib
 
-			rel_path = urllib.unquote(params['path']).decode('utf-8')
+			rel_path = params['path'].decode('utf-8')
 			debug(rel_path)
 
-			filename = urllib.unquote(params['nfo']).decode('utf-8').replace(u'.nfo', u'.strm')
+			filename = params['nfo'].decode('utf-8').replace(u'.nfo', u'.strm')
 			debug(filename)
 
 			path = filesystem.join(settings.base_path(), rel_path, filename)
@@ -780,7 +780,7 @@ def main_menu(menu_actions):
 	xbmcplugin.endOfDirectory(addon_handle)
 
 def action_add_media(params, settings):
-	title = urllib.unquote_plus(params.get('title')).decode('utf-8')
+	title = params.get('title')
 	imdb = params.get('imdb')
 	force = params.get('force') == 'true'
 	

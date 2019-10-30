@@ -115,9 +115,9 @@ def addon_data_path():
 def call_bg(action, params = {}):
 	params['action'] = action
 
-	for key, value in params.iteritems(): 
-		if isinstance(value, unicode):
-			params[key] = value.encode('utf-8')
+	# for key, value in params.iteritems(): 
+	# 	if isinstance(value, unicode):
+	# 		params[key] = value.encode('utf-8')
 
 	from plugin import RunPlugin
 	RunPlugin(**params)
@@ -255,9 +255,6 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
-	import vsdbg
-	vsdbg._attach(False)
-
 	#global _addon
 
 	# write addon info to log
@@ -329,11 +326,11 @@ def add_media(title, imdb, settings):
 	# 	with filesystem.fopen(path, 'w'):
 	# 		pass
 
-	if filesystem.exists(path):
-		with filesystem.fopen(path, 'r') as f:
-			s = f.read()
-			if imdb.encode('utf-8') in s:
-				return
+	# if filesystem.exists(path):
+	# 	with filesystem.fopen(path, 'r') as f:
+	# 		s = f.read()
+	# 		if imdb.encode('utf-8') in s:
+	# 			return
 
 	with filesystem.fopen(path, 'a+') as f:
 		log.debug('writing...')
@@ -431,7 +428,7 @@ def save_dbs():
 					if 'Running database version' in line:
 						log.debug(line)
 						name = line.split(' ')[-1].strip('\r\n\t ').decode('utf-8')
-						filesystem.touch(name)
+						filesystem.touch( filesystem.join(path, name) )
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -454,6 +451,9 @@ def create_mark_file():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 if __name__ == '__main__':
+	import vsdbg
+	vsdbg._bp()
+
 	try:
 		create_mark_file()
 		save_dbs()

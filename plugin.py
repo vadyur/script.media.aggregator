@@ -2,31 +2,16 @@ import urllib, sys
 
 import log
 def make_url(params):
-	url = 'plugin://script.media.aggregator/?' + urllib.urlencode(params)
-	return url
+	from gui import plugin
+	return plugin.get_url(**params)
 
 def get_params():
 	if len(sys.argv) < 3:
 		return None
 
-	param = dict()
-
-	paramstring = sys.argv[2]
-	if len(paramstring) >= 2:
-		params = sys.argv[2]
-		cleanedparams = params.replace('?', '')
-		if (params[len(params) - 1] == '/'):
-			params = params[0:len(params) - 2]
-		pairsofparams = cleanedparams.split('&')
-		param = {}
-		for i in range(len(pairsofparams)):
-			splitparams = {}
-			splitparams = pairsofparams[i].split('=')
-			if (len(splitparams)) == 2:
-				param[splitparams[0]] = splitparams[1]
-
-	# debug(param)
-	return param
+	from simplepluginex import PluginEx
+	paramstring = sys.argv[2][1:]
+	return PluginEx.get_params(paramstring)
 
 def ScanMonitor():
 	import xbmc
@@ -134,8 +119,6 @@ def kodi_ver():
 	res['major'] = int(BuildVersions[0])
 	res['minor'] = int(BuildVersions[1])
 	return res
-
-	
 
 def RunPlugin(**kwargs):
 	import xbmc

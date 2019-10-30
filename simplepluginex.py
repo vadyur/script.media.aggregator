@@ -1,9 +1,6 @@
 from simpleplugin import SimplePluginError, Storage, MemStorage, Addon, Plugin, Params, debug_exception
 
-from urlparse import parse_qs
-from urllib import urlencode
 import codecs
-
 
 class PluginEx(Plugin):
 	

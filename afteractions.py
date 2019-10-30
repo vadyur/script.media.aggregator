@@ -158,8 +158,8 @@ class Runner(object):
 	@property
 	def videotype(self):
 		base_path 		= self.settings.base_path().encode('utf-8')
-		rel_path 		= urllib.unquote(self.params.get('path', ''))
-		nfoFilename 	= urllib.unquote(self.params.get('nfo', ''))
+		rel_path 		= self.params.get('path', '')
+		nfoFilename 	= self.params.get('nfo', '')
 		from nforeader import NFOReader
 		nfoFullPath 	= NFOReader.make_path(base_path, rel_path, nfoFilename)
 		if filesystem.exists(nfoFullPath):
@@ -202,8 +202,7 @@ class Runner(object):
 
 	@property
 	def torrent_source(self):
-		import urllib
-		return urllib.unquote(self.params['torrent'])
+		return self.params['torrent']
 
 	@property
 	def short_name(self):
