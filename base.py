@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import log
 from log import debug
 
@@ -700,6 +700,10 @@ class TorrentPlayer(object):
 	def GetLastTorrentData(self):
 
 		decoded =self.decoded
+
+		if decoded is None:
+			return None
+
 		info = decoded['info']
 
 		def info_name():
