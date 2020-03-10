@@ -36,7 +36,7 @@ def make_fullpath(title, ext):
 	if '/' in title:
 		pass
 
-	result = unicode(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''") + ext)
+	result = unicode(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''").strip() + ext)
 	if dir_path:
 		result = filesystem.join(dir_path, result)
 
