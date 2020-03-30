@@ -70,6 +70,7 @@
       <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
       <setting id="pre_buffer_bytes"  type="slider"   label="Загружаемый объем файла до начала просмотра, Мб" default="25"      visible="eq(-8,torrent2http)"  range="5,5,50" option="int"/>
       <setting id="add_tracker"       type="text"     label="Дополнительный трекер" default="" visible="eq(-9,torrent2http)"/>
+      <setting option="close"         type="action"   label="Настройки модуля TorrServer" visible="eq(-10,TorrServer)" action="Addon.OpenSettings(script.module.torrserver)" />
       <setting type="lsep"/>
       <setting id="show_dnl_progress" type="bool"     label="Показывать прогресc загрузки" default="true"/>
       <setting id="dnl_progress_offset" type="number" label="Смещение по вертикали прогресcа загрузки" default="120" visible="eq(-1,true)"/>
