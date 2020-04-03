@@ -407,6 +407,9 @@ def main(settings=None, path=None, name=None, run=None):
 
 	stage(2)
 
+	from base import get_true_filename
+	path = get_true_filename(path)
+
 	import xbmcvfs, os
 	tempPath = xbmc.translatePath('special://temp')
 	if xbmcvfs.exists(path+'.alternative'):

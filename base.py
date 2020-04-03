@@ -395,7 +395,8 @@ class STRMWriterBase(object):
 		#import vsdbg
 		#vsdbg._bp()
 
-		strmFilename_alt = strmFilename + '.alternative'
+		strmFilename_alt = get_true_filename(strmFilename + '.alternative')
+
 		items = []
 		saved_dict = {}
 		if filesystem.isfile(strmFilename_alt):
@@ -792,3 +793,41 @@ def save_hashes(torrent_path):
 
 			with filesystem.fopen(hashes_path, 'a+') as wf:
 				wf.write(info_hash + '\n')
+
+def get_true_filename(filename):
+	if (not filename) or (not isinstance(filename, str) and not isinstance(filename, unicode)):
+		return filename
+
+	if filesystem.exists(filename):
+		return filename
+
+	parent_dir = filesystem.dirname(filename)
+	parent_name = filesystem.basename(parent_dir)
+	
+	import re
+	if not re.match(r'tt\d+', parent_name): 
+		return filename
+
+	def get_result(result):
+		if isinstance(filename, str) and isinstance(result, unicode):
+			return result.encode('utf-8')
+		if isinstance(filename, unicode) and isinstance(result, str):
+			return result.decode('utf-8')
+		return result
+
+	import os
+	file_extension = os.path.splitext(filename)[1]
+	for f in filesystem.listdir(parent_dir):
+		if file_extension and f.endswith(file_extension):
+			return get_result(filesystem.join(parent_dir, f))
+	
+	return filename
+
+#if __name__ == '__main__':
+#	filename = r''
+#	filename = get_true_filename(filename)
+#	filename = u'/Users/vd/Documents/MyKodi/tt1245112/[REC] 2 (2009).strm.alternative'
+#	filename = get_true_filename(filename)
+#	filename = r'/Users/vd/Documents/MyKodi/tt1245112/[REC] 2 (2009)'
+#	filename = get_true_filename(filename)
+#	pass

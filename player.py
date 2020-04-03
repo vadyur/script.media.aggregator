@@ -540,8 +540,11 @@ def play_torrent(settings, params):
 	base_path = settings.base_path().encode('utf-8')
 	rel_path = params.get('path', '')
 	nfoFilename = params.get('nfo', '')
-	nfoFullPath = NFOReader.make_path(base_path, rel_path, nfoFilename)
-	strmFilename = nfoFullPath.replace('.nfo', '.strm')
+
+	from base import get_true_filename
+
+	nfoFullPath = get_true_filename(NFOReader.make_path(base_path, rel_path, nfoFilename))
+	strmFilename = get_true_filename(nfoFullPath.replace('.nfo', '.strm'))
 	nfoReader = NFOReader(nfoFullPath, tempPath) if filesystem.exists(nfoFullPath) else None
 
 	debug(strmFilename)
