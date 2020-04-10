@@ -550,12 +550,9 @@ class KinopoiskAPI(object):
 				#print cache_url
 				r = self.session.get(cache_url, headers=headers, timeout=2.0)
 			
-				indx = r.text.find('<html')
-				
-				resp = Object()
-				resp.status_code = r.status_code
-				resp.text = r.text[indx:]
-
+				indx = r._content.find('<html')
+				r._content = r._content[indx:]
+				resp = r
 				return resp
 		except BaseException as e:
 			debug(str(e))
