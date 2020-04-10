@@ -18,9 +18,6 @@ class TorrServerPlayer(TorrentPlayer):
 
 		TorrentPlayer.__init__(self)
 
-	def close(self):
-		pass
-
 	def StartBufferFile(self, fileIndex):
 		self._AddTorrent(self.path)
 		
