@@ -244,7 +244,7 @@ def create_session(settings):
 		'Content-Type': 'application/x-www-form-urlencoded'
 	}
 
-	r = session.post(real_url('/takelogin.php'), headers=headers, data=data)
+	r = session.post(real_url('/takelogin.php'), headers=headers, data=data, verify=False)
 
 	if r.ok and 'signup.php' not in r.text:
 		create_session.session = session
@@ -261,7 +261,7 @@ def get_passkey(settings):
 	if not s:
 		return None
 
-	r = s.get(real_url('/my.php'))
+	r = s.get(real_url('/my.php'), verify=False)
 	if r.ok:
 		txt = r.text
 		indx = txt.index(u'Мой пасскей')
@@ -375,7 +375,7 @@ class TrackerPostsEnumerator(object):
 		return self._items
 
 	def process_page(self, url):
-		request = self._s.get(real_url(url), cookies=self.cookies)
+		request = self._s.get(real_url(url), cookies=self.cookies, verify=False)
 		self.soup = BeautifulSoup(clean_html(request.text), 'html.parser')
 		debug(url)
 
@@ -425,7 +425,7 @@ def search_results(imdb, session, settings, url, cat):
 		# full_title, content, link, settings
 
 		url = real_url(post['a'])
-		page = session.get(url, headers={'Referer': real_url('/browse.php')})
+		page = session.get(url, headers={'Referer': real_url('/browse.php')}, verify=False)
 
 		soup = BeautifulSoup(page.text, "html.parser")
 

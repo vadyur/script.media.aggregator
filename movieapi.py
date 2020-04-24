@@ -573,9 +573,6 @@ class KinopoiskAPI(object):
 
 		self.makeSoup()
 		if self.soup:
-			#h = self.soup.find('h1', class_ = 'moviename-big')
-			#if h:
-			#	title = h.contents[0].strip()
 			s = self.soup.find('span', class_='moviename-title-wrapper')
 			if s:
 				title = s.get_text().strip('\t\r\n ')
