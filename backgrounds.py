@@ -393,6 +393,10 @@ def clean_movies():
 	more_requests = MoreRequests()
 
 	movie_duplicates_list = more_requests.get_movie_duplicates()
+
+	if not movie_duplicates_list:
+		return
+
 	settings = load_settings()
 
 	watched_and_progress = {}
