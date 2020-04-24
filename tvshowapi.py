@@ -654,9 +654,10 @@ class MyShowsAPI(object):
 				import datetime, time
 				debug(s)
 				try:
-					d = datetime.datetime.strptime(s, '%b/%d/%Y')
-				except TypeError:
-					d = datetime.datetime(*(time.strptime(s, '%b/%d/%Y')[0:6]))
+					try:
+						d = datetime.datetime.strptime(s, '%b/%d/%Y')
+					except TypeError:
+						d = datetime.datetime(*(time.strptime(s, '%b/%d/%Y')[0:6]))
 				except:
 					d = None
 				if d:
