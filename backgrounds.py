@@ -446,6 +446,7 @@ def clean_movies():
 
 		update_fields = {}
 
+		movie_duplicate = None
 		for movie_duplicate in one_movie_duplicates:
 			links_with_ranks = STRMWriterBase.get_links_with_ranks(movie_duplicate['c22'], settings, use_scrape_info=False)
 			alt_data.extend(links_with_ranks)
@@ -463,14 +464,15 @@ def clean_movies():
 			alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
 			STRMWriterBase.write_alternative(strm_path, alt_data)
 
-			last_strm_path = movie_duplicate['c22']
-			if last_strm_path != strm_path:
-				last_nfo_path = last_strm_path.replace('.strm', '.nfo')
+			if movie_duplicate:
+				last_strm_path = movie_duplicate['c22']
+				if last_strm_path != strm_path:
+					last_nfo_path = last_strm_path.replace('.strm', '.nfo')
 
-				safe_copyfile(last_strm_path, strm_path)
-				safe_copyfile(last_nfo_path, nfo_path)
+					safe_copyfile(last_strm_path, strm_path)
+					safe_copyfile(last_nfo_path, nfo_path)
 
-				update_paths.add(filesystem.dirname(strm_path))
+					update_paths.add(filesystem.dirname(strm_path))
 
 			for movie_duplicate in one_movie_duplicates:
 				cur_strm_path = movie_duplicate['c22']
