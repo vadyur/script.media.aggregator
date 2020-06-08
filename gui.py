@@ -1,13 +1,13 @@
 # coding: utf-8
 
-from simplepluginex import debug_exception
+#from simplepluginex import debug_exception
 from simplepluginex import PluginEx as Plugin
 
 import filesystem
 import xbmc, xbmcgui
 
 from player import load_settings
-import vsdbg; vsdbg._bp()
+#import vsdbg; vsdbg._bp()
 
 plugin = Plugin()
 
@@ -32,7 +32,7 @@ def TMDB_API_search(s):
 	from movieapi import TMDB_API
 	return TMDB_API.search(s.decode('utf-8'))
 
-@plugin.mem_cached(30)
+@plugin.cached(30)
 def TMDB_API_genres_list():
 	from movieapi import TMDB_API
 	return TMDB_API.genres_list()
@@ -41,9 +41,10 @@ def TMDB_API_popular_by_genre(genre, page):
 	from movieapi import TMDB_API
 	return TMDB_API.popular_by_genre(genre, page)
 	
-def add_next_item(listing, list_items):
+def add_next_item(listing, list_items, params):
 	total_pages = listing.total_pages
-	params = plugin.params.copy()
+
+	params = params.copy()
 	if params:
 		page = int(params.get('page', 1))
 		if page < total_pages:
@@ -75,11 +76,11 @@ def get_tmdb_list_item(item):
 		'url': url_search
 	}
 	
-def show_tmdb_list(listing):
+def show_tmdb_list(listing, params):
 	# import vsdbg; vsdbg._bp()
 
 	list_items = [ get_tmdb_list_item(item) for item in listing ]
-	updateListing = add_next_item(listing, list_items)
+	updateListing = add_next_item(listing, list_items, params)
 	
 	return Plugin.create_listing(list_items, update_listing=updateListing, cache_to_disk=True, content='movies')
 	
@@ -179,7 +180,7 @@ def menu_search(params):
 
 	if s:
 		_debug('Keyword is: ' + s)
-		return show_tmdb_list(TMDB_API_search(s))
+		return show_tmdb_list(TMDB_API_search(s), params)
 
 	
 @plugin.action()
@@ -224,7 +225,7 @@ def genres(params):
 def genre_top(params):
 	page = params.get('page', 1)
 	genre = params['id']
-	return show_tmdb_list(TMDB_API_popular_by_genre(genre, page))
+	return show_tmdb_list(TMDB_API_popular_by_genre(genre, page), params)
 
 @plugin.action()
 def show_category(params):
@@ -232,13 +233,13 @@ def show_category(params):
 
 	from movieapi import TMDB_API
 	if params.get('category') == 'popular':
-		return show_tmdb_list(TMDB_API.popular(page))
+		return show_tmdb_list(TMDB_API.popular(page), params)
 	if params.get('category') == 'top_rated':
-		return show_tmdb_list(TMDB_API.top_rated(page))
+		return show_tmdb_list(TMDB_API.top_rated(page), params)
 	if params.get('category') == 'popular_tv':
-		return show_tmdb_list(TMDB_API.popular_tv(page))
+		return show_tmdb_list(TMDB_API.popular_tv(page), params)
 	if params.get('category') == 'top_rated_tv':
-		return show_tmdb_list(TMDB_API.top_rated_tv(page))
+		return show_tmdb_list(TMDB_API.top_rated_tv(page), params)
 	if params.get('category') == 'anime':
 		uri = 'plugin://plugin.video.shikimori.2/'
 		xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)

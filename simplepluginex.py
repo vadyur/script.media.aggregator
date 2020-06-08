@@ -1,4 +1,4 @@
-from simpleplugin import SimplePluginError, Storage, MemStorage, Addon, Plugin, Params, debug_exception
+from simpleplugin import SimplePluginError, Storage, Addon, Plugin, Params
 
 import codecs
 
