@@ -139,10 +139,13 @@ def update_case():
 		every = 8 * 3600
 		delay_startup = 0
 
+	if _addon.getSetting('role').decode('utf-8') == u'клиент':
+		return
+
 	# User action
 	path = filesystem.join(addon_data_path(), 'start_generate')
 
-	if filesystem.exists(path) and _addon.getSetting('role').decode('utf-8') != u'клиент':
+	if filesystem.exists(path):
 
 		log.debug('User action!!!')
 
