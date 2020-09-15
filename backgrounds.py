@@ -126,7 +126,7 @@ def update_service(show_progress=False):
 			settings.nnmclub_hours = int(math.ceil((time() - float(addon.getSetting('nnm_last_generate'))) / 3600.0))
 		except BaseException as e:
 			settings.nnmclub_hours = 168
-			log.print_tb(e)
+			#log.print_tb(e)
 
 		if settings.nnmclub_hours > 168:
 			settings.nnmclub_hours = 168
@@ -136,7 +136,10 @@ def update_service(show_progress=False):
 
 		log.debug('NNM hours: ' + str(settings.nnmclub_hours))
 
-		addon.setSetting('nnm_last_generate', str(time()))
+		try:
+			addon.setSetting('nnm_last_generate', str(time()))
+		except BaseException as e:
+			pass
 		
 		with dump_context('nnmclub.run'):
 			nnmclub.run(settings)
