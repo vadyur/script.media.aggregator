@@ -186,10 +186,10 @@ class DescriptionParser(DescriptionParserBase):
 
 		if len(fanart) != 0:
 			self._dict['fanart'] = fanart
-		else:
-			dt = self.date_added_duration()
-			if dt and dt.days <= 14:
-				return False
+		# else:
+		# 	dt = self.date_added_duration()
+		# 	if dt and dt.days <= 14:
+		# 		return False
 			
 		for img in self.soup.select('div.video_info a img'):
 			try:
