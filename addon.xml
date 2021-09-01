@@ -14,8 +14,8 @@
     <import addon="script.module.chardet"/>
     <import addon="script.module.shikimori.core" optional="true"/>
     <import addon="script.module.vsdbg"/>
-	
-  </requires>
+    <import addon="script.module.vd-common">
+	</requires>
   <extension point="xbmc.python.pluginsource" library="player.py">
     <provides>video</provides>
   </extension>
