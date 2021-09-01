@@ -11,7 +11,7 @@ def dispatch():
 	from player import load_settings
 
 	import vsdbg
-	vsdbg._bp()
+	#vsdbg._bp()
 	
 	if 'torrent' in params:
 		from player import play_torrent
@@ -86,13 +86,13 @@ def dispatch():
 		action_show_similar(params)
 	
 	elif params.get('action') == 'add_media':
-		vsdbg._bp()
+		#vsdbg._bp()
 
 		from player import action_add_media
 		action_add_media(params, load_settings())
 
 	elif params.get('action') == 'update_service':
-		vsdbg._bp()
+		#vsdbg._bp()
 		from backgrounds import update_service
 		update_service(show_progress=params.get('show_progress'))
 
@@ -106,7 +106,7 @@ def dispatch():
 
 	elif params.get('action') == 'select_source':
 		from context import main
-		vsdbg._bp()
+		#vsdbg._bp()
 		main()
 
 	elif params.get('action') == 'add_media_process':

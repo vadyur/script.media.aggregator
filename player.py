@@ -1327,7 +1327,7 @@ def action_show_library(params):
 	}
 
 	import vsdbg
-	vsdbg._bp()
+	#vsdbg._bp()
 
 	for q, l in ldp_query.iteritems():
 		if params.get('category') in l.items:
