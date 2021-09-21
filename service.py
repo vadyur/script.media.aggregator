@@ -258,8 +258,8 @@ def add_media_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def main():
-	import vsdbg
-	vsdbg._attach(False)
+	# import vsdbg
+	# vsdbg._attach(False)
 
 	#global _addon
 

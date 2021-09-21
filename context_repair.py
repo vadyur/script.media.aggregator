@@ -190,7 +190,7 @@ def main():
 
 
 if __name__ == '__main__':
-	import vsdbg
-	vsdbg._bp()
+	#import vsdbg
+	#vsdbg._bp()
 
 	main()

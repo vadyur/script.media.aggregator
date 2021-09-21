@@ -3,8 +3,8 @@ from log import debug
 def show_similar():
 	import xbmc, xbmcgui
 
-	import vsdbg
-	vsdbg._bp()
+	#import vsdbg
+	#vsdbg._bp()
 	
 	imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
 	type='movie'

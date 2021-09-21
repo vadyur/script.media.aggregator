@@ -549,6 +549,6 @@ def main(settings=None, path=None, name=None, run=None):
 	return True
 
 if __name__ == '__main__':
-	import vsdbg
-	vsdbg._bp()
+	#import vsdbg
+	#vsdbg._bp()
 	main()

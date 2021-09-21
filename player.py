@@ -979,7 +979,7 @@ def action_show_similar(params):
 def action_show_category(params):
 	page = params.get('page', 1)
 
-	import vsdbg
+	#import vsdbg
 	#vsdbg._bp()
 
 	from movieapi import TMDB_API
@@ -1326,7 +1326,7 @@ def action_show_library(params):
 		'recenttvshows': recenttvshows()
 	}
 
-	import vsdbg
+	#import vsdbg
 	#vsdbg._bp()
 
 	for q, l in ldp_query.iteritems():

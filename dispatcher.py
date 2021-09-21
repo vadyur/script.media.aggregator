@@ -10,7 +10,7 @@ def dispatch():
 
 	from player import load_settings
 
-	import vsdbg
+	#import vsdbg
 	#vsdbg._bp()
 	
 	if 'torrent' in params:
