@@ -588,7 +588,7 @@ def create_session(settings):
 		if settings.nnmclub_use_ssl:
 			cookies = dict( ssl='enable_ssl' )
 
-		r = s.get(real_url("http://nnm-club.me/forum/login.php", settings), verify=False)
+		r = s.get(real_url("http://nnm-club.me/forum/login.php", settings))
 
 		soup = BeautifulSoup(clean_html(r.text), 'html.parser')
 
@@ -599,7 +599,7 @@ def create_session(settings):
 
 		data = {"username": settings.nnmclub_login, "password": settings.nnmclub_password,
 				"autologin": "on", "code": code, "redirect": "", "login": ""}
-		login = s.post(real_url("http://nnm-club.me/forum/login.php", settings), data=data, verify=False, cookies=cookies,
+		login = s.post(real_url("http://nnm-club.me/forum/login.php", settings), data=data, cookies=cookies,
 					   headers={'Referer': real_url("http://nnm-club.me/forum/login.php", settings)})
 		debug('Login status: %d' % login.status_code)
 
@@ -609,8 +609,6 @@ def create_session(settings):
 				self.session = session
 				self.settings = settings
 			def _prepare(self, kwargs):
-				if settings.nnmclub_use_ssl:
-					kwargs['verify'] = False
 				kwargs['cookies'] = cookies
 			def get(self, url, **kwargs):
 				self._prepare(kwargs)
@@ -693,7 +691,7 @@ def download_torrent(url: str, path: str, settings) -> bool:
 	if href:
 		def make_req():
 			if link:
-				return requests.get(real_url(link, settings), verify=False)
+				return requests.get(real_url(link, settings))
 			else:
 				return s.get(href, headers={'Referer': real_url(url, settings)})
 			

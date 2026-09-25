@@ -292,6 +292,8 @@ def clean_movies() -> None:
 	movie_duplicates_list = more_requests.get_movie_duplicates()
 
 	if not movie_duplicates_list:
+		log.debug('* End cleaning movies: no duplicates')
+		log.debug('*'*80)
 		return
 
 	settings = load_settings()
@@ -578,6 +580,17 @@ def _tvshow_groups(root: str) -> Dict[Tuple[str, str], List[Tuple[str, Dict[str,
 	return groups
 
 
+def _nfo_tvshow_dir(info: Dict[str, Any]) -> str:
+	"""Ожидаемое имя папки по данным tvshow.nfo (без обращения к TMDB)."""
+	from base import original_name
+	from vdlib.util.base import make_fullpath
+
+	name = original_name(info.get('title'), info.get('originaltitle'))
+	if name and info.get('year'):
+		name += ' (%s)' % info['year']
+	return make_fullpath(name, '') if name else ''
+
+
 def _canonical_tvshow_dir(key: Tuple[str, str], info: Dict[str, Any]) -> Optional[str]:
 	import movieapi, tvshowapi
 	from base import original_name
@@ -613,6 +626,10 @@ def clean_tvshows() -> None:
 	for root in roots:
 		for key, dirs in _tvshow_groups(root).items():
 			try:
+				# одна папка и её имя совпадает с данными tvshow.nfo - всё в порядке, TMDB не спрашиваем
+				if len(dirs) == 1 and dirs[0][0] == _nfo_tvshow_dir(dirs[0][1]):
+					continue
+
 				canonical = _canonical_tvshow_dir(key, dirs[0][1])
 				if not canonical:
 					continue
