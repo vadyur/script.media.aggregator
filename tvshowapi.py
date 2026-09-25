@@ -2,7 +2,7 @@
 
 import json
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 from contextlib import closing
 from zipfile import ZipFile, BadZipfile, LargeZipFile
 import xml.etree.ElementTree as ET
@@ -52,7 +52,7 @@ def sortext(filelist):
 			result[ext] = result[ext] + 1
 		except:
 			result[ext] = 1
-	lol = result.iteritems()
+	lol = iter(result.items())
 	lol = sorted(lol, key=lambda x: x[1])
 	debug('[sortext]: lol:' + str(lol))
 	popext = lol[-1][0]
@@ -88,7 +88,7 @@ def cutFileNames(l):
 	text2 = cutStr(text[1][0:len(text[1]) - 1 - len(text[1].split('.')[-1])])
 	sep_file = " "
 	result = list(d.compare(text1.split(sep_file), text2.split(sep_file)))
-	debug('[cutFileNames] ' + unicode(result))
+	debug('[cutFileNames] ' + str(result))
 
 	start = ''
 	end = ''
@@ -116,7 +116,7 @@ def cutFileNames(l):
 		except:
 			pass
 		l[fl] = indexes[i]
-	debug('[cutFileNames] [sorted l]  ' + unicode(sorted(l, key=lambda x: x)))
+	debug('[cutFileNames] [sorted l]  ' + str(sorted(l, key=lambda x: x)))
 	return l
 
 
@@ -292,11 +292,11 @@ def parse_torrent2(data):
 def season_from_title(fulltitle):
 	parts = re.split(r'[,;\(\)\[\]]', fulltitle)
 	for part in parts:
-		if u'сезонов' in part.lower():
+		if 'сезонов' in part.lower():
 			return None
-		if u'сезоны' in part.lower():
+		if 'сезоны' in part.lower():
 			return None
-		if u'сезон' in part.lower():
+		if 'сезон' in part.lower():
 			if re.search('\d+\D+\d+', part):
 				return None
 			match = re.search('(\d+)', part)
@@ -367,7 +367,7 @@ def write_tvshow(fulltitle, link, settings, parser, path, skip_nfo_exists=False)
 					season_path = filesystem.join(tvshow_path, season_path)
 					with filesystem.save_make_chdir_context(season_path, 'tvshowapi.write_tvshow2'):
 
-						results = filter(lambda x: x['season'] == s_num and x['episode'] == f['episode'], files)
+						results = [x for x in files if x['season'] == s_num and x['episode'] == f['episode']]
 						if len(results) > 1:	# Has duplicate episodes
 							filename = f['name']
 						else:
@@ -428,19 +428,19 @@ class TheTVDBAPI(object):
 			return
 
 		try:
-			response1 = urllib2.urlopen(self.__base_url + 'GetSeriesByRemoteID.php?imdbid=%s&language=%s' % (imdbId, self.__lang) )
+			response1 = urllib.request.urlopen(self.__base_url + 'GetSeriesByRemoteID.php?imdbid=%s&language=%s' % (imdbId, self.__lang) )
 			try:
 				self.thetvdbid = re.search('<id>(\d+)</id>', response1.read()).group(1)
 			except AttributeError:
 				return
-		except urllib2.HTTPError as e:
+		except urllib.error.HTTPError as e:
 			debug('TheTVDBAPI: ' + str(e))
 			return
 
 		url2 = self.__base_url + self.__apikey + '/series/%s/all/%s.zip' % (self.thetvdbid, self.__lang)
 		debug(url2)
 
-		response2 = urllib2.urlopen(url2)
+		response2 = urllib.request.urlopen(url2)
 		try:
 			f = io.BytesIO(response2.read())
 			with closing(ZipFile(f, 'r')) as zf:
@@ -557,16 +557,16 @@ class MyShowsAPI(object):
 				kinopoiskId = None
 
 		base_url = 'http://api.myshows.me/shows/search/?q='
-		url = base_url + urllib2.quote(title.encode('utf-8'))
+		url = base_url + urllib.parse.quote(title.encode('utf-8'))
 		try:
-			self.myshows = json.load(urllib2.urlopen(url))
-		except urllib2.HTTPError as e:
+			self.myshows = json.load(urllib.request.urlopen(url))
+		except urllib.error.HTTPError as e:
 			debug('TVShowAPI: ' + str(e))
 			return
 
 		if not self.valid():
-			url = base_url + urllib2.quote(ruTitle.encode('utf-8'))
-			self.myshows = json.load(urllib2.urlopen(url))
+			url = base_url + urllib.parse.quote(ruTitle.encode('utf-8'))
+			self.myshows = json.load(urllib.request.urlopen(url))
 
 		if self.valid():
 			debug(url)
@@ -575,7 +575,7 @@ class MyShowsAPI(object):
 			debug(id)
 			if id != 0:
 				url = 'http://api.myshows.me/shows/' + str(id)
-				self.myshows_ep = json.load(urllib2.urlopen(url))
+				self.myshows_ep = json.load(urllib.request.urlopen(url))
 				if self.valid_ep():
 					debug(url)
 
@@ -586,7 +586,7 @@ class MyShowsAPI(object):
 		# try:
 		if True:
 			if self.valid():
-				for key in self.myshows.keys():
+				for key in list(self.myshows.keys()):
 					debug(key)
 					section = self.myshows[str(key)]
 					if imdbId:

@@ -44,13 +44,13 @@ class AskUser(object):
 	def ask_update(self):
 		if self._ask_update is None:
 			import xbmcgui
-			self._ask_update = xbmcgui.Dialog().yesno(_addon_name, u'Обновить описания?')
+			self._ask_update = xbmcgui.Dialog().yesno(_addon_name, 'Обновить описания?')
 		return self._ask_update
 
 	def ask_files_remove(self):
 		if self._ask_files_remove is None:
 			import xbmcgui
-			self._ask_files_remove = xbmcgui.Dialog().yesno(_addon_name, u'Удалить файлы?')
+			self._ask_files_remove = xbmcgui.Dialog().yesno(_addon_name, 'Удалить файлы?')
 		return self._ask_files_remove
 
 	def progress_start(self, count):
@@ -121,9 +121,9 @@ def remove_files(path):
 			if filesystem.exists(path):
 				try:
 					filesystem.remove(path)
-					debug(u'remove: {}		[OK]'.format(path))
+					debug('remove: {}		[OK]'.format(path))
 				except:
-					debug(u'remove: {}		[Fail]'.format(path))
+					debug('remove: {}		[Fail]'.format(path))
 
 		remove(path)
 		nfo_path = path.replace('.strm', '.nfo')

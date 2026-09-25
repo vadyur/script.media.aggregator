@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 import filesystem
 
 def ensure_utf8(string):
-	if isinstance(string, unicode):
+	if isinstance(string, str):
 		string = string.encode('utf-8')
 	return string
 
@@ -160,10 +160,10 @@ class NFOReader(object):
 		if is_episode:
 			path = filesystem.dirname(self.path)
 			path = filesystem.abspath(filesystem.join(path, os.pardir))
-			path = filesystem.join(path, u'tvshow.nfo')
+			path = filesystem.join(path, 'tvshow.nfo')
 
 			if filesystem.exists(path):
-				debug(u'tvs_reader: ' + path)
+				debug('tvs_reader: ' + path)
 				return NFOReader(path, self.__temp_path)
 
 		return None
@@ -208,7 +208,7 @@ if __name__ == '__main__':
 	#print reader.try_join_tvshow_info()
 	#print reader.try_join_tvshow_art()
 
-	rd = NFOReader(u'C:\\Users\\vd\\Videos\\TVShows\\Гастролёры\\Season 1\\03. episode_s01e03.nfo', '')
+	rd = NFOReader('C:\\Users\\vd\\Videos\\TVShows\\Гастролёры\\Season 1\\03. episode_s01e03.nfo', '')
 	tvs_rd = rd.tvs_reader()
 	imdb_id = tvs_rd.imdb_id()
 

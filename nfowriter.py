@@ -20,7 +20,7 @@ def fixed_writexml(self, writer, indent="", addindent="", newl=""):
 	writer.write(indent + "<" + self.tagName)
 
 	attrs = self._get_attributes()
-	a_names = attrs.keys()
+	a_names = list(attrs.keys())
 	a_names.sort()
 
 	for a_name in a_names:
@@ -81,8 +81,8 @@ class NFOWriter:
 		for (html, replacement) in self.stripPairs:
 			string = re.sub(html, replacement, string)
 
-		string = string.replace('&mdash;', u'—')
-		string = string.replace('&#151;', u'—')
+		string = string.replace('&mdash;', '—')
+		string = string.replace('&#151;', '—')
 		return string.strip(' \t\n\r')
 
 	def __init__(self, parser, movie_api=EmptyMovieApi(), tvshow_api=None):
@@ -93,7 +93,7 @@ class NFOWriter:
 	def add_element_copy(self, parent, tagname, parser):
 		value = parser.get_value(tagname)
 		if value != '':
-			ET.SubElement(parent, tagname).text = unicode(value)
+			ET.SubElement(parent, tagname).text = str(value)
 		return value != ''
 
 	def add_element_copy_ep(self, parent, tagname, episode):
@@ -105,7 +105,7 @@ class NFOWriter:
 
 	def add_element_value(self, parent, tagname, value):
 		if value != '':
-			ET.SubElement(parent, tagname).text = unicode(value)
+			ET.SubElement(parent, tagname).text = str(value)
 		return value != ''
 
 	def add_element_split(self, parent, tagname, parser):
@@ -139,7 +139,7 @@ class NFOWriter:
 		self.add_element_value(root, 'aired', episode['airDate'])
 		'''
 
-		for tagname, value in episode.iteritems():
+		for tagname, value in episode.items():
 			if tagname != 'title':
 				self.add_element_value(root, tagname, value)
 
@@ -187,7 +187,7 @@ class NFOWriter:
 			for name in self.parser.get_value('actor').split(', '):
 				if name != '':
 					actor = ET.SubElement(root, 'actor')
-					ET.SubElement(actor, 'name').text = unicode(name)
+					ET.SubElement(actor, 'name').text = str(name)
 
 	def add_trailer(self, root):
 		try:
@@ -222,7 +222,7 @@ class NFOWriter:
 	def write_set(self, root):
 		try:
 			res = self.movie_api['set']
-			debug(u'Collection: ' + res)
+			debug('Collection: ' + res)
 			ET.SubElement(root, 'set').text = res
 		except:
 			pass

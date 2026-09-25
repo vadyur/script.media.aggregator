@@ -5,7 +5,7 @@ from log import debug
 
 import os, re, filesystem
 from settings import *
-import urllib
+import urllib.request, urllib.parse, urllib.error
 from movieapi import *
 import operator
 
@@ -15,11 +15,11 @@ GB = KB * MB
 
 def lower(s):
 	s = s.lower()
-	_s = unicode()
+	_s = str()
 	for ch in s:
-		if ord(ch) >= ord(u'А') and ord(ch) <= ord(u'Я'):
-			ofs = ord(u'а') - ord(u'А')
-			_s += unichr(ord(ch) + ofs)
+		if ord(ch) >= ord('А') and ord(ch) <= ord('Я'):
+			ofs = ord('а') - ord('А')
+			_s += chr(ord(ch) + ofs)
 		else:
 			_s += ch
 	return _s
@@ -36,7 +36,7 @@ def make_fullpath(title, ext):
 	if '/' in title:
 		pass
 
-	result = unicode(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''").strip() + ext)
+	result = str(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''").strip() + ext)
 	if dir_path:
 		result = filesystem.join(dir_path, result)
 
@@ -93,10 +93,10 @@ def detect_h265(str_detect):
 
 def is_torrent_remembed(parser, settings):
 	from downloader import TorrentDownloader
-	import urllib
+	import urllib.request, urllib.parse, urllib.error
 	link = parser.get('link').split('torrent=')[-1]
 	if link:
-		torr_downloader = TorrentDownloader(urllib.unquote(link), None, settings)
+		torr_downloader = TorrentDownloader(urllib.parse.unquote(link), None, settings)
 		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
 		return filesystem.exists(path)
 
@@ -159,16 +159,16 @@ def get_rank(full_title, parser, settings):
 		if 'kbps' in part \
 			or 'kbs' in part \
 			or 'Kbps' in part \
-			or u'Кбит/сек' in part \
-			or u'Кбит/с' in part \
+			or 'Кбит/сек' in part \
+			or 'Кбит/с' in part \
 			or 'Kb/s' in part:
 				multiplier = 1
 		if 'mbps' in part \
 			or 'mbs' in part \
 			or 'Mbps' in part \
-			or u'Мбит/сек' in part \
-			or u'Mбит/с' in part \
-			or u'Мбит/с' in part \
+			or 'Мбит/сек' in part \
+			or 'Mбит/с' in part \
+			or 'Мбит/с' in part \
 			or 'Mb/s' in part \
 			or 'mb/s' in part:
 				multiplier = 1000
@@ -260,7 +260,7 @@ def get_rank(full_title, parser, settings):
 
 
 def make_utf8(s):
-	if isinstance(s, unicode):
+	if isinstance(s, str):
 		return s.encode('utf-8')
 	return s
 
@@ -326,7 +326,7 @@ def scrape_now(fn):
 def seeds_peers(item):
 	res = {}
 	try:
-		link = urllib.unquote(item['link'])
+		link = urllib.parse.unquote(item['link'])
 		try:
 			import player
 			settings = player.load_settings()
@@ -373,7 +373,7 @@ class STRMWriterBase(object):
 	def make_alternative(self, strmFilename, link, parser):
 		strmFilename_alt = strmFilename + '.alternative'
 
-		s_alt = u''
+		s_alt = ''
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				s_alt = alternative.read().decode('utf-8')
@@ -381,7 +381,7 @@ class STRMWriterBase(object):
 		if not (link in s_alt):
 			try:
 				with filesystem.fopen(strmFilename_alt, "a+") as alternative:
-					for key, value in parser.Dict().iteritems():
+					for key, value in parser.Dict().items():
 						if key in ['director', 'studio', 'country', 'plot', 'actor', 'genre', 'country_studio']:
 							continue
 						alternative.write('#%s=%s\n' % (make_utf8(key), make_utf8(value)))
@@ -414,7 +414,7 @@ class STRMWriterBase(object):
 							saved_dict[parts[0]] = parts[1].strip(' \n\t\r')
 					elif line.startswith('plugin://script.media.aggregator'):
 						try:
-							saved_dict['link'] = line.strip(u'\r\n\t ')
+							saved_dict['link'] = line.strip('\r\n\t ')
 							if use_scrape_info:
 								sp = seeds_peers(saved_dict)
 								saved_dict = dict(saved_dict, **sp)
@@ -427,7 +427,7 @@ class STRMWriterBase(object):
 							log.print_tb(e)
 							curr_rank = 1
 
-						item = {'rank': curr_rank, 'link': line.strip(u'\r\n\t ')}
+						item = {'rank': curr_rank, 'link': line.strip('\r\n\t ')}
 						items.append(dict(item, **saved_dict))
 						saved_dict.clear()
 
@@ -453,7 +453,7 @@ class STRMWriterBase(object):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
 				for line in alternative:
 					if line.startswith('plugin://'):
-						if link in urllib.unquote(line):
+						if link in urllib.parse.unquote(line):
 							return True
 		return False
 
@@ -463,7 +463,7 @@ class STRMWriterBase(object):
 		with filesystem.fopen(strmFilename_alt, 'w') as alternative:
 			for variant in links_with_ranks:
 				if 'link' in variant:
-					for k, v in variant.iteritems():
+					for k, v in variant.items():
 						if k != 'link':
 							alternative.write('#%s=%s\n' % (make_utf8(k), make_utf8(v)))
 
@@ -487,9 +487,9 @@ class Informer(object):
 		#imdbRaiting=None
 
 		if not imdb_id:
-			if u'originaltitle' in self.Dict():
+			if 'originaltitle' in self.Dict():
 				orig = self.Dict()['originaltitle']
-			if u'year' in self.Dict():
+			if 'year' in self.Dict():
 				year = self.Dict()['year']
 
 		from movieapi import MovieAPI
@@ -533,13 +533,13 @@ class DescriptionParserBase(Informer):
 
 	def Dump(self):
 		debug('-------------------------------------------------------------------------')
-		for key, value in self._dict.iteritems():
+		for key, value in self._dict.items():
 			debug(key + '\t: ' + value)
 
 	def Dict(self):
 		return self._dict
 
-	def get_value(self, tag, def_value=u''):
+	def get_value(self, tag, def_value=''):
 		try:
 			return self._dict[tag]
 		except:
@@ -605,7 +605,7 @@ class DescriptionParserBase(Informer):
 
 	def need_skipped(self, full_title):
 
-		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'[Season', u'Half-SBS']:
+		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', '[Season', 'Half-SBS']:
 			if phrase in full_title:
 				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
@@ -795,7 +795,7 @@ def save_hashes(torrent_path):
 				wf.write(info_hash + '\n')
 
 def get_true_filename(filename):
-	if (not filename) or (not isinstance(filename, str) and not isinstance(filename, unicode)):
+	if (not filename) or (not isinstance(filename, str) and not isinstance(filename, str)):
 		return filename
 
 	if filesystem.exists(filename):
@@ -809,9 +809,9 @@ def get_true_filename(filename):
 		return filename
 
 	def get_result(result):
-		if isinstance(filename, str) and isinstance(result, unicode):
+		if isinstance(filename, str) and isinstance(result, str):
 			return result.encode('utf-8')
-		if isinstance(filename, unicode) and isinstance(result, str):
+		if isinstance(filename, str) and isinstance(result, str):
 			return result.decode('utf-8')
 		return result
 

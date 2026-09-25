@@ -5,7 +5,7 @@ from log import debug
 
 
 from base import *
-import os, urllib2, sys, filesystem
+import os, urllib.request, urllib.error, urllib.parse, sys, filesystem
 
 class STRMWriter(STRMWriterBase):
 	def __init__(self, link):
@@ -20,21 +20,21 @@ class STRMWriter(STRMWriterBase):
 			debug('No update_paths attribute')
 		#------------------------------------------
 
-		strmFilename = make_fullpath(filename, u'.strm')
+		strmFilename = make_fullpath(filename, '.strm')
 		strmFilename = filesystem.join(path, strmFilename)
 		
 		#------------------------------------------
 
-		link = u'plugin://script.media.aggregator/?action=play&torrent='
-		link += urllib2.quote(self.link.encode('utf-8'))
+		link = 'plugin://script.media.aggregator/?action=play&torrent='
+		link += urllib.parse.quote(self.link.encode('utf-8'))
 		if episodeNumber != None:
-			link += u'&episodeNumber=' + str(episodeNumber - 1)
+			link += '&episodeNumber=' + str(episodeNumber - 1)
 		if seasonNumber != None:
-			link += u'&seasonNumber=' + str(seasonNumber)
+			link += '&seasonNumber=' + str(seasonNumber)
 		if cutname != None:
-			link += u'&cutName=' + urllib2.quote(cutname)
+			link += '&cutName=' + urllib.parse.quote(cutname)
 		if index != None:
-			link += u'&index=' + str(index)
+			link += '&index=' + str(index)
 
 		#------------------------------------------
 		if parser is not None:
@@ -48,13 +48,13 @@ class STRMWriter(STRMWriterBase):
 				
 		#------------------------------------------
 			
-		link += u'&nfo=' + urllib2.quote(make_fullpath(filename, '.nfo').encode('utf-8'))
+		link += '&nfo=' + urllib.parse.quote(make_fullpath(filename, '.nfo').encode('utf-8'))
 		
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(path, settings.base_path())
 			debug(path)
-			link += u'&path=' + urllib2.quote(path.encode('utf-8'))
+			link += '&path=' + urllib.parse.quote(path.encode('utf-8'))
 
 		#------------------------------------------
 		if filesystem.exists(strmFilename):

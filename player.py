@@ -10,7 +10,7 @@ import xbmcplugin
 
 from log import debug, print_tb
 import filesystem
-import urllib, time
+import urllib.request, urllib.parse, urllib.error, time
 
 # Определяем параметры плагина
 _ADDON_NAME = 'script.media.aggregator'
@@ -20,7 +20,7 @@ _addon_path = _addon.getAddonInfo('path').decode('utf-8')
 try:
 	_addondir = xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
 except:
-	_addondir = u''
+	_addondir = ''
 
 debug(_addondir)
 
@@ -35,7 +35,7 @@ def getSetting(id, default=''):
 
 def load_settings():
 	base_path = getSetting('base_path', '').decode('utf-8')
-	if base_path == u'Videos':
+	if base_path == 'Videos':
 		base_path = filesystem.join(_addondir, base_path)
 
 	movies_path				= getSetting('movies_path', 'Movies').decode('utf-8')
@@ -101,8 +101,8 @@ def load_settings():
 
 	settings.remeber_watched		= getSetting('remeber_watched') == 'true'
 
-	settings.move_video				= getSetting('action_files').decode('utf-8') == u'переместить'
-	settings.remove_files			= getSetting('action_files').decode('utf-8') == u'удалить'
+	settings.move_video				= getSetting('action_files').decode('utf-8') == 'переместить'
+	settings.remove_files			= getSetting('action_files').decode('utf-8') == 'удалить'
 	settings.copy_video_path		= getSetting('copy_video_path').decode('utf-8')
 
 	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
@@ -134,7 +134,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			if isinstance(msg, str):
 				msg = msg.decode('utf-8')
 		
-			debug(u'play_torrent_variant: {}'.format(msg) )
+			debug('play_torrent_variant: {}'.format(msg) )
 		except:
 			debug('_debug raised exception')
 
@@ -199,7 +199,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 			if xbmc.abortRequested:
 				return play_torrent_variant.resultCancel
 
-			info_dialog.update(i, u'Проверяем файлы', ' ', ' ')
+			info_dialog.update(i, 'Проверяем файлы', ' ', ' ')
 
 			if downloader and downloader.is_finished():
 				#if not filecmp.cmp(path, downloader.get_filename()):
@@ -245,12 +245,12 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 							playable_item = item
 							index = playable_item.get('index')
 			else:
-				cutName = urllib.unquote(params['cutName']).decode('utf-8').lower()
+				cutName = urllib.parse.unquote(params['cutName']).decode('utf-8').lower()
 				index = -1
 				for item in files:
 					name = item['name'].lower()
 					from tvshowapi import cutStr
-					if cutName in unicode(cutStr(name)):
+					if cutName in str(cutStr(name)):
 						playable_item = item
 						index = playable_item.get('index')
 						break
@@ -263,7 +263,7 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					#if not filecmp.cmp(path, downloader.get_filename()):
 					if downloader.info_hash() and downloader.info_hash() != player.info_hash:
 						downloader.move_file_to(path)
-						print 'play_torrent_variant.resultTryAgain'
+						print('play_torrent_variant.resultTryAgain')
 						return play_torrent_variant.resultTryAgain
 				xbmc.sleep(1000)
 
@@ -328,11 +328,11 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 
 		_debug('ListItem created')
 
-		rel_path = urllib.unquote(params['path']).decode('utf-8')
-		filename = urllib.unquote(params['nfo']).decode('utf-8')
+		rel_path = urllib.parse.unquote(params['path']).decode('utf-8')
+		filename = urllib.parse.unquote(params['nfo']).decode('utf-8')
 
 		from kodidb import KodiDB
-		k_db = KodiDB(filename.replace(u'.nfo', u'.strm'), \
+		k_db = KodiDB(filename.replace('.nfo', '.strm'), \
 		              rel_path,
 		              sys.argv[0] + sys.argv[2])
 		k_db.PlayerPreProccessing()
@@ -385,10 +385,10 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 					info = player.GetTorrentInfo()
 					percent = float(info['downloaded']) * 100 / info['size']
 					if percent >= 0:
-						heading = u"{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + r'%' + '\n'
+						heading = "{} МB из {} МB - {}".format(info['downloaded'], info['size'], int(percent)) + r'%' + '\n'
 						if percent < 100:
 
-							heading += u"Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
+							heading += "Скорость загрузки: {} KB/сек\n".format(info['dl_speed'])
 
 							this_time = time.time()
 							time_passed = (this_time - self.time_started)
@@ -401,9 +401,9 @@ def play_torrent_variant(path, info_dialog, episodeNumber, nfoReader, settings, 
 								seconds = (info['size'] - info['downloaded']) / average_speed if average_speed != 0 else -1
 								# _debug('seconds: {}'.format(seconds))
 								if seconds > 0:
-									heading += u"Осталось: {} мин {} сек\n".format(int(seconds / 60), int(seconds % 60))
+									heading += "Осталось: {} мин {} сек\n".format(int(seconds / 60), int(seconds % 60))
 
-							heading += u"Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
+							heading += "Сиды: {}    Пиры: {}".format(info['num_seeds'], info['num_peers'])
 
 						self.info_label.setLabel(heading)
 						self.info_label_bg.setLabel(heading)
@@ -495,7 +495,7 @@ def get_path_or_url_and_episode(settings, params, torrent_source):
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 
 	from downloader import TorrentDownloader
-	torr_downloader = TorrentDownloader(urllib.unquote(torrent_source), tempPath, settings)
+	torr_downloader = TorrentDownloader(urllib.parse.unquote(torrent_source), tempPath, settings)
 
 	path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(),
 	                       torr_downloader.get_post_index() + '.torrent')
@@ -524,7 +524,7 @@ def openInTorrenter(nfoReader):
 		if not ctitle is None:
 			uri = \
 				'%s?%s' % (
-				'plugin://plugin.video.torrenter/', urllib.urlencode({'action': 'search', 'url': ctitle.encode('utf-8')}))
+				'plugin://plugin.video.torrenter/', urllib.parse.urlencode({'action': 'search', 'url': ctitle.encode('utf-8')}))
 			debug('Search in torrenter: ' + uri)
 			xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
 
@@ -537,8 +537,8 @@ def play_torrent(settings, params):
 
 	tempPath = xbmc.translatePath('special://temp').decode('utf-8')
 	base_path = settings.base_path().encode('utf-8')
-	rel_path = urllib.unquote(params.get('path', ''))
-	nfoFilename = urllib.unquote(params.get('nfo', ''))
+	rel_path = urllib.parse.unquote(params.get('path', ''))
+	nfoFilename = urllib.parse.unquote(params.get('nfo', ''))
 
 	from base import get_true_filename
 
@@ -653,14 +653,14 @@ def play_torrent(settings, params):
 		pass
 
 
-restart_msg = u'Чтобы изменения вступили в силу, нужно перезапустить KODI. Перезапустить?'
+restart_msg = 'Чтобы изменения вступили в силу, нужно перезапустить KODI. Перезапустить?'
 
 
 def check_sources(settings):
 	import sources
 	if sources.need_create(settings):
 		dialog = xbmcgui.Dialog()
-		if dialog.yesno(settings.addon_name, u'Источники категорий не созданы. Создать?'):
+		if dialog.yesno(settings.addon_name, 'Источники категорий не созданы. Создать?'):
 			if sources.create(settings):
 				if dialog.yesno(settings.addon_name, restart_msg):
 					xbmc.executebuiltin('Quit')
@@ -693,7 +693,7 @@ def dialog_action(action, settings, params=None):
 		kinohd_enable = _addon.getSetting('kinohd_enable') == 'true'
 
 		if not (anidub_enable or hdclub_enable or bluebird_enable or nnmclub_enable or rutor_enable or soap4me_enable or kinohd_enable):
-			xbmcgui.Dialog().ok(_ADDON_NAME, u'Пожалуйста, заполните настройки', u'Ни одного сайта не выбрано')
+			xbmcgui.Dialog().ok(_ADDON_NAME, 'Пожалуйста, заполните настройки', 'Ни одного сайта не выбрано')
 			action = dialog_action_case.settings
 		else:
 			from service import start_generate
@@ -730,8 +730,8 @@ def dialog_action(action, settings, params=None):
 		s = None
 		if not 'keyword' in params:
 			dlg = xbmcgui.Dialog()
-			s = dlg.input(u'Введите поисковую строку')
-			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.quote(s)
+			s = dlg.input('Введите поисковую строку')
+			command = sys.argv[0] + sys.argv[2] + '&keyword=' + urllib.parse.quote(s)
 			debug('Run command: {0}'.format(command))
 			xbmc.executebuiltin('Container.Update("{0}")'.format(command))
 
@@ -741,7 +741,7 @@ def dialog_action(action, settings, params=None):
 				debug('No keyword param. Return')
 				return False
 		else:
-			s = urllib.unquote(params.get('keyword'))
+			s = urllib.parse.unquote(params.get('keyword'))
 
 		if s:
 			from movieapi import TMDB_API
@@ -755,14 +755,14 @@ def dialog_action(action, settings, params=None):
 
 		listing = [
 
-			('popular', u'Популярные'),
-			('top_rated', u'Рейтинговые'),
-			('popular_tv', u'Популярные сериалы'),
-			('top_rated_tv', u'Рейтинговые сериалы')
+			('popular', 'Популярные'),
+			('top_rated', 'Рейтинговые'),
+			('popular_tv', 'Популярные сериалы'),
+			('top_rated_tv', 'Рейтинговые сериалы')
 		]
 
 		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
-			listing.append(('anime', u'Аниме (Shikimori.org)' ), )
+			listing.append(('anime', 'Аниме (Shikimori.org)' ), )
 
 		for l in listing:
 			li = xbmcgui.ListItem(l[1])
@@ -781,29 +781,29 @@ def dialog_action(action, settings, params=None):
 
 		listing = [
 
-			('anime_top', u'Аниме: популярное'),
-			('anime_recomended', u'Аниме: текущее'),
-			('anime_last', u'Аниме: последнее'),
+			('anime_top', 'Аниме: популярное'),
+			('anime_recomended', 'Аниме: текущее'),
+			('anime_last', 'Аниме: последнее'),
 
-			('animation_top', u'Мультфильмы: популярное'),
-			('animation_recomended', u'Мультфильмы: текущее'),
-			('animation_last', u'Мультфильмы: последнее'),
+			('animation_top', 'Мультфильмы: популярное'),
+			('animation_recomended', 'Мультфильмы: текущее'),
+			('animation_last', 'Мультфильмы: последнее'),
 
-			('animtv_top', u'Мультсериалы: популярное'),
-			('animtv_recomended', u'Мультсериалы: текущее'),
-			('animtv_last', u'Мультсериалы: последнее'),
+			('animtv_top', 'Мультсериалы: популярное'),
+			('animtv_recomended', 'Мультсериалы: текущее'),
+			('animtv_last', 'Мультсериалы: последнее'),
 
-			('documentary_top', u'Документальные фильмы: популярное'),
-			('documentary_recomended', u'Документальные фильмы: текущее'),
-			('documentary_last', u'Документальные фильмы: последнее'),
+			('documentary_top', 'Документальные фильмы: популярное'),
+			('documentary_recomended', 'Документальные фильмы: текущее'),
+			('documentary_last', 'Документальные фильмы: последнее'),
 
-			('movie_top', u'Художественные фильмы: популярное'),
-			('movie_recomended', u'Художественные фильмы: текущее'),
-			('movie_last', u'Художественные фильмы: последнее'),
+			('movie_top', 'Художественные фильмы: популярное'),
+			('movie_recomended', 'Художественные фильмы: текущее'),
+			('movie_last', 'Художественные фильмы: последнее'),
 
-			('tvshow_top', u'Сериалы: популярное'),
-			('tvshow_recomended', u'Сериалы: текущее'),
-			('tvshow_last', u'Сериалы: последнее'),
+			('tvshow_top', 'Сериалы: популярное'),
+			('tvshow_recomended', 'Сериалы: текущее'),
+			('tvshow_last', 'Сериалы: последнее'),
 
 		]
 
@@ -839,7 +839,7 @@ def next_item(total_pages):
 			url = make_url(params)
 
 			addon_handle = int(sys.argv[1])
-			li = xbmcgui.ListItem(u'[Далее]')
+			li = xbmcgui.ListItem('[Далее]')
 			xbmcplugin.addDirectoryItem(handle=addon_handle, url=url, listitem=li, isFolder=True)
 		return page > 1
 	else:
@@ -865,8 +865,8 @@ def show_list(listing):
 			 'type': item.type,
 			 'tmdb': item.tmdb_id()})
 
-		items = [(u'Смотрите также', 'Container.Update("%s")' % url_similar),
-				(u'Искать источники', 'RunPlugin("%s")' % (url_search + '&force=true') )]
+		items = [('Смотрите также', 'Container.Update("%s")' % url_similar),
+				('Искать источники', 'RunPlugin("%s")' % (url_search + '&force=true') )]
 
 		li.addContextMenuItems(items)
 
@@ -881,12 +881,12 @@ def force_library_update(settings, params):
 	UpdateVideoLibrary(path='/fake_path', wait=True)
 
 
-menu_items = [u'Генерировать .strm и .nfo файлы',
-				u'Создать источники',
-				u'Настройки',
-				u'Поиск',
-				u'Каталог',
-				u'Медиатека'
+menu_items = ['Генерировать .strm и .nfo файлы',
+				'Создать источники',
+				'Настройки',
+				'Поиск',
+				'Каталог',
+				'Медиатека'
 ]
 
 menu_actions = ['generate',
@@ -911,11 +911,11 @@ def main_menu(menu_actions):
 	xbmcplugin.endOfDirectory(addon_handle)
 
 def action_add_media(params, settings):
-	title = urllib.unquote_plus(params.get('title')).decode('utf-8')
+	title = urllib.parse.unquote_plus(params.get('title')).decode('utf-8')
 	imdb = params.get('imdb')
 	force = params.get('force') == 'true'
 	
-	if getSetting('role').decode('utf-8') == u'клиент' and params.get('norecursive'):
+	if getSetting('role').decode('utf-8') == 'клиент' and params.get('norecursive'):
 		force_library_update(settings, params)
 
 	if force:
@@ -959,13 +959,13 @@ def action_add_media(params, settings):
 	
 	dialog = xbmcgui.Dialog()
 	if found == 'movie':
-		if dialog.yesno(u'Кино найдено в библиотеке', u'Запустить?'):
+		if dialog.yesno('Кино найдено в библиотеке', 'Запустить?'):
 			xbmc.executebuiltin('PlayMedia("%s")' % r['file'].encode('utf-8'))
 	elif found == 'tvshow':
-		if dialog.yesno(u'Сериал найден в библиотеке', u'Перейти?'):
+		if dialog.yesno('Сериал найден в библиотеке', 'Перейти?'):
 			xbmc.executebuiltin('ActivateWindow(Videos,%s,return)' % r['file'].encode('utf-8'))
 	elif not params.get('norecursive'):
-		if dialog.yesno(u'Кино/сериал не найден в библиотеке', u'Запустить поиск по трекерам?'):
+		if dialog.yesno('Кино/сериал не найден в библиотеке', 'Запустить поиск по трекерам?'):
 			from service import add_media
 			add_media(title, imdb, settings)
 
@@ -1104,7 +1104,7 @@ def action_show_library(params):
 				else:
 					cast = [None, None]
 
-				full_title = u"{} ({})".format(movie['title'], movie['year']) if movie['year'] and self.content == 'movies' else movie['title']
+				full_title = "{} ({})".format(movie['title'], movie['year']) if movie['year'] and self.content == 'movies' else movie['title']
 
 				li = xbmcgui.ListItem(full_title)
 				url = movie['file']
@@ -1244,7 +1244,7 @@ def action_show_library(params):
 				nSeason = "%.2d" % float(episode['season'])
 				fEpisode = "s%se%s" % (nSeason, nEpisode)
 
-				full_title = u'{} - {}x{} {}'.format(episode['showtitle'], episode['episode'], episode['season'], episode['title'])
+				full_title = '{} - {}x{} {}'.format(episode['showtitle'], episode['episode'], episode['season'], episode['title'])
 				li = xbmcgui.ListItem(full_title)
 				url = episode['file']
 
@@ -1329,7 +1329,7 @@ def action_show_library(params):
 	#import vsdbg
 	#vsdbg._bp()
 
-	for q, l in ldp_query.iteritems():
+	for q, l in ldp_query.items():
 		if params.get('category') in l.items:
 			l.category = params.get('category')
 			l.full_listing()

@@ -1,4 +1,4 @@
-import binascii, urllib, urllib2, socket, random, struct
+import binascii, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, socket, random, struct
 from bencode import bdecode
 from urlparse import urlparse, urlunsplit
 
@@ -33,7 +33,7 @@ def scrape(tracker, hashes, timeout=1):
 	raise RuntimeError("Unknown tracker scheme: %s" % parsed.scheme)	
 
 def scrape_udp(parsed_tracker, hashes, timeout):
-	print "Scraping UDP: %s for %s hashes" % (parsed_tracker.geturl(), len(hashes))
+	print("Scraping UDP: %s for %s hashes" % (parsed_tracker.geturl(), len(hashes)))
 	if len(hashes) > 74:
 		raise RuntimeError("Only 74 hashes can be scraped on a UDP tracker due to UDP limitations")
 	transaction_id = "\x00\x00\x04\x12\x27\x10\x19\x70";
@@ -55,17 +55,17 @@ def scrape_udp(parsed_tracker, hashes, timeout):
 	return udp_parse_scrape_response(buf, transaction_id, hashes)
 
 def scrape_http(parsed_tracker, hashes, timeout):
-	print "Scraping HTTP: %s for %s hashes" % (parsed_tracker.geturl(), len(hashes))
+	print("Scraping HTTP: %s for %s hashes" % (parsed_tracker.geturl(), len(hashes)))
 	qs = []
 	for hash in hashes:
 		url_param = binascii.a2b_hex(hash)
 		qs.append(("info_hash", url_param))
-	qs = urllib.urlencode(qs)
+	qs = urllib.parse.urlencode(qs)
 	pt = parsed_tracker	
 	url = urlunsplit((pt.scheme, pt.netloc, pt.path, qs, pt.fragment))
-	print url
+	print(url)
 	try:
-		handle = urllib2.urlopen(url, timeout=timeout);
+		handle = urllib.request.urlopen(url, timeout=timeout);
 	except:
 		raise RuntimeError("Timeout")	
 	
@@ -75,7 +75,7 @@ def scrape_http(parsed_tracker, hashes, timeout):
 	result = handle.read()
 	decoded = bdecode(result)
 	ret = {}
-	for hash, stats in decoded['files'].iteritems():		
+	for hash, stats in decoded['files'].items():		
 		nice_hash = binascii.b2a_hex(hash)
 		#print str(stats)
 		try:
@@ -84,7 +84,7 @@ def scrape_http(parsed_tracker, hashes, timeout):
 			c = stats["downloaded"] if "downloaded" in stats else -1
 			ret[nice_hash] = { "seeds" : s, "peers" : p, "complete" : c}		
 		except BaseException as e:
-			print e
+			print(e)
 	# print ret
 	return ret
 

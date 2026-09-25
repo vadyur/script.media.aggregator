@@ -5,7 +5,7 @@ from log import debug
 
 from settings import Settings
 from base import *
-import feedparser, urllib2, re
+import feedparser, urllib.request, urllib.error, urllib.parse, re
 from bs4 import BeautifulSoup
 from nfowriter import *
 from strmwriter import *
@@ -15,7 +15,7 @@ import requests, filesystem
 class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def get_content(self, url):
-		page = urllib2.urlopen(url)
+		page = urllib.request.urlopen(url)
 		return page
 	
 	#==============================================================================================
@@ -31,20 +31,20 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def get_tag(self, x):
 		return {
-			u'Год: ': u'year',
-			u'Жанр: ': u'genre',
-			u'Описание: ': u'plot',
-			u'Режиссер: ': u'director',
-			u'Продолжительность: ': u'runtime',
-			u'Страна: ': u'country',
-		}.get(x, u'')
+			'Год: ': 'year',
+			'Жанр: ': 'genre',
+			'Описание: ': 'plot',
+			'Режиссер: ': 'director',
+			'Продолжительность: ': 'runtime',
+			'Страна: ': 'country',
+		}.get(x, '')
 		
 	#==============================================================================================
 	def clean(self, title):
 		try:
-			title = title.split(u' ТВ-')[0]
-			title = title.split(u' TV-')[0]
-			title = title.split(u' [')[0]
+			title = title.split(' ТВ-')[0]
+			title = title.split(' TV-')[0]
+			title = title.split(' [')[0]
 		except:
 			pass
 		return title.strip()
@@ -76,9 +76,9 @@ class DescriptionParser(DescriptionParserBase):
 				except:
 					pass
 
-			parts = title.split(u'ТВ-')
+			parts = title.split('ТВ-')
 			if len(parts) == 1:
-				parts = title.split(u'TV-')
+				parts = title.split('TV-')
 			if len(parts) > 1:
 				found = re.search('([0-9]+)', parts[1]).group(1)
 				self._dict['season'] = int(found)
@@ -99,7 +99,7 @@ class DescriptionParser(DescriptionParserBase):
 			for li in ul.find_all('li'):
 				txt = li.get_text()
 				parts = txt.split(':')
-				if len(parts) > 1 and parts[0] == u'Дата':
+				if len(parts) > 1 and parts[0] == 'Дата':
 					date, t = parts[1].split(',')	# 		d	u' 30-09-2012'	unicode
 
 					from datetime import datetime, timedelta
@@ -109,9 +109,9 @@ class DescriptionParser(DescriptionParserBase):
 
 					#date = ' 30-09-2012'
 
-					if u'Сегодня' in date:
+					if 'Сегодня' in date:
 						d = datetime.today()
-					elif u'Вчера' in date:
+					elif 'Вчера' in date:
 						d = yesterday
 					else:
 						try:
@@ -124,7 +124,7 @@ class DescriptionParser(DescriptionParserBase):
 		
 	#==============================================================================================
 	def parse(self):
-		tag = u''
+		tag = ''
 		self._dict['gold'] = False
 		self._dict['season'] = 1
 		
@@ -149,9 +149,9 @@ class DescriptionParser(DescriptionParserBase):
 		for div in self.soup.select('div.story_c'):
 			try:
 				text = div.get_text()
-				text = text.split(u'Описание:')[1]
-				text = text.split(u'Эпизоды')[0]
-				text = text.split(u'Скриншоты')[0]
+				text = text.split('Описание:')[1]
+				text = text.split('Эпизоды')[0]
+				text = text.split('Скриншоты')[0]
 				text = text.strip()
 				self._dict['plot'] = text
 				#debug('---')
@@ -261,7 +261,7 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 			tvshow_api = TVShowAPI.get_by(originaltitle, title)
 			write_tvshow_nfo(parser, tvshow_api, tvshow_path)
 
-		season_path = filesystem.join(tvshow_path, u'Season ' + unicode(season))
+		season_path = filesystem.join(tvshow_path, 'Season ' + str(season))
 		debug(season_path)
 
 		with filesystem.save_make_chdir_context(season_path, 'Anidub.write_tvshow_item_2'):
@@ -320,7 +320,7 @@ def download_torrent(url, path, settings):
 	from base import save_hashes
 	save_hashes(path)
 
-	url = urllib2.unquote(url)
+	url = urllib.parse.unquote(url)
 	debug('download_torrent:' + url)
 
 	s = get_session(settings)
@@ -416,7 +416,7 @@ def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = N
 
 
 def write_favorites(path, settings):
-	write_pages('https://tr.anidub.com/favorites/', path, settings, dialog_title=u'Избранное AniDUB')
+	write_pages('https://tr.anidub.com/favorites/', path, settings, dialog_title='Избранное AniDUB')
 
 
 def search_generate(what, settings, path_out):
@@ -432,7 +432,7 @@ def search_generate(what, settings, path_out):
 				{'do': 'search',
 				'subaction': 'search',
 				'story': what.encode('utf-8')}, filter,
-				dialog_title=u'Поиск AniDUB',
+				dialog_title='Поиск AniDUB',
 				path_out=path_out)
 	
 

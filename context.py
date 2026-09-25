@@ -11,7 +11,7 @@ import pyxbmct.addonwindow as pyxbmct
 import filesystem
 from base import STRMWriterBase, seeds_peers
 
-seeds_peers_fmt = u'[COLOR=FF5AC3C6][B]Сиды[/B]:[/COLOR] %d        [COLOR=FF5AC3C6][B]пиры[/B]:[/COLOR] %d'
+seeds_peers_fmt = '[COLOR=FF5AC3C6][B]Сиды[/B]:[/COLOR] %d        [COLOR=FF5AC3C6][B]пиры[/B]:[/COLOR] %d'
 
 def colorify(text, sub, color):
 	return text.replace(str(sub), '[COLOR={}]{}[/COLOR]'.format(color, sub))
@@ -49,11 +49,11 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			except:
 				pass
 			try:
-				s += '\n' + u'[COLOR=FF5AC3C6][B]Видео[/B]:[/COLOR] ' + item['video']
+				s += '\n' + '[COLOR=FF5AC3C6][B]Видео[/B]:[/COLOR] ' + item['video']
 			except:
 				pass
 			try:
-				s += '\n' + u'[COLOR=FF5AC3C6][B]Перевод[/B]:[/COLOR] ' + item['translate']
+				s += '\n' + '[COLOR=FF5AC3C6][B]Перевод[/B]:[/COLOR] ' + item['translate']
 				#print s
 			except:
 				pass
@@ -95,22 +95,22 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		kodi_ver_major = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 
 		if kodi_ver_major < 16:
-			li = xbmcgui.ListItem(u'НАСТРОЙКИ...')
+			li = xbmcgui.ListItem('НАСТРОЙКИ...')
 			li.setProperty('link', 'plugin://script.media.aggregator/?action=settings')
 			self.list.addItem(li)
 
-			li = xbmcgui.ListItem(u'СМОТРИТЕ ТАКЖЕ...')
+			li = xbmcgui.ListItem('СМОТРИТЕ ТАКЖЕ...')
 			li.setProperty('link', 'plugin://script.media.aggregator/?action=show_similar')
 			self.list.addItem(li)
 
-			li = xbmcgui.ListItem(u'ПОИСК ИСТОЧНИКОВ...')
+			li = xbmcgui.ListItem('ПОИСК ИСТОЧНИКОВ...')
 			li.setProperty('link', 'plugin://script.media.aggregator/?action=add_media')
 			self.list.addItem(li)
 
 			pathUnited = 'special://home/addons/plugin.video.united.search'
 			pathUnited = xbmc.translatePath(pathUnited)
 			if filesystem.exists(pathUnited.decode('utf-8')):
-				li = xbmcgui.ListItem(u'UNITED SEARCH...')
+				li = xbmcgui.ListItem('UNITED SEARCH...')
 				li.setProperty('link', 'plugin://script.media.aggregator/?action=united_search')
 				self.list.addItem(li)
 		
@@ -132,7 +132,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		#xbmcgui.Dialog().ok(self.settings.addon_name, "Reload")
 
 		def find_listitem(item):
-			for index in xrange(self.list.size()):
+			for index in range(self.list.size()):
 				li = self.list.getListItem(index)
 				if li.getProperty('link') == item['link']:
 					return li
@@ -142,7 +142,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			li = find_listitem(item)
 			if li:
 				s = li.getLabel()
-				if not isinstance(s, unicode):
+				if not isinstance(s, str):
 					s = s.decode('utf-8')
 				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
 				li.setLabel(s)
@@ -173,27 +173,27 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		#path = self.download_torrent(link)
 		#choice_path = path.replace('.torrent', '.choice')
 		from downloader import TorrentDownloader
-		import urllib
-		torr_downloader = TorrentDownloader(urllib.unquote(link), None, self.settings)
+		import urllib.request, urllib.parse, urllib.error
+		torr_downloader = TorrentDownloader(urllib.parse.unquote(link), None, self.settings)
 		choice_path = filesystem.join(self.settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.choice')
 
 
 		# +++
 
 		if self.settings.copy_torrent_path:
-			li = xbmcgui.ListItem(u'Копировать торрент')
+			li = xbmcgui.ListItem('Копировать торрент')
 			li.setProperty('link', link)
 			#li.setProperty('path', path)
 			li.setProperty('action', 'copy_torrent')
 			self.left_menu.addItem(li)
 
 		if filesystem.exists(choice_path):
-			li = xbmcgui.ListItem(u'Отменить выбор')
+			li = xbmcgui.ListItem('Отменить выбор')
 			li.setProperty('link', link)
 			li.setProperty('path', choice_path)
 			li.setProperty('action', 'cancel_choice')
 		else:
-			li = xbmcgui.ListItem(u'Запомнить выбор')
+			li = xbmcgui.ListItem('Запомнить выбор')
 			li.setProperty('link', link)
 			li.setProperty('path', choice_path)
 			li.setProperty('action', 'remember_choice')
@@ -276,8 +276,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		from downloader import TorrentDownloader
 		import player
 		settings = self.settings
-		import urllib
-		torr_downloader = TorrentDownloader(urllib.unquote(link), tempPath, settings)
+		import urllib.request, urllib.parse, urllib.error
+		torr_downloader = TorrentDownloader(urllib.parse.unquote(link), tempPath, settings)
 		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 		if not filesystem.exists(path):
 			torr_downloader.download()
@@ -308,7 +308,7 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			if data:
 				for f in data['files']:
 					try:
-						li = xbmcgui.ListItem(str(f['size'] / 1024 / 1024) + u' МБ | ' + f['name'])
+						li = xbmcgui.ListItem(str(f['size'] / 1024 / 1024) + ' МБ | ' + f['name'])
 					except:
 						li = xbmcgui.ListItem(f['name'])
 					li.setProperty('index', str(f['index']))
@@ -362,7 +362,7 @@ def get_path_name():
 			if 'movies' in dbtype:
 				jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetMovieDetails", "params": { "properties": ["file"], "movieid": dbid }, "id": 1}
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-				path = result[u'result'][u'moviedetails'][u'file']
+				path = result['result']['moviedetails']['file']
 			if 'tvshows' in dbtype:
 				if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':
 					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetEpisodeDetails", "params": { "properties": ["file"], "episodeid": dbid }, "id": 13}
@@ -371,7 +371,7 @@ def get_path_name():
 					jsno = {"jsonrpc": "2.0", "method": "VideoLibrary.GetTVShowDetails", "params": { "properties": ["file"], "tvshowid": dbid }, "id": 13}
 					res_type = 'tvshowdetails'
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
-				path = result[u'result'][res_type][u'file']
+				path = result['result'][res_type]['file']
 	
 			try:
 				if path:

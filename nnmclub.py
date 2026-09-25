@@ -5,7 +5,7 @@ from log import debug
 
 
 import re
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from bs4 import BeautifulSoup
 
@@ -69,16 +69,16 @@ class DescriptionParser(DescriptionParserBase):
 			# u'Название:': u'title',
 			# u'Оригинальное название:': u'originaltitle',
 			# u'Год выхода:': u'year',
-			u'Жанр:': u'genre',
-			u'Режиссер:': u'director',
-			u'Актеры:': u'actor',
-			u'Описание:': u'plot',
-			u'Продолжительность:': u'runtime',
-			u'Качество видео:': u'format',
-			u'Производство:': u'country_studio',
-			u'Видео:': u'video',
-			u'Перевод:': u'translate',
-		}.get(x.strip(), u'')
+			'Жанр:': 'genre',
+			'Режиссер:': 'director',
+			'Актеры:': 'actor',
+			'Описание:': 'plot',
+			'Продолжительность:': 'runtime',
+			'Качество видео:': 'format',
+			'Производство:': 'country_studio',
+			'Видео:': 'video',
+			'Перевод:': 'translate',
+		}.get(x.strip(), '')
 
 	def clean(self, title):
 		return title.strip(' \t\n\r')
@@ -107,7 +107,7 @@ class DescriptionParser(DescriptionParserBase):
 	def get_year(self, full_title):
 		try:
 			found = re.search('\(([0-9]+)\)', full_title).group(1)
-			return unicode(found)
+			return str(found)
 		except AttributeError:
 			return 0
 
@@ -159,7 +159,7 @@ class DescriptionParser(DescriptionParserBase):
 	def parse_description(self, html_text):
 		self.soup = BeautifulSoup(clean_html(html_text), 'html.parser')
 
-		tag = u''
+		tag = ''
 		self._dict['gold'] = False
 		for a in self.soup.select('img[src="images/gold.gif"]'):
 			self._dict['gold'] = True
@@ -170,10 +170,10 @@ class DescriptionParser(DescriptionParserBase):
 				text = span.get_text()
 				tag = self.get_tag(text)
 				if tag != '':
-					if tag != u'plot':
-						self._dict[tag] = base.striphtml(unicode(span.next_sibling).strip())
+					if tag != 'plot':
+						self._dict[tag] = base.striphtml(str(span.next_sibling).strip())
 					else:
-						self._dict[tag] = base.striphtml(unicode(span.next_sibling.next_sibling).strip())
+						self._dict[tag] = base.striphtml(str(span.next_sibling.next_sibling).strip())
 					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
 			except:
 				pass
@@ -186,7 +186,7 @@ class DescriptionParser(DescriptionParserBase):
 				href = a['href']
 
 				components = href.split('/')
-				if components[2] == u'www.imdb.com' and components[3] == u'title':
+				if components[2] == 'www.imdb.com' and components[3] == 'title':
 					self._dict['imdb_id'] = components[4]
 					count_id += 1
 			except:
@@ -235,7 +235,7 @@ class DescriptionParser(DescriptionParserBase):
 class DescriptionParserTVShows(DescriptionParser):
 
 	def need_skipped(self, full_title):
-		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'Half-SBS']:
+		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', 'Half-SBS']:
 			if phrase in full_title:
 				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
@@ -392,7 +392,7 @@ def write_movies(content, path, settings, tracker=False):
 		for i in range(settings.nnmclub_pages):
 			enumerator.process_page(content + _NEXT_PAGE_SUFFIX + str(i * _ITEMS_ON_PAGE))
 
-		for post in enumerator.items():
+		for post in list(enumerator.items()):
 			write_movie(post, settings, tracker)
 		# ---------------------------------------------
 
@@ -633,7 +633,7 @@ def get_passkey(settings=None, session=None):
 	for span in soup.select('span.gen'):
 		if next:
 			return span.get_text()
-		if span.get_text() == u'Текущий passkey:':
+		if span.get_text() == 'Текущий passkey:':
 			next = True
 
 	return None
@@ -654,7 +654,7 @@ def download_torrent(url, path, settings):
 	from base import save_hashes
 	save_hashes(path)
 	import shutil
-	url = urllib2.unquote(url)
+	url = urllib.parse.unquote(url)
 	debug('download_torrent:' + url)
 
 	href = None
@@ -670,7 +670,7 @@ def download_torrent(url, path, settings):
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
 	else:
 		href = linkd
-		response = urllib2.urlopen(real_url(link, settings))
+		response = urllib.request.urlopen(real_url(link, settings))
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
 			shutil.copyfileobj(response, f)
@@ -712,9 +712,9 @@ def download_torrent(url, path, settings):
 
 
 def make_search_url(what, IDs):
-	url = u'http://nnm-club.me/forum/tracker.php'
+	url = 'http://nnm-club.me/forum/tracker.php'
 	url += '?f=' + str(IDs)+'&s=2'
-	url += '&nm=' + urllib2.quote(what.encode('utf-8'))
+	url += '&nm=' + urllib.parse.quote(what.encode('utf-8'))
 	return url
 
 
@@ -778,7 +778,7 @@ def search_results(imdb, session, settings, url, type='movie'):
 	with dump_context('nnmclub.enumerator.process_page'):
 		enumerator.process_page(real_url(url, settings))
 	result = []
-	for post in enumerator.items():
+	for post in list(enumerator.items()):
 		if 'seeds' in post and int(post['seeds']) < 5:
 			continue
 

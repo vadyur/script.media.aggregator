@@ -29,10 +29,10 @@ class Settings(object):
 	current_settings = None
 	
 	def __init__(self, base_path,
-	             movies_path			= u'Movies',
-	             animation_path		= u'Animation',
-	             documentary_path	= u'Documentary',
-	             anime_path			= u'Anime',
+	             movies_path			= 'Movies',
+	             animation_path		= 'Animation',
+	             documentary_path	= 'Documentary',
+	             anime_path			= 'Anime',
 	             hdclub_passkey 		= '',
 	             bluebird_passkey 		= None, bluebird_preload_torrents = False, bluebird_login = '', bluebird_password = '', bluebird_nouhd = True,
 	             anidub_login = '', anidub_password = '', anidub_rss=True, anidub_favorite=True,
@@ -131,7 +131,7 @@ class Settings(object):
 		attrs = vars(self)
 		#return ', \n'.join("%s: %s" % item for item in attrs.items() )
 		result = ''
-		for key, value in attrs.items():
+		for key, value in list(attrs.items()):
 			if 'pass' in key:
 				continue
 			if result != '':

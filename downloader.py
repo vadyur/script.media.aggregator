@@ -1,4 +1,4 @@
-import urllib2, requests, re, threading, filesystem, os
+import urllib.request, urllib.error, urllib.parse, requests, re, threading, filesystem, os
 
 class Downloader(object):
 	def __init__(self, url, saveDir = None, extension = '', index = None):
@@ -43,7 +43,7 @@ class Downloader(object):
 
 	def download(self):
 		import shutil
-		response = urllib2.urlopen(self.url)
+		response = urllib.request.urlopen(self.url)
 		with filesystem.fopen(self.get_filename(), 'wb') as f:
 			shutil.copyfileobj(response, f)
 		self.saved_to = self.get_filename()

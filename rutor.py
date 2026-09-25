@@ -5,7 +5,7 @@ from log import debug
 
 
 import re
-import urllib2, urlparse
+import urllib.request, urllib.error, urllib.parse, urlparse
 
 from bs4 import BeautifulSoup
 
@@ -48,25 +48,25 @@ class DescriptionParser(DescriptionParserBase):
 
 	def get_tag(self, x):
 		return {
-			u'Название:': u'title',
-			u'Оригинальное название:': u'originaltitle',
-			u'Год выхода:': u'year',
-			u'Жанр:': u'genre',
-			u'Режиссер:': u'director',
-			u'Режиссёр:': u'director',
-			u'В ролях:': u'actor',
-			u'О фильме:': u'plot',
-			u'Описание:': u'plot',
-			u'Описание фильма:': u'plot',
-			u'Сюжет фильма:': u'plot',
-			u'Продолжительность:': u'runtime',
-			u'Качество:': u'format',
+			'Название:': 'title',
+			'Оригинальное название:': 'originaltitle',
+			'Год выхода:': 'year',
+			'Жанр:': 'genre',
+			'Режиссер:': 'director',
+			'Режиссёр:': 'director',
+			'В ролях:': 'actor',
+			'О фильме:': 'plot',
+			'Описание:': 'plot',
+			'Описание фильма:': 'plot',
+			'Сюжет фильма:': 'plot',
+			'Продолжительность:': 'runtime',
+			'Качество:': 'format',
 			#u'Производство:': u'country_studio',
-			u'Страна:': u'country',
-			u'Студия:': u'studio',
-			u'Видео:': u'video',
-			u'Перевод:': u'translate',
-		}.get(x.strip(), u'')
+			'Страна:': 'country',
+			'Студия:': 'studio',
+			'Видео:': 'video',
+			'Перевод:': 'translate',
+		}.get(x.strip(), '')
 
 	def clean(self, title):
 		title = re.sub('\[.+\]', '', title)
@@ -96,7 +96,7 @@ class DescriptionParser(DescriptionParserBase):
 	def get_year(self, full_title):
 		try:
 			found = re.search(r'\((\d+)\)', full_title).group(1)
-			return unicode(found)
+			return str(found)
 		except AttributeError:
 			return 0
 
@@ -145,14 +145,14 @@ class DescriptionParser(DescriptionParserBase):
 			log.debug(html_text)
 			return False
 
-		tag = u''
+		tag = ''
 
 		for b in self.soup.select('#details b'):
 			try:
 				text = b.get_text()
 				tag = self.get_tag(text)
 				if tag == 'plot':
-					plot = base.striphtml(unicode(b.next_sibling.next_sibling).strip())
+					plot = base.striphtml(str(b.next_sibling.next_sibling).strip())
 					if plot:
 						self._dict[tag] = plot
 						debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
@@ -163,16 +163,16 @@ class DescriptionParser(DescriptionParserBase):
 						if '/tag/' in a['href']:
 							genres.append(a.get_text())
 
-					self._dict[tag] = u', '.join(genres)
+					self._dict[tag] = ', '.join(genres)
 
 				elif tag != '':
-					self._dict[tag] = base.striphtml(unicode(b.next_sibling).strip())
+					self._dict[tag] = base.striphtml(str(b.next_sibling).strip())
 					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
 			except:
 				pass
 
 		tags = []
-		for tag in [u'title', u'year', u'genre', u'director', u'actor', u'plot']:
+		for tag in ['title', 'year', 'genre', 'director', 'actor', 'plot']:
 			if tag not in self._dict:
 				tags.append(tag)
 
@@ -183,8 +183,8 @@ class DescriptionParser(DescriptionParserBase):
 				for l in lines:
 					if ':' in l:
 						key, desc = l.split(':', 1)
-						key = key.strip(u' \r\n\t✦═')
-						desc = desc.strip(u' \r\n\t')
+						key = key.strip(' \r\n\t✦═')
+						desc = desc.strip(' \r\n\t')
 
 						tag = self.get_tag(key+':')
 						if tag and desc and tag not in self._dict:
@@ -210,7 +210,7 @@ class DescriptionParser(DescriptionParserBase):
 					if 'XviD' in part:
 						return False
 
-					m = re.search(ur'(\d+)[xXхХ](\d+)', part)
+					m = re.search(r'(\d+)[xXхХ](\d+)', part)
 					if m:
 						w = int(m.group(1))
 						#h = int(m.group(2))
@@ -226,7 +226,7 @@ class DescriptionParser(DescriptionParserBase):
 				href = a['href']
 
 				components = href.split('/')
-				if components[2] == u'www.imdb.com' and components[3] == u'title':
+				if components[2] == 'www.imdb.com' and components[3] == 'title':
 					self._dict['imdb_id'] = components[4]
 					count_id += 1
 			except:
@@ -252,7 +252,7 @@ class DescriptionParser(DescriptionParserBase):
 								href = a['href']
 
 								components = href.split('/')
-								if components[2] == u'www.imdb.com' and components[3] == u'title':
+								if components[2] == 'www.imdb.com' and components[3] == 'title':
 									self._dict['imdb_id'] = components[4]
 									count_id += 1
 							except:
@@ -309,7 +309,7 @@ class DescriptionParser(DescriptionParserBase):
 class DescriptionParserTVShows(DescriptionParser):
 
 	def need_skipped(self, full_title):
-		for phrase in [u'[EN]', u'[EN / EN Sub]', u'[Фильмография]', u'[ISO]', u'DVD', u'стереопара', u'Half-SBS']:
+		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', 'Half-SBS']:
 			if phrase in full_title:
 				debug('Skipped by: ' + phrase.encode('utf-8'))
 				return True
@@ -459,7 +459,7 @@ def download_torrent(url, path, settings):
 	from base import save_hashes
 	save_hashes(path)
 
-	url = urllib2.unquote(url)
+	url = urllib.parse.unquote(url)
 	debug('download_torrent:' + url)
 
 	page = requests.get(real_url(url, settings))
@@ -575,7 +575,7 @@ def search_results(imdb, settings, url, what=None):
 	with dump_context('rutor.enumerator.process_page'):
 		enumerator.process_page(url)
 
-	for post in enumerator.items():
+	for post in list(enumerator.items()):
 		try:
 			if 'seeds' in post and int(post['seeds']) < 1:
 				continue
@@ -630,7 +630,7 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save and count == 0:
 		# 0/5/000/0 - Наше кино, поиск по названию в разделе
 		if not result1:
-			url = 'http://rutor.info/search/0/5/000/0/' + urllib2.quote(what.encode('utf-8'))
+			url = 'http://rutor.info/search/0/5/000/0/' + urllib.parse.quote(what.encode('utf-8'))
 			result1 = search_results(None, settings, url, what)
 			count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 

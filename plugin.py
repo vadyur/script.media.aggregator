@@ -1,8 +1,8 @@
-import urllib, sys
+import urllib.request, urllib.parse, urllib.error, sys
 
 import log
 def make_url(params):
-	url = 'plugin://script.media.aggregator/?' + urllib.urlencode(params)
+	url = 'plugin://script.media.aggregator/?' + urllib.parse.urlencode(params)
 	return url
 
 def get_params():
@@ -66,7 +66,7 @@ def wait_for_update(timeout=1000, monitor=None):
 			return
 
 		while not monitor.abortRequested() and count:
-			for i in xrange(10):
+			for i in range(10):
 				if monitor.waitForAbort(0.1) or monitor.do_exit:
 					log.debug('wait_for_update - Stop scan detected')
 					del monitor
@@ -89,7 +89,7 @@ def wait_for_update(timeout=1000, monitor=None):
 def UpdateVideoLibrary(path=None, wait=False):
 	import xbmc, log
 	if path:
-		if isinstance(path,unicode):
+		if isinstance(path,str):
 			path = path.encode('utf-8')
 		log.debug('UpdateLibrary: {}'.format(path))
 		command = 'UpdateLibrary(video, {})'.format(path)

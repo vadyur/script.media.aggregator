@@ -5,13 +5,13 @@ from log import debug
 
 
 import os
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 import filesystem
 
 class Runner(object):
 	def __init__(self, settings, params, playable_item, torrent_info, torrent_path, info_hash):
-		self.command = settings.script_params.split(u' ')
+		self.command = settings.script_params.split(' ')
 		self.settings = settings
 		self.params = params
 		self.torrent_info = torrent_info
@@ -102,15 +102,15 @@ class Runner(object):
 
 		for item in files:
 			path = filesystem.join(self.storage_path, data['name'], item['name'])
-			debug(u'all_torrent_files_exists: ' + path)
+			debug('all_torrent_files_exists: ' + path)
 			if not filesystem.exists(path):
 				path = filesystem.join(self.settings.copy_video_path, data['name'], item['name'])
-				debug(u'all_torrent_files_exists: ' + path)
+				debug('all_torrent_files_exists: ' + path)
 				if not filesystem.exists(path):
-					debug(u'all_torrent_files_exists: not found')
+					debug('all_torrent_files_exists: not found')
 					return False
 
-		debug(u'all_torrent_files_exists: Ok')
+		debug('all_torrent_files_exists: Ok')
 		return True
 
 
@@ -158,8 +158,8 @@ class Runner(object):
 	@property
 	def videotype(self):
 		base_path 		= self.settings.base_path().encode('utf-8')
-		rel_path 		= urllib.unquote(self.params.get('path', ''))
-		nfoFilename 	= urllib.unquote(self.params.get('nfo', ''))
+		rel_path 		= urllib.parse.unquote(self.params.get('path', ''))
+		nfoFilename 	= urllib.parse.unquote(self.params.get('nfo', ''))
 		from nforeader import NFOReader
 		nfoFullPath 	= NFOReader.make_path(base_path, rel_path, nfoFilename)
 		if filesystem.exists(nfoFullPath):
@@ -202,8 +202,8 @@ class Runner(object):
 
 	@property
 	def torrent_source(self):
-		import urllib
-		return urllib.unquote(self.params['torrent'])
+		import urllib.request, urllib.parse, urllib.error
+		return urllib.parse.unquote(self.params['torrent'])
 
 	@property
 	def short_name(self):
@@ -273,7 +273,7 @@ class Runner(object):
 
 		try:
 			subprocess.call(executable=u8runner, args=self.command, startupinfo=startupinfo, shell=shell)
-		except OSError, e:
+		except OSError as e:
 			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:
 			log.print_tb(e)
@@ -285,14 +285,14 @@ class TestRunner(Runner):
 
 
 def test_resume(tr):
-	dest = u'/mnt/videocache/фываолдж'
+	dest = '/mnt/videocache/фываолдж'
 	Runner.change_resume_file(tr, dest)
 
 
 def test_get_relative_torrent_files_list(tr):
 	l = Runner.get_relative_torrent_files_list(tr)
 	for f in l:
-		print f
+		print(f)
 
 
 if __name__ == '__main__':

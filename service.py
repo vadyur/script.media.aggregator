@@ -1,6 +1,6 @@
 # coding: utf-8
 
-import math, urllib
+import math, urllib.request, urllib.parse, urllib.error
 import log
 
 try:
@@ -54,7 +54,7 @@ class AddonRO(object):
 	# get setting no caching
 	def getSetting(self, s):
 		if not filesystem.exists(self._addon_xml):
-			return u''
+			return ''
 
 		if self.mtime != filesystem.getmtime(self._addon_xml):
 			self.load()
@@ -62,7 +62,7 @@ class AddonRO(object):
 		for item in self.root:
 			if item.get('id') == s:
 				return item.get('value').encode('utf-8')
-		return u''
+		return ''
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
@@ -115,8 +115,8 @@ def addon_data_path():
 def call_bg(action, params = {}):
 	params['action'] = action
 
-	for key, value in params.iteritems(): 
-		if isinstance(value, unicode):
+	for key, value in params.items(): 
+		if isinstance(value, str):
 			params[key] = value.encode('utf-8')
 
 	from plugin import RunPlugin
@@ -139,7 +139,7 @@ def update_case():
 		every = 8 * 3600
 		delay_startup = 0
 
-	if _addon.getSetting('role').decode('utf-8') == u'клиент':
+	if _addon.getSetting('role').decode('utf-8') == 'клиент':
 		return
 
 	# User action
@@ -229,7 +229,7 @@ def scrape_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media_case():
-	if _addon.getSetting('role').decode('utf-8') == u'клиент':
+	if _addon.getSetting('role').decode('utf-8') == 'клиент':
 		return
 
 	path = filesystem.join(addon_data_path(), 'add_media')
@@ -395,7 +395,7 @@ def add_media(title, imdb, settings):
 
 				if not xbmc.Player().isPlaying():
 					if count:
-						dlg.notification(_addon_name, u'"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
+						dlg.notification(_addon_name, '"%s" добавлено в библиотеку, найдено %d источников.' % (title, count), time=10000)
 						xbmc.executebuiltin('Container.Refresh')
 
 						from plugin import RunPlugin
@@ -404,7 +404,7 @@ def add_media(title, imdb, settings):
 								norecursive=True)
 					else:
 						dlg.notification(_addon_name,
-											u'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
+											'"%s" не добавлено в библиотеку, Источники не найдены.' % title,
 											time=10000)
 			try:
 				filesystem.remove(ended_path)
@@ -439,7 +439,7 @@ def save_dbs():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def create_mark_file():
-	import urllib2, shutil
+	import urllib.request, urllib.error, urllib.parse, shutil
 	path = filesystem.join(_addondir, 'version_latest')
 	if not filesystem.exists(path):
 		try:
@@ -448,7 +448,7 @@ def create_mark_file():
 
 			if filesystem.exists(path):
 				url = 'https://github.com/vadyur/script.media.aggregator/releases/download/ver_0.15.2/version_latest'
-				response = urllib2.urlopen(url)
+				response = urllib.request.urlopen(url)
 				log.debug(response.read())
 		except BaseException as e:
 			log.print_tb(e)

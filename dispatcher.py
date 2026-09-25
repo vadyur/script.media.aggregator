@@ -21,12 +21,12 @@ def dispatch():
 		skip_show_sources = False
 
 		if settings.show_sources and 'onlythis' not in params:
-			import filesystem, urllib
+			import filesystem, urllib.request, urllib.parse, urllib.error
 
-			rel_path = urllib.unquote(params['path']).decode('utf-8')
+			rel_path = urllib.parse.unquote(params['path']).decode('utf-8')
 			debug(rel_path)
 
-			filename = urllib.unquote(params['nfo']).decode('utf-8').replace(u'.nfo', u'.strm')
+			filename = urllib.parse.unquote(params['nfo']).decode('utf-8').replace('.nfo', '.strm')
 			debug(filename)
 
 			path = filesystem.join(settings.base_path(), rel_path, filename)
@@ -114,8 +114,8 @@ def dispatch():
 
 		from backgrounds import add_media_process
 		title = params.get('title')
-		import urllib
-		title = urllib.unquote_plus(title)
+		import urllib.request, urllib.parse, urllib.error
+		title = urllib.parse.unquote_plus(title)
 		title = title.decode('utf-8')
 	
 		add_media_process(title, params.get('imdb'))

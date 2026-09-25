@@ -172,7 +172,7 @@ def update_service(show_progress=False):
 # ------------------------------------------------------------------------------------------------------------------- #
 def chunks(l, n):
 	"""Yield successive n-sized chunks from l."""
-	for i in xrange(0, len(l), n):
+	for i in range(0, len(l), n):
 		yield l[i:i + n]
 
 
@@ -410,15 +410,15 @@ def clean_movies():
 	from base import make_fullpath
 	def get_info_and_move_files(imdbid):
 		def _log(s):
-			log.debug(u'    get_info_and_move_files: {}'.format(s))
+			log.debug('    get_info_and_move_files: {}'.format(s))
 
 		api = movieapi.MovieAPI.get_by(imdb_id=imdbid)[0]
 
 		try:
 			genre = api['genres']
-			if u'мультфильм' in genre:
+			if 'мультфильм' in genre:
 				base_path = settings.animation_path()
-			elif u'документальный' in genre:
+			elif 'документальный' in genre:
 				base_path = settings.documentary_path()
 			else:
 				base_path = settings.movies_path()
@@ -428,7 +428,7 @@ def clean_movies():
 		from movieapi import make_imdb_path
 		base_path = make_imdb_path(base_path, imdbid)
 
-		one_movie_duplicates = filter(lambda x: x['c22'].endswith('.strm'), more_requests.get_movies_by_imdb(imdbid))
+		one_movie_duplicates = [x for x in more_requests.get_movies_by_imdb(imdbid) if x['c22'].endswith('.strm')]
 
 		from base import STRMWriterBase
 		from base import Informer
@@ -441,8 +441,8 @@ def clean_movies():
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))
 
-		_log(u'title = ' + title)
-		_log(u'strm_path = ' + strm_path)
+		_log('title = ' + title)
+		_log('strm_path = ' + strm_path)
 
 		#strm_data = filesystem.fopen(one_movie_duplicates[0]['c22'], 'r').read()
 		alt_data = []
@@ -464,7 +464,7 @@ def clean_movies():
 					'total':	int(movie_duplicate['totalTimeInSeconds'])}
 
 		with filesystem.save_make_chdir_context(base_path, 'STRMWriterBase.write_alternative'):
-			alt_data = [dict(t) for t in set([tuple(d.iteritems()) for d in alt_data])]
+			alt_data = [dict(t) for t in set([tuple(d.items()) for d in alt_data])]
 			STRMWriterBase.write_alternative(strm_path, alt_data)
 
 			if movie_duplicate:
@@ -510,7 +510,7 @@ def clean_movies():
 
 	#ver = JSONRPC.Version()
 	for path in update_paths:
-		log.debug(u'Scan for: {}'.format(path))
+		log.debug('Scan for: {}'.format(path))
 		#VideoLibrary.Scan(directory=path)
 		#wait_for_update()
 		UpdateVideoLibrary(path=path, wait=True)
@@ -520,13 +520,13 @@ def clean_movies():
 
 	log.debug('# ----------------')
 	log.debug('# Apply watched & progress')
-	for imdbid, update_data in watched_and_progress.iteritems():
+	for imdbid, update_data in watched_and_progress.items():
 		if update_data:
 			movies = more_requests.get_movies_by_imdb(imdbid)
 			if movies:
 				movieid = movies[-1]['idMovie']
-				log.debug(u'Process {}'.format(movies[-1]['c22']))
-				log.debug(unicode(update_data))
+				log.debug('Process {}'.format(movies[-1]['c22']))
+				log.debug(str(update_data))
 				VideoLibrary.SetMovieDetails(movieid=movieid, **update_data)
 		pass
 
