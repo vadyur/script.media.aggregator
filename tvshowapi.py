@@ -52,6 +52,33 @@ def parse_torrent(data: bytes, season: Optional[int] = None) -> List[Dict[str, A
 	return _parse_torrent_info(info, season)
 
 
+def tvshow_dirname(parser, tvshow_api) -> str:
+	"""Имя папки сериала: '<оригинальное название> (<год>)'.
+
+	Название и год берутся из TMDB (год начала показа одинаков для всех сезонов).
+	Без TMDB год не ставится: у раздач разных сезонов он разный, и сериал разъехался бы по папкам.
+	"""
+	from base import original_name
+
+	api = parser.movie_api()
+	try:
+		title, originaltitle, year = api.get('title'), api.get('originaltitle'), api.get('year')
+	except Exception:
+		title = originaltitle = year = None
+
+	if title or originaltitle:
+		name = original_name(title, originaltitle)
+		return name + ' (%s)' % year if year else name
+
+	name = original_name(parser.get_value('title'), parser.get_value('originaltitle'))
+	if not name:
+		try:
+			name = tvshow_api.Title() or ''
+		except Exception:
+			name = ''
+	return name
+
+
 def write_tvshow(fulltitle: str, link: str, settings, parser, path: str, skip_nfo_exists: bool = False) -> Optional[str]:
 	from nfowriter import NFOWriter
 	from strmwriter import STRMWriter
@@ -73,19 +100,7 @@ def write_tvshow(fulltitle: str, link: str, settings, parser, path: str, skip_nf
 	imdb_id = parser.get('imdb_id', None)
 	tvshow_api = TVShowAPI.get_by(originaltitle, title, imdb_id)
 
-	api_title = None  # type: Optional[str]
-	try:
-		api_title = parser.movie_api().imdbapi.title()
-	except Exception:
-		pass
-	if not api_title:
-		try:
-			api_title = parser.movie_api()['title']
-		except Exception:
-			pass
-	if not api_title:
-		api_title = tvshow_api.Title()
-	tvshow_path = make_fullpath(api_title if api_title is not None else title, '')
+	tvshow_path = make_fullpath(tvshow_dirname(parser, tvshow_api), '')
 	debug(tvshow_path)
 
 	if not tvshow_path:

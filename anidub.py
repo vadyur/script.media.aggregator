@@ -252,7 +252,8 @@ def write_tvshow_item(item, path, settings, path_out=[]):
 
 		debug('Episodes: ' + str(parser.get_value('episodes')))
 
-		tvshow_path = make_fullpath(title, '')
+		# как и у остальных сериалов - по оригинальному названию; без года, чтобы сезоны не разъехались по папкам
+		tvshow_path = make_fullpath(original_name(title, originaltitle), '')
 
 		tvshow_path = filesystem.join(path, tvshow_path)
 		debug(tvshow_path)
