@@ -742,8 +742,12 @@ def show_list(listing):
 	xbmcplugin.setContent(addon_handle, 'movies')
 	for item in listing:
 		info = item.get_info()
+		# uniqueid (словарь) setInfo не принимает, для него есть setUniqueIDs
+		uniqueid = {k: v for k, v in info.pop('uniqueid', {}).items() if v and v != 'None'}
 		li = xbmcgui.ListItem(info['title'])
 		li.setInfo('video', info)
+		if uniqueid:
+			li.setUniqueIDs(uniqueid)
 		li.setArt(item.get_art())
 
 		url_search = make_url(
