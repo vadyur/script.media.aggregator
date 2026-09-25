@@ -384,11 +384,28 @@ def get_path_or_url_and_episode(settings, params: Dict[str, Any], torrent_source
 	return {'path_or_url': path, 'episode': params.get('episodeNumber', None), 'downloader': torr_downloader}
 
 
+class BusyDialog(object):
+	""" Пока скачивается .torrent и TorrServer принимает раздачу - стандартный индикатор ожидания Kodi.
+		Прогресс предзагрузки показывает PreloadDialog из script.module.torrserver, своё окно не нужно
+		(раньше оно на мгновение появлялось перед ним). Интерфейс - как у DialogProgress. """
+
+	def create(self, *args: Any, **kwargs: Any) -> None:
+		xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
+
+	def update(self, *args: Any, **kwargs: Any) -> None:
+		pass
+
+	def iscanceled(self) -> bool:
+		return False
+
+	def close(self) -> None:
+		xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
+
+
 def play_torrent(settings, params: Dict[str, Any]) -> None:
 	from nforeader import NFOReader
-	from vdlib.kodi.player import OurDialogProgress
 
-	info_dialog = OurDialogProgress()
+	info_dialog = BusyDialog()
 	info_dialog.create(settings.addon_name)
 
 	tempPath = translatePath('special://temp')
