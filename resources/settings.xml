@@ -9,9 +9,7 @@
         <setting label="Аниме" 			type="bool"   id="anime_save" 		default="true"/>
         <setting label="Сериалы" 		type="bool"   id="tvshows_save" 		default="true"/>
         <setting label="Анимационные сериалы" 	type="bool"   id="animation_tvshows_save" 	default="true"/>
-<!--      <setting label="Первая помощь" type="lsep"/>
-        <setting label="Очистка дубликатов фильмов" type="action" action="RunPlugin(plugin://script.media.aggregator/?action=clean_movies)"/>
--->    </category>
+    </category>
 
     <category label="Дополнительно">
       <setting label="Роль медиацентра" type="select" id="role" values="одиночный|сервер|клиент" default="одиночный"/>
@@ -25,13 +23,8 @@
         <setting label="Ежедневно в" type="select" id="service_generate_schedule_time" enable="eq(-1,true)" default="3:00" visible="!eq(-7,клиент)"
                  values="0:00|1:00|2:00|3:00|4:00|5:00|6:00|7:00|8:00|9:00|10:00|11:00|12:00|13:00|14:00|15:00|16:00|17:00|18:00|19:00|20:00|21:00|22:00|23:00"/>
 
-      <setting label="Общая папка с данными... (по-умолчанию папка плагина)" type="folder" id="data_path" default="" visible="!eq(-6,одиночный)"/>
-      <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default="" visible="!eq(-7,одиночный)"/>
-      <setting label="Использовать Кинопоиск"	type="bool" id="use_kinopoisk" default="true" visible="!eq(-8,клиент)"/>
-      <setting label="Использовать Google cache для доступа к Кинопоиску"	type="bool" id="kp_googlecache" default="false" visible="!eq(-9,клиент)" enable="eq(-1,true)"/>
-      <setting label="Использовать zaborona.help для доступа к Кинопоиску"	type="bool" id="kp_usezaborona" default="false" visible="!eq(-10,клиент)" enable="eq(-2,true)"/>
-      
-      <setting label="Использовать World-art"	type="bool" id="use_worldart" default="false" visible="!eq(-11,клиент)"/>
+      <setting label="Общая папка с данными... (по-умолчанию папка плагина)" type="folder" id="data_path" default="" visible="!eq(-8,одиночный)"/>
+      <setting label="Хранить торренты в... (по-умолчанию папка плагина)"	type="folder" id="torrent_path" 		default="" visible="!eq(-9,одиночный)"/>
     </category>
 
     <category label="Действия">
@@ -45,7 +38,7 @@
         <setting label="    %f - путь к проигрываемому файлу" type="text" enable="false" visible="eq(-4,true)" />
         <setting label="    %F - путь к проигрываемому файлу, относительно каталага загрузки" type="text" enable="false" visible="eq(-5,true)" />
         <setting label="    %u - URL раздачи" type="text" enable="false" visible="eq(-6,true)" />
-        <setting label="    %s - короткое имя источника (anidub, elitehd, nnmclub)" type="text" enable="false" visible="eq(-7,true)" />
+        <setting label="    %s - короткое имя источника (anidub, nnmclub, rutor)" type="text" enable="false" visible="eq(-7,true)" />
         <setting label="    %p - количество загруженного (%)" type="text" enable="false" visible="eq(-8,true)" />
         <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" visible="eq(-9,true)" />
         <setting label="Видео файлы по завершению просмотра" type="select" id="action_files" values="оставить|переместить|удалить" default="оставить"/>
@@ -61,24 +54,14 @@
     </category>
 
     <category label="P2P Сеть">
-		  <setting label="Торрент проигрыватель" id="torrent_player" type="select" values="YATP|torrent2http|Ace Stream|Elementum|TorrServer" default="torrent2http" />
-		  <setting label="Путь для сохранения видео файлов"	type="folder" id="storage_path"	default="" visible="eq(-1,torrent2http)" />
-      <setting id="upload_limit"      type="number"   label="Ограничить скорость раздачи МБит/сек (0 - неограничено)" default="0"       visible="eq(-2,torrent2http)"/>
-      <setting id="download_limit"    type="number"   label="Ограничить скорость закачки МБит/сек (0 - неограничено)" default="0"       visible="eq(-3,torrent2http)"/>
-      <setting id="encryption"        type="bool"     label="Шифрование" default="true"    visible="eq(-4,torrent2http)"/>
-      <setting id="connections_limit" type="number"   label="Макс. соединений (0 - безлимит)" default="200"     visible="eq(-5,torrent2http)"/>
-      <setting id="listen_port"       type="number"   label="Порт для входящих соединений" default="6881"    visible="eq(-6,torrent2http)"/>
-      <setting id="use_random_port"   type="bool"     label="Использовать случайные порты" default="false"   visible="eq(-7,torrent2http)"/>
-      <setting id="pre_buffer_bytes"  type="slider"   label="Загружаемый объем файла до начала просмотра, Мб" default="25"      visible="eq(-8,torrent2http)"  range="5,5,50" option="int"/>
-      <setting id="add_tracker"       type="text"     label="Дополнительный трекер" default="" visible="eq(-9,torrent2http)"/>
-      <setting option="close"         type="action"   label="Настройки модуля TorrServer" visible="eq(-10,TorrServer)" action="Addon.OpenSettings(script.module.torrserver)" />
+      <setting option="close"         type="action"   label="Настройки модуля TorrServer" action="Addon.OpenSettings(script.module.torrserver)" />
       <setting type="lsep"/>
       <setting id="show_dnl_progress" type="bool"     label="Показывать прогресc загрузки" default="true"/>
       <setting id="dnl_progress_offset" type="number" label="Смещение по вертикали прогресcа загрузки" default="120" visible="eq(-1,true)"/>
 		  <setting id="start_play_max_time" type="number" label="Таймаут начала воспроизведения (секунды)" default="60"/>
 		  <setting id="search_seed_max_time" type="number"  label="Таймаут поиска сидов (секунды)" default="15"/>
 	  </category>
-	
+
     <category label="Anidub">
 		  <setting label="Использовать" type="bool" id="anidub_enable" default="false"/>
 		  <setting label="Учётные данные сайта tr.anidub.com (необходима регистрация на сайте)" type="lsep"/>
@@ -87,69 +70,21 @@
 		  <setting label="Обновления" type="bool" id="anidub_rss" enable="eq(-4,true)" default="true"/>
 		  <setting label="Избранное" type="bool" id="anidub_favorite" enable="eq(-5,true)+!eq(-2,'')" default="true"/>
     </category>
-  
-    <!--
-    <category label="EliteHD(HDClub)">
-		  <setting label="Использовать" type="bool" id="hdclub_enable" default="false"/>
-		  <setting label="Получить Passkey можно перейдя на 'https://elitehd.org/getrss.php' и сгенерировав RSS ссылку" type="lsep"/>
-      <setting label="Passkey" type="text"   id="hdclub_passkey" enable="eq(-2,true)" option="hidden" default=""/>
-    </category>
-    -->
-
-  <category label="BLUEBIRD-HD">
-    <setting label="Использовать" type="bool" id="bluebird_enable" default="false"/>
-    <!--
-    <setting label="***" type="lsep"/>
-    <setting label="Passkey" type="text"   id="bluebird_passkey" enable="eq(-2,true)" option="hidden" default=""/>
-    -->
-    <setting label="Учётные данные сайта bluebird-hd.org (необходима регистрация на сайте)" type="lsep"/>
-    <setting label="Login" type="text"   id="bluebird_login" enable="eq(-2,true)" default=""/>
-    <setting label="Password" type="text"   id="bluebird_password" enable="eq(-3,true)" option="hidden"  default=""/>
-
-    <setting label="Исключать UHD-контент" type="bool" id="bluebird_nouhd" default="true"/>
-
-  </category>
 
   <category label="nnm-club">
 		  <setting label="Использовать" type="bool" id="nnmclub_enable" default="false"/>
-      <setting label="Домен" type="text"   id="nnmclub_domain" enable="eq(-1,true)" default="nnm-club.me"/>
-		  <setting label="Использовать защищённое соединение (SSL)" type="bool" id="nnmclub_use_ssl" enable="eq(-2,true)" default="false"/>
-		  <setting label="Учётные данные сайта nnm-club.me (необходима регистрация на сайте)" type="lsep"/>
+      <setting label="Домен" type="text"   id="nnmclub_domain" enable="eq(-1,true)" default="nnmclub.to"/>
+		  <setting label="Использовать защищённое соединение (SSL)" type="bool" id="nnmclub_use_ssl" enable="eq(-2,true)" default="true"/>
+		  <setting label="Учётные данные сайта nnmclub.to (необходима регистрация на сайте)" type="lsep"/>
       <setting label="Login" type="text"   id="nnmclub_login" enable="eq(-4,true)" default=""/>
       <setting label="Password" type="text"   id="nnmclub_password" enable="eq(-5,true)" option="hidden"  default=""/>
     </category>
-  
+
     <category label="Rutor">
       <setting label="Использовать" type="bool" id="rutor_enable" default="false"/>
       <setting label="Домен" type="text" id="rutor_domain" default="rutor.info"/>
       <setting label="Фильтр" type="text" id="rutor_filter" default="CAMRip TS TC VHSRip TVRip SATRip IPTVRip HDTV HDTVRip WEBRip DVD5 DVD9 DVDRip Blu-Ray SuperTS SCR VHSScr DVDScr WP"/>
-    
+
       <setting label="Исключать SD-контент" type="bool" id="rutor_nosd" default="true"/>
     </category>
-
-    <!--
-    <category label="KinoHD">
-      <setting label="Использовать" type="bool" id="kinohd_enable" default="false"/>
-      <setting label="Категории" type="lsep"/>
-      <setting label="4K"       type="bool" id="kinohd_4k" default="true"/>
-      <setting label="FullHD"   type="bool" id="kinohd_1080p" default="true"/>
-      <setting label="HD"       type="bool" id="kinohd_720p" default="true"/>
-      <setting label="3D"       type="bool" id="kinohd_3d" default="true"/>
-      <setting label="Сериалы"  type="bool" id="kinohd_serial" default="true"/>
-
-      <setting label="Дополнительно" type="lsep"/>
-      <setting label="Торрент проигрыватель" id="kinohd_torrent_player" type="select" values="Default|YATP|torrent2http|Ace Stream|Elementum" default="Default" />
-    </category>
-    -->
-  
-    <!--
-    <category label="soap4.me">
-      <setting label="Использовать" type="bool" id="soap4me_enable" default="false"/>
-      <setting label="Учётные данные сайта soap4.me (необходима регистрация на сайте)" type="lsep"/>
-      <setting label="Login" type="text"   id="soap4me_login" enable="eq(-2,true)" default=""/>
-      <setting label="Password" type="text"   id="soap4me_password" enable="eq(-3,true)" option="hidden"  default=""/>
-	  <setting label="" type="lsep"/>
-	  <setting label="RSS" type="select" id="soap4me_rss" enable="eq(-5,true)" values="Все сериалы|Дополнительный #1|Дополнительный #2|Дополнительный #3|Дополнительный #4|Дополнительный #5" default="Все сериалы"/>
-    </category>
-    -->
 </settings>
