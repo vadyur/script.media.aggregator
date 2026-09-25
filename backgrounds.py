@@ -325,10 +325,8 @@ def clean_movies() -> None:
 		from base import STRMWriterBase
 		from base import Informer
 
-		try:
-			title = Informer().filename_with(api.title(), api.originaltitle(), api['year'])
-		except AttributeError:
-			title = Informer().filename_with(api.title(), api.originaltitle(), None)
+		# то же правило имени, что и при генерации (Informer.make_filename_imdb), иначе файлы будут переименовываться туда-обратно
+		title = Informer().filename_with(api.get('title'), api.get('originaltitle'), api.get('year'))
 			
 		strm_path = filesystem.join(base_path, make_fullpath(title, '.strm'))
 		nfo_path = filesystem.join(base_path, make_fullpath(title, '.nfo'))

@@ -376,6 +376,18 @@ class STRMWriterBase(object):
 					alternative.write( make_utf8(variant['link']) + '\n')
 
 
+def original_name(title: Optional[str], originaltitle: Optional[str]) -> str:
+	"""Оригинальное название для имени файла.
+
+	С трекеров оригинальное название иногда приходит с вариантами через ' / '
+	(например 'Pelangi Di Mars / Rainbow on Mars'), тогда берётся последний.
+	"""
+	orig = (originaltitle or '').strip()
+	if ' / ' in orig:
+		orig = orig.split(' / ')[-1].strip()
+	return orig or (title or '').strip()
+
+
 class EmptyMovieApi(object):
 	def get(self, key, default=None):
 		return default
@@ -406,33 +418,25 @@ class Informer(object):
 	def movie_api(self):
 		return self.__movie_api
 
-	def filename_with(self, title: str, originaltitle: str, year: Any) -> str:
-		if title == originaltitle:
-			filename = title
-		elif title == '' and originaltitle != '':
-			filename = originaltitle
-		elif title != '' and originaltitle == '':
-			filename = title
-		else:
-			filename = originaltitle
-
-		# Год дописывается всегда (как и раньше), чтобы не менялись имена уже созданных файлов
-		filename += ' (' + str(year) + ')'
-
+	def filename_with(self, title: Optional[str], originaltitle: Optional[str], year: Any) -> str:
+		"""Имя файла в формате '<оригинальное название> (<год>)'."""
+		filename = original_name(title, originaltitle)
+		if year:
+			filename += ' (' + str(year) + ')'
 		return filename
 
 	def make_filename_imdb(self) -> Optional[str]:
-		if self.__movie_api:
-			title 			= self.__movie_api.imdbapi.title()
-			originaltitle	= self.__movie_api.imdbapi.originaltitle()
-			try:
-				year		= self.__movie_api['year']
-			except AttributeError:
-				year = None
+		"""Имя по данным TMDB (через MovieAPI) - самый надёжный источник оригинального названия и года."""
+		api = self.__movie_api
+		if not api:
+			return None
 
-			return self.filename_with(title, originaltitle, year)
+		title = api.get('title')
+		originaltitle = api.get('originaltitle')
+		if not (title or originaltitle):
+			return None
 
-		return None
+		return self.filename_with(title, originaltitle, api.get('year'))
 
 class DescriptionParserBase(Informer):
 	_dict = {}  # type: Dict[str, Any]
@@ -498,9 +502,11 @@ class DescriptionParserBase(Informer):
 
 		try:
 			if 'imdb_id' in self._dict:
-				return self.make_filename_imdb()
+				filename = self.make_filename_imdb()
+				if filename:
+					return filename
 		except:
-			pass
+			log.print_tb()
 
 		title 			= self._dict.get('title', '')
 		originaltitle 	= self._dict.get('originaltitle', '')
