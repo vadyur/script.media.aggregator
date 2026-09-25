@@ -55,7 +55,6 @@
       <setting option="close"         type="action"   label="Настройки модуля TorrServer" action="Addon.OpenSettings(script.module.torrserver)" />
       <setting type="lsep"/>
       <setting id="show_dnl_progress" type="bool"     label="Показывать прогресc загрузки" default="true"/>
-      <setting id="dnl_progress_offset" type="number" label="Смещение по вертикали прогресcа загрузки" default="120" visible="eq(-1,true)"/>
 		  <setting id="start_play_max_time" type="number" label="Таймаут начала воспроизведения (секунды)" default="60"/>
 		  <setting id="search_seed_max_time" type="number"  label="Таймаут поиска сидов (секунды)" default="15"/>
 	  </category>
