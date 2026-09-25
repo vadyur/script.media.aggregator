@@ -72,7 +72,7 @@ class NFOReader(object):
 			return info
 		
 		string_items = ['genre', 'director', 'mpaa', 'plot', 'plotoutline', 'title', 'originaltitle', 'duration',
-						'studio', 'code', 'aired', 'credits', 'album', 'votes', 'trailer', 'thumb']
+						'studio', 'code', 'aired', 'credits', 'album', 'votes', 'trailer']	# thumb идёт в get_art/setArt
 		integer_items = ['year', 'episode', 'season', 'top250', 'tracknumber']
 		
 		float_items = ['rating']
