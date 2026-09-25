@@ -117,7 +117,6 @@ def play_torrent_variant(path: str, info_dialog, episodeNumber, nfoReader, setti
 	play_torrent_variant. resultTryNext	= 'TryNext'
 	play_torrent_variant. resultTryAgain	= 'TryAgain'
 
-	start_time = time.time()
 	start_play_max_time 	= int(getSetting('start_play_max_time', '60'))
 	search_seed_max_time = int(getSetting('search_seed_max_time', '15'))
 	monitor = xbmc.Monitor()
@@ -231,46 +230,23 @@ def play_torrent_variant(path: str, info_dialog, episodeNumber, nfoReader, setti
 
 		while not info_dialog.iscanceled() and not player.CheckTorrentAdded():
 			xbmc.sleep(1000)
-			start_time = time.time()
 			player.updateCheckingProgress(info_dialog)
 
-		info_dialog.update(0, 'Media Aggregator: буфферизация')
-
-		while not info_dialog.iscanceled():
-			if player.CheckBufferComplete():
-				break
-
-			percent = player.GetBufferingProgress()
-			if percent >= 0:
-				player.updateDialogInfo(percent, info_dialog)
-
-			if time.time() > start_time + start_play_max_time:
-				return play_torrent_variant.resultTryNext
-
-			if time.time() > start_time + search_seed_max_time:
-				info = player.GetTorrentInfo()
-				if 'num_seeds' in info:
-					if info['num_seeds'] == 0:
-						_debug('Seeds not found')
-						return play_torrent_variant.resultTryNext
-
-			if downloader and downloader.is_finished():
-				#if not filecmp.cmp(path, downloader.get_filename()):
-				if downloader.info_hash() and downloader.info_hash() != player.info_hash:
-					downloader.move_file_to(path)
-					_debug('play_torrent_variant.resultTryAgain')
-					return play_torrent_variant.resultTryAgain
-				else:
-					_debug('Torrents are equal')
-					downloader = None
-
-			xbmc.sleep(1000)
-
 		canceled = info_dialog.iscanceled()
-		info_dialog.update(0)
 		info_dialog.close()
 		if canceled:
 			return play_torrent_variant.resultCancel
+
+		# предзагрузка - общий диалог TorrServer, как в plugin.video.torrserve-next
+		from torrserve_stream.preload import PreloadDialog
+		preload = PreloadDialog(engine=player.engine, index=player.file_id,
+		                        max_timeout=start_play_max_time, no_seeds_timeout=search_seed_max_time)
+		if not preload.run():
+			if preload.canceled:
+				return play_torrent_variant.resultCancel
+			_debug('Preload failed, try next source')
+			info_dialog.create(settings.addon_name)	# диалог для следующей раздачи
+			return play_torrent_variant.resultTryNext
 
 		playable_url = player.GetStreamURL(playable_item)
 		_debug(playable_url)
