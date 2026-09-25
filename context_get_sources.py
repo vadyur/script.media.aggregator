@@ -1,8 +1,8 @@
-from log import debug
+from vdlib.util.log import debug
 import xbmc
 
 
-def get_sources(settings):
+def get_sources(settings) -> None:
 	imdb_id = xbmc.getInfoLabel('ListItem.IMDBNumber')
 	title = xbmc.getInfoLabel('ListItem.Title')
 
@@ -10,7 +10,7 @@ def get_sources(settings):
 	debug(title)
 
 	from service import add_media
-	add_media(title.decode('utf-8'), imdb_id, settings)
+	add_media(title, imdb_id, settings)
 
 if __name__ == '__main__':
 	from player import load_settings

@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
-import log
-from log import debug
+from typing import Any, Dict, List, Optional
 
+from vdlib.util import log
+from vdlib.util.log import debug
+from vdlib.util import filesystem
 
-import os, re, filesystem
+import os, re
 from settings import *
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 from movieapi import *
 import operator
 
-KB = 1024
-MB = KB * KB
-GB = KB * MB
+# Общие утилиты перенесены в vdlib; реэкспортируются для модулей, делающих `from base import *`
+from vdlib.util.base import KB, MB, GB, make_fullpath, remove_script_tags, clean_html, striphtml, \
+	detect_mpg, detect_h264, detect_h265
+from vdlib.torrent.torrentplayer import TorrentPlayer
+from vdlib.torrent.bencodepy import bdecode, bencode, BencodeDecodeError
 
-def lower(s):
+
+def lower(s: str) -> str:
 	s = s.lower()
 	_s = str()
 	for ch in s:
@@ -24,76 +29,13 @@ def lower(s):
 			_s += ch
 	return _s
 
-def make_fullpath(title, ext):
-	if filesystem._is_abs_path(title):
-		dir_path = filesystem.dirname(title)
-		filename = filesystem.basename(title)
-		pass
-	else:
-		dir_path = None
-		filename = title
 
-	if '/' in title:
-		pass
-
-	result = str(filename.replace(':', '').replace('/', '#').replace('?', '').replace('"', "''").strip() + ext)
-	if dir_path:
-		result = filesystem.join(dir_path, result)
-
-	return result
-
-def skipped(item):
-	debug(item.title.encode('utf-8') + '\t\t\t[Skipped]')
-
-def remove_script_tags(file):
-	pattern = re.compile(r'<script[\s\S]+?/script>')
-	subst = ""
-	return re.sub(pattern, subst, file)
-
-def clean_html(page):
-	#pattern = r"(?is)<script[^>]*>(.*?)</script>"
-	#pattern = r'<script(.*?)</script>'
-	#flags = re.M + re.S + re.I
-	#r = re.compile(pattern, flags=flags)
-	#debug(r)
-	#page = r.sub('', page)
-	#debug(page)
-	page = remove_script_tags(page)
-
-	return page.replace("</sc'+'ript>", "").replace('</bo"+"dy>', '').replace('</ht"+"ml>', '')
+def skipped(item) -> None:
+	debug(item.title + '\t\t\t[Skipped]')
 
 
-def striphtml(data):
-	p = re.compile(r'<.*?>')
-	return p.sub('', data)
-
-
-def detect_mpg(str_detect):
-	try:
-		str_detect = str_detect.lower()
-		return 'divx' in str_detect or 'xvid' in str_detect or 'mpeg2' in str_detect or 'mpeg-2' in str_detect
-	except:
-		return False
-
-
-def detect_h264(str_detect):
-	try:
-		str_detect = str_detect.lower()
-		return 'avc' in str_detect or 'h264' in str_detect or 'h.264' in str_detect
-	except:
-		return False
-
-
-def detect_h265(str_detect):
-	try:
-		str_detect = str_detect.lower()
-		return 'hevc' in str_detect or 'h265' in str_detect or 'h.265' in str_detect
-	except:
-		return False
-
-def is_torrent_remembed(parser, settings):
+def is_torrent_remembed(parser: Dict[str, Any], settings) -> bool:
 	from downloader import TorrentDownloader
-	import urllib.request, urllib.parse, urllib.error
 	link = parser.get('link').split('torrent=')[-1]
 	if link:
 		torr_downloader = TorrentDownloader(urllib.parse.unquote(link), None, settings)
@@ -103,9 +45,9 @@ def is_torrent_remembed(parser, settings):
 	return False
 
 
-def get_rank(full_title, parser, settings):
+def get_rank(full_title: str, parser: Dict[str, Any], settings) -> float:
 
-	preffered_resolution_v = 1080 
+	preffered_resolution_v = 1080
 	try:
 		if settings.preffered_type == QulityType.Q720:
 			preffered_resolution_v = 720
@@ -118,13 +60,13 @@ def get_rank(full_title, parser, settings):
 
 	rank = 0.0
 	conditions = 0
-	mults = []
+	mults = []  # type: List[float]
 
 	if '[ad]' in full_title.lower():
 		mults.append(1.1)
 
 	if 'seeds' in parser:
-		seeds = parser['seeds']
+		seeds = int(parser['seeds'])
 		if seeds == 0:
 			mults.append(10)
 		else:
@@ -132,10 +74,6 @@ def get_rank(full_title, parser, settings):
 			mults.append(v)
 	else:
 		mults.append(1.25)
-
-	#if parser.get('gold', 'False') == 'True':
-	#	rank += 0.8
-	#	conditions += 1
 
 	res_v = 1080
 	if '720p' in full_title:
@@ -149,10 +87,6 @@ def get_rank(full_title, parser, settings):
 		parts = video.split(', ')
 	else:
 		parts = []
-
-	#if len(parts) == 0:
-	#	rank += 2
-	#	conditions += 1
 
 	for part in parts:
 		multiplier = 0
@@ -173,7 +107,7 @@ def get_rank(full_title, parser, settings):
 			or 'mb/s' in part:
 				multiplier = 1000
 		if multiplier != 0:
-			find = re.findall('[\d\.,]', part.split('(')[0])
+			find = re.findall(r'[\d\.,]', part.split('(')[0])
 			bitrate = ''.join(find).replace(',', '.')
 			try:
 				if bitrate != '' and float(bitrate) != 0 and float(bitrate) < 50000:
@@ -255,76 +189,73 @@ def get_rank(full_title, parser, settings):
 
 	if is_torrent_remembed(parser, settings):
 		rank /= 1000
-	
+
 	return rank
 
 
-def make_utf8(s):
-	if isinstance(s, str):
-		return s.encode('utf-8')
-	return s
+def make_utf8(s: Any) -> str:
+	# Историческое имя: раньше кодировало в utf-8 байты, теперь просто приводит к str
+	return s if isinstance(s, str) else str(s)
 
-def scrape_now(fn):
+
+def _bstr(value: Any) -> str:
+	return value.decode('utf-8', 'replace') if isinstance(value, bytes) else str(value)
+
+
+def scrape_now(fn: str) -> Dict[str, Any]:
 	debug(fn)
-	with filesystem.fopen(fn, 'r') as fin:
-		from bencode import BTFailure
+	with filesystem.fopen(fn, 'rb') as fin:
 		try:
-			from bencode import bdecode
 			decoded = bdecode(fin.read())
-		except BTFailure:
+		except BencodeDecodeError:
 			debug("Can't decode torrent data (invalid torrent link?)")
 			return {}
 
-		info = decoded['info']
+	import hashlib
+	info_hash = hashlib.sha1(bencode(decoded[b'info'])).hexdigest()
 
-		import hashlib
-		from bencode import bencode
-		info_hash = hashlib.sha1(bencode(info)).hexdigest()
+	hashes = [info_hash]
+	import scraper
 
-		hashes = [info_hash]
-		import scraper
+	result = []  # type: List[Dict[str, Any]]
+	threads = []
 
-		result = []
-		threads = []
+	def start_scrape(announce: str) -> None:
+		def do_scrape():
+			try:
+				res = scraper.scrape(announce, hashes, 0.25)
+				result.append(res[info_hash])
+			except:
+				debug(announce + ' - not working')
 
-		def start_scrape(announce):
-			def do_scrape():
-				try:
-					res = scraper.scrape(announce, hashes, 0.25)
-					result.append(res[info_hash])
-				except:
-					debug(announce + ' - not working')
-					pass
+		import threading
+		t = threading.Thread(target=do_scrape)
+		threads.append(t)
+		t.start()
 
-			import threading			
-			t = threading.Thread(target=do_scrape)
-			threads.append(t)
-			t.start()
+	if b'announce-list' in decoded:
+		for announce in decoded[b'announce-list']:
+			start_scrape(_bstr(announce[0]))
 
-		if 'announce-list' in decoded:
-			for announce in decoded['announce-list']:
-				start_scrape(announce[0])
+		alive = True
+		while not result and alive:
+			alive = False
+			for t in threads:
+				if t.is_alive():
+					alive = True
+					break
+	elif b'announce' in decoded:
+		res = scraper.scrape(_bstr(decoded[b'announce']), hashes)
+		return res[info_hash]
 
-			alive = True
-			while not result and alive:
-				alive = False
-				for t in threads:
-					if t.is_alive():
-						alive = True
-						break
-		elif 'announce' in decoded:
-			res = scraper.scrape(decoded['announce'], hashes)
-			return res[info_hash]
-
-
-		if result:
-			return result[0]
+	if result:
+		return result[0]
 
 	return {}
 
 
-def seeds_peers(item):
-	res = {}
+def seeds_peers(item: Dict[str, Any]) -> Dict[str, Any]:
+	res = {}  # type: Dict[str, Any]
 	try:
 		link = urllib.parse.unquote(item['link'])
 		try:
@@ -332,7 +263,7 @@ def seeds_peers(item):
 			settings = player.load_settings()
 		except:
 			settings = Settings.current_settings
-		if 'nnm-club' in link:
+		if 'nnm-club' in link or 'nnmclub' in link:
 			debug('seeds_peers: ' + link)
 			t_id = re.search(r't=(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'nnmclub', t_id + '.stat')
@@ -341,28 +272,10 @@ def seeds_peers(item):
 				import json
 				res = json.load(stat_file)
 				debug(str(res))
-		elif 'hdclub' in link:
-			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
-			fn = filesystem.join(settings.torrents_path(), 'elitehd', t_id + '.torrent')
-			return scrape_now(fn)
-		elif 'bluebird' in link:
-			t_id = re.search(r'\.php.+?id=(\d+)', link).group(1)
-			fn = filesystem.join(settings.torrents_path(), 'bluebird', t_id + '.torrent')
-			if not filesystem.exists(fn):
-				import bluebird
-				bluebird.download_torrent(link, fn, settings)
-			return scrape_now(fn)
 		elif 'rutor' in link:
 			t_id = re.search(r'/torrent/(\d+)', link).group(1)
 			fn = filesystem.join(settings.torrents_path(), 'rutor', t_id + '.torrent')
 			return scrape_now(fn)
-		'''
-		elif 'kinohd'  in link:
-			part = self.url.split('/')[-1]
-			t_id = re.search(r'^(\d+)', part).group(1)
-			fn = filesystem.join(settings.torrents_path(), 'kinohd', t_id + '.torrent')
-			return scrape_now(fn)
-		'''
 
 	except BaseException as e:
 		debug(str(e))
@@ -370,13 +283,13 @@ def seeds_peers(item):
 
 
 class STRMWriterBase(object):
-	def make_alternative(self, strmFilename, link, parser):
+	def make_alternative(self, strmFilename: str, link: str, parser) -> None:
 		strmFilename_alt = strmFilename + '.alternative'
 
 		s_alt = ''
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
-				s_alt = alternative.read().decode('utf-8')
+				s_alt = alternative.read()
 
 		if not (link in s_alt):
 			try:
@@ -385,28 +298,24 @@ class STRMWriterBase(object):
 						if key in ['director', 'studio', 'country', 'plot', 'actor', 'genre', 'country_studio']:
 							continue
 						alternative.write('#%s=%s\n' % (make_utf8(key), make_utf8(value)))
-					alternative.write(link.encode('utf-8') + '\n')
+					alternative.write(link + '\n')
 			except:
-				pass
+				log.print_tb()
 
 
 	@staticmethod
-	def get_links_with_ranks(strmFilename, settings, use_scrape_info = False):
-		#import vsdbg
-		#vsdbg._bp()
-
+	def get_links_with_ranks(strmFilename: str, settings, use_scrape_info: bool = False) -> List[Dict[str, Any]]:
 		strmFilename_alt = get_true_filename(strmFilename + '.alternative')
 
-		items = []
-		saved_dict = {}
+		items = []  # type: List[Dict[str, Any]]
+		saved_dict = {}  # type: Dict[str, Any]
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
-				curr_rank = 1
+				curr_rank = 1.0
 				while True:
 					line = alternative.readline()
 					if not line:
 						break
-					line = line.decode('utf-8')
 					if line.startswith('#'):
 						line = line.lstrip('#')
 						parts = line.split('=')
@@ -423,22 +332,19 @@ class STRMWriterBase(object):
 							else:
 								curr_rank = get_rank(saved_dict.get('full_title', ''), saved_dict, settings)
 						except BaseException as e:
-							import log
 							log.print_tb(e)
-							curr_rank = 1
+							curr_rank = 1.0
 
 						item = {'rank': curr_rank, 'link': line.strip('\r\n\t ')}
 						items.append(dict(item, **saved_dict))
 						saved_dict.clear()
 
 		items.sort(key=operator.itemgetter('rank'))
-		#debug('Sorded items')
-		#debug(items)
 		return items
 
 
 	@staticmethod
-	def get_link_with_min_rank(strmFilename, settings):
+	def get_link_with_min_rank(strmFilename: str, settings) -> Optional[str]:
 		items = STRMWriterBase.get_links_with_ranks(strmFilename, settings)
 
 		if len(items) == 0:
@@ -447,7 +353,7 @@ class STRMWriterBase(object):
 			return items[0]['link']
 
 	@staticmethod
-	def has_link(strmFilename, link):
+	def has_link(strmFilename: str, link: str) -> bool:
 		strmFilename_alt = strmFilename + '.alternative'
 		if filesystem.isfile(strmFilename_alt):
 			with filesystem.fopen(strmFilename_alt, "r") as alternative:
@@ -458,7 +364,7 @@ class STRMWriterBase(object):
 		return False
 
 	@staticmethod
-	def write_alternative(strmFilename, links_with_ranks):
+	def write_alternative(strmFilename: str, links_with_ranks: List[Dict[str, Any]]) -> None:
 		strmFilename_alt = strmFilename + '.alternative'
 		with filesystem.fopen(strmFilename_alt, 'w') as alternative:
 			for variant in links_with_ranks:
@@ -481,10 +387,10 @@ class Informer(object):
 	def __init__(self):
 		self.__movie_api = EmptyMovieApi()
 
-	def make_movie_api(self, imdb_id, kp_id, settings):
+	def make_movie_api(self, imdb_id: Optional[str], kp_id: Optional[str] = None, settings = None) -> None:
+		# kp_id оставлен для совместимости с трекерами; API Кинопоиска больше нет
 		orig=None
 		year=None
-		#imdbRaiting=None
 
 		if not imdb_id:
 			if 'originaltitle' in self.Dict():
@@ -493,14 +399,14 @@ class Informer(object):
 				year = self.Dict()['year']
 
 		from movieapi import MovieAPI
-		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, kinopoisk_url=kp_id, orig=orig, year=year, settings=settings)
+		self.__movie_api, imdb_id = MovieAPI.get_by(imdb_id=imdb_id, orig=orig, year=year, settings=settings)
 		if imdb_id:
 			self.Dict()['imdb_id'] = imdb_id
 
 	def movie_api(self):
 		return self.__movie_api
 
-	def filename_with(self, title, originaltitle, year):
+	def filename_with(self, title: str, originaltitle: str, year: Any) -> str:
 		if title == originaltitle:
 			filename = title
 		elif title == '' and originaltitle != '':
@@ -510,12 +416,12 @@ class Informer(object):
 		else:
 			filename = originaltitle
 
-		if year != None or year != '' or year != 0:
-			filename += ' (' + str(year) + ')'
+		# Год дописывается всегда (как и раньше), чтобы не менялись имена уже созданных файлов
+		filename += ' (' + str(year) + ')'
 
 		return filename
 
-	def make_filename_imdb(self):
+	def make_filename_imdb(self) -> Optional[str]:
 		if self.__movie_api:
 			title 			= self.__movie_api.imdbapi.title()
 			originaltitle	= self.__movie_api.imdbapi.originaltitle()
@@ -529,39 +435,39 @@ class Informer(object):
 		return None
 
 class DescriptionParserBase(Informer):
-	_dict = {}
+	_dict = {}  # type: Dict[str, Any]
 
-	def Dump(self):
+	def Dump(self) -> None:
 		debug('-------------------------------------------------------------------------')
 		for key, value in self._dict.items():
-			debug(key + '\t: ' + value)
+			debug('{}\t: {}'.format(key, value))
 
-	def Dict(self):
+	def Dict(self) -> Dict[str, Any]:
 		return self._dict
 
-	def get_value(self, tag, def_value=''):
+	def get_value(self, tag: str, def_value: Any = '') -> Any:
 		try:
 			return self._dict[tag]
 		except:
 			return def_value
 
-	def get(self, tag, def_value):
+	def get(self, tag: str, def_value: Any) -> Any:
 		return self._dict.get(tag, def_value)
 
-	def parsed(self):
+	def parsed(self) -> bool:
 		return self.OK
 
-	def parse(self):
+	def parse(self) -> bool:
 		raise NotImplementedError("def parse(self): not imlemented.\nPlease Implement this method")
 
-	def fanart(self):
+	def fanart(self) -> Optional[str]:
 		if 'fanart' in self._dict:
 			return self._dict['fanart']
 		else:
 			return None
 
-	def parse_country_studio(self):
-		import countries
+	def parse_country_studio(self) -> None:
+		from vdlib.scrappers import countries
 		if 'country_studio' in self._dict:
 			parse_string = self._dict['country_studio']
 			items = re.split(r'[/,|\(\);\\]', parse_string.replace(' - ', '/'))
@@ -575,7 +481,7 @@ class DescriptionParserBase(Informer):
 			self._dict['country'] = ', '.join(cntry)
 			self._dict['studio'] = ', '.join(stdio)
 
-	def __init__(self, full_title, content, settings = None):
+	def __init__(self, full_title: str, content: str, settings = None):
 		Informer.__init__(self)
 
 		from bs4 import BeautifulSoup
@@ -583,12 +489,12 @@ class DescriptionParserBase(Informer):
 		self._dict = dict()
 		self._dict['full_title'] = full_title
 		self.content = content
-		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
+		html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content + '\n</html>'
 		self.soup = BeautifulSoup(clean_html(html_doc), 'html.parser')
 		self.settings = settings
 		self.OK = self.parse()
 
-	def make_filename(self):
+	def make_filename(self) -> str:
 
 		try:
 			if 'imdb_id' in self._dict:
@@ -601,183 +507,22 @@ class DescriptionParserBase(Informer):
 		year			= self._dict.get('year', '')
 
 		return self.filename_with(title, originaltitle, year)
-		#return filename
 
-	def need_skipped(self, full_title):
+	def need_skipped(self, full_title: str) -> bool:
 
 		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', '[Season', 'Half-SBS']:
 			if phrase in full_title:
-				debug('Skipped by: ' + phrase.encode('utf-8'))
+				debug('Skipped by: ' + phrase)
 				return True
 
-
-			if re.search('\(\d\d\d\d[-/]', full_title.encode('utf-8')):
+			if re.search(r'\(\d\d\d\d[-/]', full_title):
 				debug('Skipped by: Year')
 				return True
 
 		return False
 
-class TorrentPlayer(object):
 
-	def __init__(self):
-		self._decoded	= None
-		self._info_hash = None
-
-	@property
-	def decoded(self):
-		if not self._decoded:
-			data = None
-			with filesystem.fopen(self.path, 'rb') as torr:
-				data = torr.read()
-
-			if data is None:
-				return None
-
-			from bencode import BTFailure
-			try:
-				from bencode import bdecode
-				self._decoded = bdecode(data)
-			except BTFailure:
-				debug("Can't decode torrent data (invalid torrent link?)")
-				return None
-
-		return self._decoded
-
-	@property
-	def info_hash(self):
-		if not self._info_hash:
-			try:
-				import hashlib
-				from bencode import bencode
-				info = self.decoded['info']
-				self._info_hash = hashlib.sha1(bencode(info)).hexdigest()
-			except:
-				return None
-
-		return self._info_hash
-
-	@staticmethod
-	def is_playable(name):
-		filename, file_extension = os.path.splitext(name)
-		return file_extension in ['.mkv', '.mp4', '.ts', '.avi', '.m2ts', '.mov']
-
-	def AddTorrent(self, path):
-		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		self.path = path
-
-	def CheckTorrentAdded(self):
-		#raise NotImplementedError("def ###: not imlemented.\nPlease Implement this method")
-		return filesystem.exists(self.path)
-
-	def updateCheckingProgress(self, progressBar):
-		pass
-
-	@staticmethod
-	def Name(name):
-		try:
-			return name.decode('utf-8')
-		except UnicodeDecodeError:
-			try:
-				import chardet
-				enc = chardet.detect(name)
-				log.debug('confidence: {0}'.format(enc['confidence']))
-				log.debug('encoding: {0}'.format(enc['encoding']))
-				if enc['confidence'] > 0.5:
-					try:
-						name = name.decode(enc['encoding'])
-					except UnicodeDecodeError:
-						pass
-				else:
-					#import vsdbg
-					#vsdbg._bp()
-					log.print_tb()
-			except BaseException as e:
-				#import vsdbg
-				#vsdbg._bp()
-				log.print_tb()
-				
-		return name
-
-	def GetLastTorrentData(self):
-
-		decoded =self.decoded
-
-		if decoded is None:
-			return None
-
-		info = decoded['info']
-
-		def info_name():
-			if 'name.utf-8' in info:
-				return info['name.utf-8']
-			else:
-				return info['name']
-
-		def f_path(f):
-			if 'path.utf-8' in f:
-				return f['path.utf-8']
-			else:
-				return f['path']
-
-		name = '.'
-		playable_items = []
-		try:
-			if 'files' in info:
-				for i, f in enumerate(info['files']):
-					# debug(i)
-					# debug(f)
-					name = os.sep.join(f_path(f))
-					size = f['length']
-					#debug(name)
-					if TorrentPlayer.is_playable(name):
-						playable_items.append({'index': i, 'name': TorrentPlayer.Name(name), 'size': size})
-					name = TorrentPlayer.Name(info_name())
-			else:
-				playable_items = [ {'index': 0, 'name': TorrentPlayer.Name(info_name()), 'size': info['length'] } ]
-		except UnicodeDecodeError:
-			return None
-
-		return { 'info_hash': self.info_hash, 'announce': decoded['announce'], 'files': playable_items, 'name': name }
-
-	def GetTorrentInfo(self):
-		try:
-			return { 'downloaded' : 	100,
-			            'size' : 		100,
-			            'dl_speed' : 	1,
-			            'ul_speed' :	0,
-			            'num_seeds' :	1,
-			            'num_peers' :	0
-			            }
-		except:
-			pass
-
-		return None
-
-	def StartBufferFile(self, fileIndex):
-		pass
-
-	def CheckBufferComplete(self):
-		pass
-
-	def GetBufferingProgress(self):
-		pass
-
-	def GetStreamURL(self, playable_item):
-		pass
-
-	def updateDialogInfo(self, progress, progressBar):
-		pass
-
-	def GetBufferingProgress(self):
-		return 100
-
-	def CheckBufferComplete(self):
-		return True
-
-	def loop(self):
-		pass
-
-def save_hashes(torrent_path):
+def save_hashes(torrent_path: str) -> None:
 	hashes_path = torrent_path + '.hashes'
 	if filesystem.exists(torrent_path):
 		tp = TorrentPlayer()
@@ -794,8 +539,8 @@ def save_hashes(torrent_path):
 			with filesystem.fopen(hashes_path, 'a+') as wf:
 				wf.write(info_hash + '\n')
 
-def get_true_filename(filename):
-	if (not filename) or (not isinstance(filename, str) and not isinstance(filename, str)):
+def get_true_filename(filename: Optional[str]) -> Optional[str]:
+	if not filename or not isinstance(filename, str):
 		return filename
 
 	if filesystem.exists(filename):
@@ -803,31 +548,13 @@ def get_true_filename(filename):
 
 	parent_dir = filesystem.dirname(filename)
 	parent_name = filesystem.basename(parent_dir)
-	
-	import re
-	if not re.match(r'tt\d+', parent_name): 
+
+	if not re.match(r'tt\d+', parent_name):
 		return filename
 
-	def get_result(result):
-		if isinstance(filename, str) and isinstance(result, str):
-			return result.encode('utf-8')
-		if isinstance(filename, str) and isinstance(result, str):
-			return result.decode('utf-8')
-		return result
-
-	import os
 	file_extension = os.path.splitext(filename)[1]
 	for f in filesystem.listdir(parent_dir):
 		if file_extension and f.endswith(file_extension):
-			return get_result(filesystem.join(parent_dir, f))
-	
-	return filename
+			return filesystem.join(parent_dir, f)
 
-#if __name__ == '__main__':
-#	filename = r''
-#	filename = get_true_filename(filename)
-#	filename = u'/Users/vd/Documents/MyKodi/tt1245112/[REC] 2 (2009).strm.alternative'
-#	filename = get_true_filename(filename)
-#	filename = r'/Users/vd/Documents/MyKodi/tt1245112/[REC] 2 (2009)'
-#	filename = get_true_filename(filename)
-#	pass
+	return filename

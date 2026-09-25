@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from typing import Any, Dict, List, Optional
+
+from vdlib.util import log
+from vdlib.util.log import debug
 
 
 import re
-import urllib.request, urllib.error, urllib.parse, urlparse
+import urllib.parse
 
 from bs4 import BeautifulSoup
 
@@ -13,7 +15,7 @@ import base
 import feedparser
 import requests
 
-import filesystem
+from vdlib.util import filesystem
 from base import DescriptionParserBase, clean_html, Informer
 from nfowriter import NFOWriter
 from settings import Settings
@@ -21,18 +23,19 @@ from strmwriter import STRMWriter
 
 import tvshowapi
 
-def real_url(url, settings):
-	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', settings.rutor_domain, res.path, res.params, res.query, res.fragment)
-	res = urlparse.urlunparse(res)
+def real_url(url: str, settings) -> str:
+	res = urllib.parse.urlparse(url)
+	res = urllib.parse.ParseResult(res.scheme if res.scheme else 'http', settings.rutor_domain, res.path, res.params, res.query, res.fragment)
+	res = urllib.parse.urlunparse(res)
 	debug('real_url(%s, ...) return %s' % (url, res))
 	return res
 
 
-def origin_url(url, settings):
-	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult(res.scheme if res.scheme else 'http', 'rutor.info', res.path, res.params, res.query, res.fragment)
-	res = urlparse.urlunparse(res)
+def origin_url(url: str, settings) -> str:
+	# ссылки в .strm всегда на rutor.info, реальный домен подставляется при запросе (real_url)
+	res = urllib.parse.urlparse(url)
+	res = urllib.parse.ParseResult(res.scheme if res.scheme else 'http', 'rutor.info', res.path, res.params, res.query, res.fragment)
+	res = urllib.parse.urlunparse(res)
 	debug('original_url(%s, ...) return %s' % (url, res))
 	return res
 
@@ -69,14 +72,14 @@ class DescriptionParser(DescriptionParserBase):
 		}.get(x.strip(), '')
 
 	def clean(self, title):
-		title = re.sub('\[.+\]', '', title)
+		title = re.sub(r'\[.+\]', '', title)
 		return title.strip(' \t\n\r')
 
 	def get_title(self, full_title):
 		try:
 			sep = '/'
 			if not ' / ' in full_title:
-				sep = '\('
+				sep = r'\('
 
 			found = re.search(r'^(.+?) ' + sep, full_title).group(1)
 			return self.clean(found)
@@ -118,7 +121,7 @@ class DescriptionParser(DescriptionParserBase):
 				return False
 
 			full_title = self._dict['full_title']
-			debug('full_title: ' + full_title.encode('utf-8'))
+			debug('full_title: ' + full_title)
 
 			self.parse_title(full_title)
 
@@ -134,13 +137,11 @@ class DescriptionParser(DescriptionParserBase):
 
 		return False
 
-	def parse_description(self, html_text):
-		from HTMLParser import HTMLParseError
-
+	def parse_description(self, html_text) -> bool:
 		html_text = clean_html(html_text)
 		try:
 			self.soup = BeautifulSoup(html_text, 'html.parser')
-		except HTMLParseError as e:
+		except Exception as e:
 			log.print_tb(e)
 			log.debug(html_text)
 			return False
@@ -155,10 +156,10 @@ class DescriptionParser(DescriptionParserBase):
 					plot = base.striphtml(str(b.next_sibling.next_sibling).strip())
 					if plot:
 						self._dict[tag] = plot
-						debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
+						debug('%s (%s): %s' % (text, tag, self._dict[tag]))
 				elif tag == 'genre':
 					genres = []
-					elements = b.findNextSiblings('a')
+					elements = b.find_next_siblings('a')
 					for a in elements:
 						if '/tag/' in a['href']:
 							genres.append(a.get_text())
@@ -167,7 +168,7 @@ class DescriptionParser(DescriptionParserBase):
 
 				elif tag != '':
 					self._dict[tag] = base.striphtml(str(b.next_sibling).strip())
-					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
+					debug('%s (%s): %s' % (text, tag, self._dict[tag]))
 			except:
 				pass
 
@@ -235,7 +236,7 @@ class DescriptionParser(DescriptionParserBase):
 		if count_id == 0:
 			div_index = self.soup.select('#index')
 			if div_index:
-				for a in div_index[0].findAll('a', recursive=True):
+				for a in div_index[0].find_all('a', recursive=True):
 					if '/torrent/' in a['href']:
 						parts = a['href'].split('/')
 						href = parts[0] + '/' + parts[1] + '/' + parts[2]
@@ -271,7 +272,7 @@ class DescriptionParser(DescriptionParserBase):
 		for det in self.soup.select('#details'):
 			tr = det.find('tr', recursive=False)
 			if tr:
-				tds = tr.findAll('td', recursive=False)
+				tds = tr.find_all('td', recursive=False)
 				if len(tds) > 1:
 					td = tds[1]
 					img = td.find('img')
@@ -311,7 +312,7 @@ class DescriptionParserTVShows(DescriptionParser):
 	def need_skipped(self, full_title):
 		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', 'Half-SBS']:
 			if phrase in full_title:
-				debug('Skipped by: ' + phrase.encode('utf-8'))
+				debug('Skipped by: ' + phrase)
 				return True
 		return False
 
@@ -378,10 +379,7 @@ def write_tvshows(rss_url, path, settings):
 			if not is_tvshow(item.title):
 				continue
 
-			try:
-				debug(item.title.encode('utf-8'))
-			except:
-				continue
+			debug(item.title)
 
 			write_tvshow(
 				fulltitle=item.title,
@@ -391,7 +389,7 @@ def write_tvshows(rss_url, path, settings):
 				path=path)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
+			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)
 
 
 def write_movies_rss(rss_url, path, settings):
@@ -408,10 +406,7 @@ def write_movies_rss(rss_url, path, settings):
 			if is_tvshow(item.title):
 				continue
 
-			try:
-				debug(item.title.encode('utf-8'))
-			except:
-				continue
+			debug(item.title)
 			write_movie_rss(
 				fulltitle=item.title,
 				description=item.description,
@@ -420,7 +415,7 @@ def write_movies_rss(rss_url, path, settings):
 				path=path)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
+			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)
 
 
 def get_rss_url(f_id):
@@ -445,7 +440,7 @@ def run(settings):
 		write_tvshows(get_rss_url(4), settings.tvshow_path(), settings)
 
 
-def get_magnet_link(url):
+def get_magnet_link(url: str, settings) -> Optional[str]:
 	r = requests.get(real_url(url, settings))
 	if r.status_code == requests.codes.ok:
 		soup = BeautifulSoup(clean_html(r.content), 'html.parser')
@@ -455,7 +450,7 @@ def get_magnet_link(url):
 	return None
 
 
-def download_torrent(url, path, settings):
+def download_torrent(url: str, path: str, settings) -> bool:
 	from base import save_hashes
 	save_hashes(path)
 
@@ -488,7 +483,7 @@ def download_torrent(url, path, settings):
 			save_hashes(path)
 			return True
 		except:
-			pass
+			log.print_tb()
 
 	return False
 
@@ -500,7 +495,7 @@ def make_search_strms(result, settings, type, path, path_out):
 		link = item['link']
 		parser = item['parser']
 
-		settings.progress_dialog.update(count * 100 / len(result), 'Rutor', parser.get_value('full_title'))
+		settings.progress_dialog.update(count * 100 // len(result), 'Rutor', parser.get_value('full_title'))
 
 		if link:
 			if type == 'movie':
@@ -571,7 +566,7 @@ def search_results(imdb, settings, url, what=None):
 
 	enumerator = PostsEnumerator(settings)
 
-	from log import dump_context
+	from vdlib.util.log import dump_context
 	with dump_context('rutor.enumerator.process_page'):
 		enumerator.process_page(url)
 
@@ -583,7 +578,7 @@ def search_results(imdb, settings, url, what=None):
 			pass
 
 		title = post['a'].get_text()
-		dl_link = str('http://rutor.info' + post['dl_link'])
+		dl_link = urllib.parse.urljoin('http://rutor.info', post['dl_link'])
 		link = get_source_url(dl_link)
 
 		import copy
@@ -630,7 +625,7 @@ def search_generate(what, imdb, settings, path_out):
 	if settings.movies_save and count == 0:
 		# 0/5/000/0 - Наше кино, поиск по названию в разделе
 		if not result1:
-			url = 'http://rutor.info/search/0/5/000/0/' + urllib.parse.quote(what.encode('utf-8'))
+			url = 'http://rutor.info/search/0/5/000/0/' + urllib.parse.quote(what)
 			result1 = search_results(None, settings, url, what)
 			count += make_search_strms(result1, settings, 'movie', settings.movies_path(), path_out)
 
@@ -643,35 +638,3 @@ def search_generate(what, imdb, settings, path_out):
 	"""
 
 	return count
-
-if __name__ == '__main__':
-	import filesystem
-
-	test_dir = filesystem.join(filesystem.dirname(__file__), 'test')
-	settings = Settings( filesystem.join(test_dir, 'Videos') )
-	settings.addon_data_path	= filesystem.join(test_dir, 'data')
-	settings.torrent_path		= filesystem.join(test_dir, 'torrents')
-	settings.torrent_player		= 'torrent2http'
-	settings.kp_googlecache		= False
-	settings.kp_usezaborona		= True
-	settings.use_kinopoisk		= True
-	settings.use_worldart		= True
-
-	settings.rutor_domain = 'rutor.is'
-
-	path_out = []
-	#search_generate(u'Ольга', 'tt6481562', settings, path_out)
-
-	#import time
-	#from_time = time.time()
-
-	#from backgrounds import recheck_torrent_if_need
-
-	from log import dump_context
-	with dump_context('rutor.run'):
-		run(settings)
-
-	#recheck_torrent_if_need(from_time, settings)
-	search_generate(None, 'tt2948356', settings, path_out)
-
-	pass

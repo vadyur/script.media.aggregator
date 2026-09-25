@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from log import debug
+from vdlib.util.log import debug
 from settings import _addon_name
 
 class MyListItem(object):
@@ -60,7 +60,7 @@ class AskUser(object):
 		self._progress_count = count
 
 	def progress_update(self, current, msg):
-		percent = current * 100 / self._progress_count
+		percent = current * 100 // self._progress_count
 		self._progress.update(percent, _addon_name, msg)
 
 	def progress_stop(self):
@@ -110,14 +110,14 @@ def update_episode(e, api_data):
 	if not user.ask_update():
 		return
 
-	from jsonrpc_requests import update_episode as _update_episode
+	from vdlib.kodi.jsonrpc_requests import update_episode as _update_episode
 	_update_episode(e, api_data)
 
 
 def remove_files(path):
 	if path.endswith('.strm'):
 		def remove(path):
-			import filesystem
+			from vdlib.util import filesystem
 			if filesystem.exists(path):
 				try:
 					filesystem.remove(path)
@@ -133,7 +133,7 @@ def remove_files(path):
 		
 
 def remove_episode(e):
-	from jsonrpc_requests import remove_episode as _remove_episode
+	from vdlib.kodi.jsonrpc_requests import remove_episode as _remove_episode
 	_remove_episode(e)
 	
 	if user.ask_files_remove():
@@ -142,7 +142,7 @@ def remove_episode(e):
 
 def repair(tvshow_id):
 
-	from jsonrpc_requests import get_tvshow, get_tvshows, get_episodes
+	from vdlib.kodi.jsonrpc_requests import get_tvshow, get_tvshows, get_episodes
 
 	tvshow = get_tvshow(tvshow_id)
 

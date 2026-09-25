@@ -2,8 +2,8 @@ import sys
 
 from plugin import get_params
 
-def dispatch():
-	from log import debug
+def dispatch() -> None:
+	from vdlib.util.log import debug
 
 	params = get_params()
 	debug(params)
@@ -21,12 +21,13 @@ def dispatch():
 		skip_show_sources = False
 
 		if settings.show_sources and 'onlythis' not in params:
-			import filesystem, urllib.request, urllib.parse, urllib.error
+			import urllib.parse
+			from vdlib.util import filesystem
 
-			rel_path = urllib.parse.unquote(params['path']).decode('utf-8')
+			rel_path = urllib.parse.unquote(params['path'])
 			debug(rel_path)
 
-			filename = urllib.parse.unquote(params['nfo']).decode('utf-8').replace('.nfo', '.strm')
+			filename = urllib.parse.unquote(params['nfo']).replace('.nfo', '.strm')
 			debug(filename)
 
 			path = filesystem.join(settings.base_path(), rel_path, filename)
@@ -47,7 +48,7 @@ def dispatch():
 						return
 
 			import context
-			res = context.main(settings, path.encode('utf-8'), filename.encode('utf-8'), run)
+			res = context.main(settings, path, filename, run)
 			if not res:
 				play_torrent(settings=settings, params=params)
 		else:
@@ -113,10 +114,8 @@ def dispatch():
 		#vsdbg._bp()
 
 		from backgrounds import add_media_process
-		title = params.get('title')
-		import urllib.request, urllib.parse, urllib.error
-		title = urllib.parse.unquote_plus(title)
-		title = title.decode('utf-8')
+		import urllib.parse
+		title = urllib.parse.unquote_plus(params.get('title'))
 	
 		add_media_process(title, params.get('imdb'))
 	

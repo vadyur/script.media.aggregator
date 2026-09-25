@@ -1,7 +1,7 @@
 # coding: utf-8
 
-import log
-from log import debug
+from vdlib.util import log
+from vdlib.util.log import debug
 
 
 import sys
@@ -47,16 +47,16 @@ if sys.version_info < (2, 7):
 	xml.dom.minidom.Element.writexml = fixed_writexml
 
 
-def prettify(xml_text):
-	reparsed = minidom.parseString(xml_text)
-	return reparsed.toprettyxml(indent=" " * 2, encoding="utf-8")
+def prettify(xml_text: str) -> str:
+	reparsed = minidom.parseString(xml_text.encode('utf-8'))
+	return reparsed.toprettyxml(indent=" " * 2, encoding="utf-8").decode('utf-8')
 
 
-def write_tree(fn, root):
+def write_tree(fn: str, root) -> None:
 	try:
 		with filesystem.fopen(fn, 'w') as f:
 			xml_text = "<?xml version='1.0' encoding='UTF-8'?>\n"
-			xml_text += ET.tostring(root).encode('utf-8')
+			xml_text += ET.tostring(root, encoding='unicode')
 			f.write(prettify(xml_text))
 	except IOError as e:
 		debug("I/O error({0}): {1}".format(e.errno, e.strerror))

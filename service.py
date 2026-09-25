@@ -1,7 +1,9 @@
 # coding: utf-8
 
-import math, urllib.request, urllib.parse, urllib.error
-import log
+import urllib.request
+from typing import Any, Dict, Optional
+
+from vdlib.util import log
 
 try:
 	import xbmc, xbmcaddon, xbmcgui
@@ -15,18 +17,15 @@ from time import strftime
 from time import gmtime
 from time import sleep
 
-import filesystem
-try:
-	import player
-except ImportError:
-	pass
+from vdlib.util import filesystem
+from vdlib.kodi.compat import translatePath
 
 import xml.etree.ElementTree as ET
 
 _ADDON_NAME =   'script.media.aggregator'
 try:
 	_addon      =   xbmcaddon.Addon(id=_ADDON_NAME)
-	_addondir   =   xbmc.translatePath(_addon.getAddonInfo('profile')).decode('utf-8')
+	_addondir   =   translatePath(_addon.getAddonInfo('profile'))
 except:
 	pass
 
@@ -52,7 +51,7 @@ class AddonRO(object):
 		self.mtime = filesystem.getmtime(self._addon_xml)
 
 	# get setting no caching
-	def getSetting(self, s):
+	def getSetting(self, s: str) -> str:
 		if not filesystem.exists(self._addon_xml):
 			return ''
 
@@ -61,7 +60,7 @@ class AddonRO(object):
 
 		for item in self.root:
 			if item.get('id') == s:
-				return item.get('value').encode('utf-8')
+				return item.get('value') or ''
 		return ''
 
 
@@ -78,7 +77,7 @@ class Addon(AddonRO):
 				f.write('<settings>\n')
 				f.write('</settings>\n')
 
-	def setSetting(self, id, val):
+	def setSetting(self, id: str, val: Any) -> None:
 		# not work in Python 2.6
 		# item = self.root.find("./setting[@id='%s']" % str(id))
 
@@ -104,7 +103,7 @@ class Addon(AddonRO):
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def addon_data_path():
+def addon_data_path() -> str:
 	if _addon.getSetting('data_path'):
 		return _addon.getSetting('data_path')
 	else:
@@ -112,12 +111,9 @@ def addon_data_path():
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def call_bg(action, params = {}):
+def call_bg(action: str, params: Optional[Dict[str, Any]] = None) -> None:
+	params = dict(params or {})
 	params['action'] = action
-
-	for key, value in params.items(): 
-		if isinstance(value, str):
-			params[key] = value.encode('utf-8')
 
 	from plugin import RunPlugin
 	RunPlugin(**params)
@@ -139,7 +135,7 @@ def update_case():
 		every = 8 * 3600
 		delay_startup = 0
 
-	if _addon.getSetting('role').decode('utf-8') == 'клиент':
+	if _addon.getSetting('role') == 'клиент':
 		return
 
 	# User action
@@ -229,7 +225,7 @@ def scrape_case():
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def add_media_case():
-	if _addon.getSetting('role').decode('utf-8') == 'клиент':
+	if _addon.getSetting('role') == 'клиент':
 		return
 
 	path = filesystem.join(addon_data_path(), 'add_media')
@@ -238,7 +234,7 @@ def add_media_case():
 			with filesystem.fopen(path, 'r') as f:
 				while True:
 					try:
-						title = f.readline().strip(' \n\t\r').decode('utf-8')
+						title = f.readline().strip(' \n\t\r')
 						imdb = f.readline().strip(' \n\t\r')
 
 						log.debug('add_media_case: ' + imdb)
@@ -280,8 +276,9 @@ def main():
 		filesystem.remove(path)
 
 
+	monitor = xbmc.Monitor()
 	cnt = 0
-	while not xbmc.abortRequested:
+	while not monitor.abortRequested():
 
 		try:
 			scrape_case()
@@ -291,8 +288,8 @@ def main():
 		except BaseException as e:
 			log.print_tb(e)
 
-		finally:
-			sleep(1)
+		if monitor.waitForAbort(1):
+			break
 
 		if cnt % 3600 == 0:
 			log.debug("I'm alive at %s" % asctime())
@@ -318,7 +315,7 @@ def update_library_next_start():
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def add_media(title, imdb, settings):
+def add_media(title: str, imdb: str, settings) -> None:
 	ended_path = filesystem.join(addon_data_path(), imdb + '.ended')
 	if filesystem.exists(ended_path):
 		try:
@@ -335,13 +332,12 @@ def add_media(title, imdb, settings):
 	if filesystem.exists(path):
 		with filesystem.fopen(path, 'r') as f:
 			s = f.read()
-			if imdb.encode('utf-8') in s:
+			if imdb in s:
 				return
 
 	with filesystem.fopen(path, 'a+') as f:
 		log.debug('writing...')
-		seq = [title.encode('utf-8') + '\n', imdb.encode('utf-8') + '\n']
-		f.writelines(seq)
+		f.write(title + '\n' + imdb + '\n')
 
 	import xbmcgui
 	from settings import _addon_name
@@ -399,8 +395,8 @@ def add_media(title, imdb, settings):
 						xbmc.executebuiltin('Container.Refresh')
 
 						from plugin import RunPlugin
-						RunPlugin(action='add_media', title=title.encode('utf-8'),
-								imdb=imdb, strm=strm_path.encode('utf-8'),
+						RunPlugin(action='add_media', title=title,
+								imdb=imdb, strm=strm_path,
 								norecursive=True)
 					else:
 						dlg.notification(_addon_name,
@@ -425,21 +421,20 @@ def save_dbs():
 		for fn in filesystem.listdir(path):
 			filesystem.remove(fn)
 
-		log_dir = xbmc.translatePath('special://logpath').decode('utf-8')
+		log_dir = translatePath('special://logpath')
 		log_path = filesystem.join(log_dir, 'kodi.log')
 		log.debug(log_path)
 		with filesystem.fopen(log_path, 'r') as lf:
 			for line in lf.readlines():
 				if 'Running database version' in line:
 					log.debug(line)
-					name = line.split(' ')[-1].strip('\r\n\t ').decode('utf-8')
+					name = line.split(' ')[-1].strip('\r\n\t ')
 					with filesystem.fopen(name, 'w'):
 						pass
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def create_mark_file():
-	import urllib.request, urllib.error, urllib.parse, shutil
 	path = filesystem.join(_addondir, 'version_latest')
 	if not filesystem.exists(path):
 		try:

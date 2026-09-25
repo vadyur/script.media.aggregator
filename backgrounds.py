@@ -1,120 +1,46 @@
 # -*- coding: utf-8 -*-
 
-import filesystem, log
+from typing import Any, Dict, List, Optional
+
+from vdlib.util import filesystem, log
+from vdlib.util.log import dump_context
 from movieapi import MovieAPI
 
-def addon_data_path():
+def addon_data_path() -> str:
 	from player import _addon, _addondir
 	if _addon.getSetting('data_path'):
 		return _addon.getSetting('data_path')
 	else:
 		return _addondir
 
-def recheck_torrent_if_need(from_time, settings):
-	if settings.torrent_player != 'torrent2http':
-		return
-
-	def check_modify_time(fn):
-		import time, filesystem
-		mt = filesystem.getmtime(fn)
-		if abs(from_time - mt) < 3600:
-			return True
-		return False
-
-	def get_hashes(fn):
-		with filesystem.fopen(fn, 'r') as hf:
-			hashes = hf.readlines()
-			return [ h.strip('\r\n') for h in hashes ]
-		return []
-
-	def rehash_torrent(hashes, torrent_path):
-		import time
-		try:
-			from torrent2httpplayer import Torrent2HTTPPlayer
-			from torrent2http import State
-		except ImportError:
-			return
-
-		player = Torrent2HTTPPlayer(settings)
-		player.AddTorrent(torrent_path)
-		player.GetLastTorrentData()
-		#player.StartBufferFile(0)
-		player._AddTorrent(torrent_path)
-		player.engine.start()
-		f_status = player.engine.file_status(0)
-
-		while True:
-			time.sleep(1.0)
-			status = player.engine.status()
-
-			if status.state in [State.FINISHED, State.SEEDING, State.DOWNLOADING]:
-				break;
-
-		player.engine.wait_on_close()
-		player.close()
-
-	def process_dir(_d):
-		for fn in filesystem.listdir(_d):
-			full_name = filesystem.join(_d, fn)
-			if fn.endswith('.hashes') and check_modify_time(full_name):
-				hashes = get_hashes(full_name)
-				if len(hashes) > 1:
-					rehash_torrent(hashes, full_name.replace('.hashes', ''))
-
-	for d in filesystem.listdir(settings.torrents_path()):
-		dd = filesystem.join(settings.torrents_path(), d)
-		if not filesystem.isfile(dd):
-			process_dir(dd)
-
-
 # ------------------------------------------------------------------------------------------------------------------- #
-def update_service(show_progress=False):
+def update_service(show_progress: bool = False) -> None:
 
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
+	import anidub, nnmclub, rutor
 
 	from player import _addon
 
 	anidub_enable		= _addon.getSetting('anidub_enable') == 'true'
-	hdclub_enable		= False
-	bluebird_enable		= _addon.getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= _addon.getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= _addon.getSetting('rutor_enable') == 'true'
-	soap4me_enable		= _addon.getSetting('soap4me_enable') == 'true'
-	kinohd_enable		= _addon.getSetting('kinohd_enable') == 'true'
 
 
 	from player import load_settings
 	settings = load_settings()
-
-	import time
-	from_time = time.time()
 
 	if show_progress:
 		import xbmcgui
 		info_dialog = xbmcgui.DialogProgressBG()
 		info_dialog.create(settings.addon_name)
 		settings.progress_dialog = info_dialog
-	
-	from log import dump_context
 
 	if anidub_enable:
 		with dump_context('anidub.run'):
 			anidub.run(settings)
 
-	#if hdclub_enable:
-	#	hdclub.run(settings)
-
-	if bluebird_enable:
-		with dump_context('bluebird.run'):
-			bluebird.run(settings)
-
 	if rutor_enable:
 		with dump_context('rutor.run'):
 			rutor.run(settings)
-
-	if kinohd_enable:
-		with dump_context('kinohd.run'):
-			kinohd.run(settings)
 
 	if nnmclub_enable:
 		from service import Addon
@@ -144,17 +70,11 @@ def update_service(show_progress=False):
 		with dump_context('nnmclub.run'):
 			nnmclub.run(settings)
 
-	#if soap4me_enable:
-	#	import soap4me
-	#	soap4me.run(settings)
-
 	if show_progress:
-		info_dialog.update(0, '', '')
+		info_dialog.update(0)
 		info_dialog.close()
 
 	if settings.update_paths:
-		#from plugin import wait_for_update
-		from jsonrpc_requests import VideoLibrary
 		from plugin import UpdateVideoLibrary, ScanMonitor
 
 		monitor = ScanMonitor()
@@ -166,8 +86,6 @@ def update_service(show_progress=False):
 				clean_movies()
 				break
 
-	#recheck_torrent_if_need(from_time, settings)
-
 
 # ------------------------------------------------------------------------------------------------------------------- #
 def chunks(l, n):
@@ -177,7 +95,7 @@ def chunks(l, n):
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def scrape_nnm():
+def scrape_nnm() -> None:
 	from player import load_settings
 	settings = load_settings()
 
@@ -190,7 +108,7 @@ def scrape_nnm():
 	for torr in filesystem.listdir(filesystem.join(data_path, 'nnmclub')):
 		if torr.endswith('.torrent'):
 			try:
-				from base import TorrentPlayer
+				from vdlib.torrent.torrentplayer import TorrentPlayer
 				tp = TorrentPlayer()
 				tp.AddTorrent(filesystem.join(data_path, 'nnmclub', torr))
 				data = tp.GetLastTorrentData()
@@ -204,7 +122,7 @@ def scrape_nnm():
 		try:
 			seeds_peers = scraper.scrape(chunk[0][0], [i[1] for i in chunk], 10)
 		except RuntimeError as RunE:
-			if '414 status code returned' in RunE.message:
+			if '414 status code returned' in str(RunE):
 				for c in chunks(chunk, 16):
 					try:
 						seeds_peers = scraper.scrape(c[0][0], [i[1] for i in c], 10)
@@ -235,21 +153,17 @@ def process_chunk(chunk, data_path, seeds_peers):
 			filesystem.remove(filename)
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def add_media_process(title, imdb):
+def add_media_process(title: str, imdb: str) -> None:
 	count = 0
 
 	from player import getSetting, load_settings
-	import anidub, hdclub, nnmclub, rutor, soap4me, bluebird, kinohd
+	import anidub, nnmclub, rutor
 
 	settings = load_settings()
 
 	anidub_enable		= getSetting('anidub_enable') == 'true'
-	hdclub_enable		= False
-	bluebird_enable		= getSetting('bluebird_enable') == 'true'
 	nnmclub_enable		= getSetting('nnmclub_enable') == 'true'
 	rutor_enable		= getSetting('rutor_enable') == 'true'
-	soap4me_enable		= False
-	kinohd_enable		= getSetting('kinohd_enable') == 'true'
 
 	class RemoteDialogProgress:
 		progress_file_path = filesystem.join(addon_data_path(), '.'.join([imdb, 'progress']))
@@ -257,7 +171,7 @@ def add_media_process(title, imdb):
 		def update(self, percent, *args, **kwargs):
 			with filesystem.fopen(self.progress_file_path, 'w') as progress_file:
 				progress_file.write(str(percent) + '\n')
-				progress_file.write('\n'.join(args).encode('utf-8'))
+				progress_file.write('\n'.join(str(a) for a in args))
 
 		def close(self):
 			try:
@@ -267,53 +181,34 @@ def add_media_process(title, imdb):
 
 	settings.progress_dialog = RemoteDialogProgress()
 
-	p = []
+	p = []  # type: List[str]
 
-	from log import dump_context
-	#try:
-	if True:
-		if anidub_enable and imdb.startswith('sm'):
-			with dump_context('anidub.search_generate'):
-				c = anidub.search_generate(title, settings, p)
+	if anidub_enable and imdb.startswith('sm'):
+		with dump_context('anidub.search_generate'):
+			c = anidub.search_generate(title, settings, p)
+			count += c
+
+	if imdb.startswith('tt'):
+		if rutor_enable:
+			with dump_context('rutor.search_generate'):
+				c = rutor.search_generate(title, imdb, settings, p)
 				count += c
 
-		if imdb.startswith('tt'):
-			#if hdclub_enable:
-			#	c = hdclub.search_generate(title, imdb, settings, p)
-			#	count += c
-			if bluebird_enable:
-				with dump_context('bluebird.search_generate'):
-					c = bluebird.search_generate(title, imdb, settings, p)
-					count += c
-			if rutor_enable:
-				with dump_context('rutor.search_generate'):
-					c = rutor.search_generate(title, imdb, settings, p)
-					count += c
-			if kinohd_enable:
-				with dump_context('kinohd.search_generate'):
-					c = kinohd.search_generate(title, imdb, settings, p)
-					count += c
-
-			if nnmclub_enable:
-				with dump_context('nnmclub.search_generate'):
-					c = nnmclub.search_generate(title, imdb, settings, p)
-					count += c
-			#if soap4me_enable:
-			#	count += soap4me.search_generate(title, imdb, settings)
-	#except BaseException as e:
-	#	log.print_tb(e)
+		if nnmclub_enable:
+			with dump_context('nnmclub.search_generate'):
+				c = nnmclub.search_generate(title, imdb, settings, p)
+				count += c
 
 	if p:
 		path = filesystem.join(addon_data_path(), imdb + '.strm_path')
 		with filesystem.fopen(path, 'w') as f:
-			f.write(p[0].encode('utf-8'))
+			f.write(p[0])
 
 	settings.progress_dialog.close()
 
 	if count:
 		import xbmc
 		if not xbmc.getCondVisibility('Library.IsScanningVideo'):
-			from jsonrpc_requests import VideoLibrary
 			from plugin import UpdateVideoLibrary
 			if p and p[0]:
 				path = p[0]
@@ -325,7 +220,7 @@ def add_media_process(title, imdb):
 
 				base_path = filesystem.dirname(p[0])
 
-				from sources import Sources
+				from vdlib.kodi.sources import Sources
 				srcs = Sources()
 				for src in srcs.get('video', normalize=False):
 					src_path_basename = filesystem.basename(src.path.rstrip('\\/'))
@@ -356,14 +251,11 @@ def load_settings():
 	from player import load_settings as _load_settings
 	return _load_settings()
 
-def safe_remove(path):
-	import filesystem
+def safe_remove(path: str) -> None:
 	if filesystem.exists(path):
 		filesystem.remove(path)
 
-def safe_copyfile(src, dst):
-	import filesystem
-
+def safe_copyfile(src: str, dst: str) -> None:
 	dirname = filesystem.dirname(dst)
 	if not filesystem.exists(dirname):
 		filesystem.makedirs(dirname)
@@ -382,7 +274,7 @@ def dt(ss):
 
 
 # ------------------------------------------------------------------------------------------------------------------- #
-def clean_movies():
+def clean_movies() -> None:
 	_debug = False
 
 	from plugin import wait_for_update
@@ -392,7 +284,7 @@ def clean_movies():
 	log.debug('* Start cleaning movies')
 	log.debug('*'*80)
 
-	from kodidb import MoreRequests
+	from vdlib.kodi.kodidb import MoreRequests
 	more_requests = MoreRequests()
 
 	movie_duplicates_list = more_requests.get_movie_duplicates()
@@ -407,8 +299,8 @@ def clean_movies():
 	clean_ids = []
 	
 	import movieapi
-	from base import make_fullpath
-	def get_info_and_move_files(imdbid):
+	from vdlib.util.base import make_fullpath
+	def get_info_and_move_files(imdbid: str) -> Dict[str, Any]:
 		def _log(s):
 			log.debug('    get_info_and_move_files: {}'.format(s))
 
@@ -496,16 +388,14 @@ def clean_movies():
 			imdbid = movie[0]
 			watched_and_progress[imdbid] = get_info_and_move_files(imdbid)
 		except BaseException as e:
-			from log import print_tb
-			print_tb()
-			pass
+			log.print_tb(e)
 
 		if _debug:
 			break
 
 	log.debug('# ----------------')
 	log.debug('# Update Video library')
-	from jsonrpc_requests import VideoLibrary	#, JSONRPC
+	from vdlib.kodi.jsonrpc_requests import VideoLibrary
 	from plugin import wait_for_update, UpdateVideoLibrary
 
 	#ver = JSONRPC.Version()

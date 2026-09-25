@@ -1,4 +1,4 @@
-import urllib.request, urllib.parse, urllib.error, xbmc
+import urllib.parse, xbmc
 title = xbmc.getInfoLabel('ListItem.Title')
 
 if xbmc.getInfoLabel('ListItem.DBTYPE') == 'episode':

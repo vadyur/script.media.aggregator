@@ -1,15 +1,18 @@
 ﻿# coding: utf-8
-import log
-from log import debug
+from typing import Any, Dict, List, Optional
+
+from vdlib.util import log
+from vdlib.util.log import debug
 
 
 from settings import Settings
 from base import *
-import feedparser, urllib.request, urllib.error, urllib.parse, re
+import feedparser, urllib.request, urllib.parse, re
 from bs4 import BeautifulSoup
 from nfowriter import *
 from strmwriter import *
-import requests, filesystem
+import requests
+from vdlib.util import filesystem
 
 ###################################################################################################
 class DescriptionParser(DescriptionParserBase):
@@ -52,7 +55,7 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================	
 	def get_title(self, full_title):
 		try:
-			found = re.search('^(.+?) /', full_title).group(1)
+			found = re.search(r'^(.+?) /', full_title).group(1)
 			return self.clean(found)
 		except AttributeError:
 			return full_title
@@ -60,7 +63,7 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================	
 	def get_original_title(self, full_title):
 		try:
-			found = re.search('^.+? / (.+)', full_title).group(1)
+			found = re.search(r'^.+? / (.+)', full_title).group(1)
 			return self.clean(found)
 		except AttributeError:
 			return full_title
@@ -80,7 +83,7 @@ class DescriptionParser(DescriptionParserBase):
 			if len(parts) == 1:
 				parts = title.split('TV-')
 			if len(parts) > 1:
-				found = re.search('([0-9]+)', parts[1]).group(1)
+				found = re.search(r'([0-9]+)', parts[1]).group(1)
 				self._dict['season'] = int(found)
 		except:
 			pass
@@ -88,7 +91,7 @@ class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def get_episodes_num(self, full_title):
 		try:
-			found = re.search(' \[([0-9]+) ', full_title).group(1)
+			found = re.search(r' \[([0-9]+) ', full_title).group(1)
 			return int(found)
 		except AttributeError:
 			return 1
@@ -230,7 +233,7 @@ def write_tvshow(content, path, settings):
 			write_tvshow_item(item, path, settings)
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), 'anidub', path)
+			settings.progress_dialog.update(cnt * 100 // len(d.entries), 'anidub', path)
 
 
 def write_tvshow_item(item, path, settings, path_out=[]):
@@ -399,7 +402,7 @@ def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = N
 				write_tvshow_item(Item(link, title), path, settings, path_out)
 	
 				cnt += 1
-				settings.progress_dialog.update(cnt * 100 / len(selector), dialog_title, path)
+				settings.progress_dialog.update(cnt * 100 // len(selector), dialog_title, path)
 
 			if not 'favorites' in url:
 				break
@@ -431,7 +434,7 @@ def search_generate(what, settings, path_out):
 				settings.anime_tvshow_path(), settings, 
 				{'do': 'search',
 				'subaction': 'search',
-				'story': what.encode('utf-8')}, filter,
+				'story': what}, filter,
 				dialog_title='Поиск AniDUB',
 				path_out=path_out)
 	

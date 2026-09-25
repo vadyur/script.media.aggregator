@@ -1,30 +1,31 @@
 # -*- coding: utf-8 -*-
+from typing import Optional
 
-from log import debug
-
-import base, filesystem
+from vdlib.util.log import debug
+from vdlib.util import filesystem
+from vdlib.util.base import make_fullpath
 
 user_agent = 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.100'
 
-def copy_files(src, dst, pattern):
+def copy_files(src: str, dst: str, pattern: str) -> None:
 	from backgrounds import safe_copyfile
 	for ext in ['.strm', '.nfo', '.strm.alternative']:
-		src_file = filesystem.join(src, base.make_fullpath(pattern, ext))
+		src_file = filesystem.join(src, make_fullpath(pattern, ext))
 		if filesystem.exists(src_file):
-			dst_file = filesystem.join(dst, base.make_fullpath(pattern, ext))
+			dst_file = filesystem.join(dst, make_fullpath(pattern, ext))
 			safe_copyfile(src_file, dst_file)
 
-def make_imdb_path(path, imdb):
+def make_imdb_path(path: str, imdb: Optional[str]) -> str:
 	if imdb and imdb.startswith('tt'):
 		return filesystem.join(path, 'TTx' + imdb[3:5], imdb)
 	return path
 
-def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, download_torrent=True):
+def write_movie(fulltitle: str, link: str, settings, parser, path: str, skip_nfo_exists: bool = False, download_torrent: bool = True) -> Optional[str]:
 	debug('+-------------------------------------------')
 	filename = parser.make_filename()
 	if filename:
-		debug('fulltitle: ' + fulltitle.encode('utf-8'))
-		debug('filename: ' + filename.encode('utf-8'))
+		debug('fulltitle: ' + fulltitle)
+		debug('filename: ' + filename)
 		debug('-------------------------------------------+')
 
 		imdb = parser.get_value('imdb_id')
@@ -46,24 +47,15 @@ def write_movie(fulltitle, link, settings, parser, path, skip_nfo_exists=False, 
 				TorrentDownloader(parser.link(), settings.torrents_path(), settings).download()
 
 			settings.update_paths.add(new_path)
-			return filesystem.relpath( filesystem.join(new_path, base.make_fullpath(filename, '.strm')), start=settings.base_path())
+			return filesystem.relpath( filesystem.join(new_path, make_fullpath(filename, '.strm')), start=settings.base_path())
 
+	return None
+
+# API метаданных живут в vdlib (Кинопоиск и world-art удалены, не восстанавливаются)
 from vdlib.scrappers.movieapi import get_tmdb_api_key
-
 from vdlib.scrappers.movieapi import IDs
-
-from soup_base import soup_base
-
-from vdlib.scrappers.movieapi import world_art_actors, world_art_info, world_art
-
+from vdlib.base.soup_base import soup_base
 from vdlib.scrappers.movieapi import tmdb_movie_item
-
-from vdlib.scrappers.movieapi import KinopoiskAPI, KinopoiskAPI2
-
 from vdlib.scrappers.movieapi import imdb_cast, ImdbAPI
-
 from vdlib.scrappers.movieapi import TMDB_API
-
 from vdlib.scrappers.movieapi import MovieAPI
-
-

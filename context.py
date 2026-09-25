@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from vdlib.util import log
+from vdlib.util.log import debug
+from vdlib.kodi.compat import translatePath
 
 
 import sys, xbmc, re, xbmcgui
 
 import pyxbmct.addonwindow as pyxbmct
 
-import filesystem
+from vdlib.util import filesystem
 from base import STRMWriterBase, seeds_peers
 
 seeds_peers_fmt = '[COLOR=FF5AC3C6][B]Сиды[/B]:[/COLOR] %d        [COLOR=FF5AC3C6][B]пиры[/B]:[/COLOR] %d'
@@ -29,18 +30,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 				s += '[COLOR=FFFF6666][B]'
 				if 'anidub' in link:
 					s += '[AniDUB] '
-				elif 'nnm-club' in link:
+				elif 'nnm-club' in link or 'nnmclub' in link:
 					s += '[NNM-Club] '
-				elif 'hdclub' in link:
-					s += '[EliteHD] '
-				elif 'bluebird' in link:
-					s += '[BlueBird-HD] '
 				elif 'rutor' in link:
 					s += '[rutor] '
-				elif 'soap4' in link:
-					s += '[soap4me] '
-				elif 'kinohd' in link:
-					s += '[KinoHD] '
 				s += '[/B][/COLOR]'
 			except:
 				pass
@@ -108,8 +101,8 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			self.list.addItem(li)
 
 			pathUnited = 'special://home/addons/plugin.video.united.search'
-			pathUnited = xbmc.translatePath(pathUnited)
-			if filesystem.exists(pathUnited.decode('utf-8')):
+			pathUnited = translatePath(pathUnited)
+			if filesystem.exists(pathUnited):
 				li = xbmcgui.ListItem('UNITED SEARCH...')
 				li.setProperty('link', 'plugin://script.media.aggregator/?action=united_search')
 				self.list.addItem(li)
@@ -142,8 +135,6 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 			li = find_listitem(item)
 			if li:
 				s = li.getLabel()
-				if not isinstance(s, str):
-					s = s.decode('utf-8')
 				s +=  '\n' + seeds_peers_fmt % (item['seeds'], item['peers'])
 				li.setLabel(s)
 
@@ -272,11 +263,10 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		return link
 
 	def download_torrent(self, link):
-		tempPath = xbmc.translatePath('special://temp').decode('utf-8')
+		tempPath = translatePath('special://temp')
 		from downloader import TorrentDownloader
-		import player
 		settings = self.settings
-		import urllib.request, urllib.parse, urllib.error
+		import urllib.parse
 		torr_downloader = TorrentDownloader(urllib.parse.unquote(link), tempPath, settings)
 		path = filesystem.join(settings.torrents_path(), torr_downloader.get_subdir_name(), torr_downloader.get_post_index() + '.torrent')
 		if not filesystem.exists(path):
@@ -301,14 +291,14 @@ class MyWindow(pyxbmct.AddonDialogWindow):
 		path = self.download_torrent(link)
 
 		if filesystem.exists(path):
-			import base
-			player = base.TorrentPlayer()
+			from vdlib.torrent.torrentplayer import TorrentPlayer
+			player = TorrentPlayer()
 			player.AddTorrent(path)
 			data = player.GetLastTorrentData()
 			if data:
 				for f in data['files']:
 					try:
-						li = xbmcgui.ListItem(str(f['size'] / 1024 / 1024) + ' МБ | ' + f['name'])
+						li = xbmcgui.ListItem(str(f['size'] // 1024 // 1024) + ' МБ | ' + f['name'])
 					except:
 						li = xbmcgui.ListItem(f['name'])
 					li.setProperty('index', str(f['index']))
@@ -373,11 +363,6 @@ def get_path_name():
 				result = json.loads(xbmc.executeJSONRPC(json.dumps(jsno)))
 				path = result['result'][res_type]['file']
 	
-			try:
-				if path:
-					path = path.encode('utf-8')
-			except UnicodeDecodeError:
-				pass
 	
 			name = path.replace('\\', '/').split('/')[-1]
 	return path, name
@@ -411,7 +396,7 @@ def main(settings=None, path=None, name=None, run=None):
 	path = get_true_filename(path)
 
 	import xbmcvfs, os
-	tempPath = xbmc.translatePath('special://temp')
+	tempPath = translatePath('special://temp')
 	if xbmcvfs.exists(path+'.alternative'):
 		debug('path exists')
 		xbmcvfs.copy(path, os.path.join(tempPath, name))
@@ -423,7 +408,7 @@ def main(settings=None, path=None, name=None, run=None):
 	class Links():
 		def __init__(self):
 			self.reload = None
-			self._links = result = STRMWriterBase.get_links_with_ranks(path.decode('utf-8'), settings, use_scrape_info=False)
+			self._links = result = STRMWriterBase.get_links_with_ranks(path, settings, use_scrape_info=False)
 
 		def	__call__(self):
 			return self._links
@@ -497,7 +482,7 @@ def main(settings=None, path=None, name=None, run=None):
 
 	del window
 
-	with filesystem.fopen(path.decode('utf-8'), 'r') as strm:
+	with filesystem.fopen(path, 'r') as strm:
 		src_link = strm.read()
 		debug(src_link)
 
@@ -540,7 +525,7 @@ def main(settings=None, path=None, name=None, run=None):
 				run_params[k]=v
 			run(run_params)
 		else:
-			xbmc.executebuiltin('xbmc.PlayMedia(' + dst_link + ')')
+			xbmc.executebuiltin('PlayMedia(' + dst_link + ')')
 
 	if tempPath in path:
 		xbmcvfs.delete(path)

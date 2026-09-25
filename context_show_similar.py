@@ -1,6 +1,6 @@
-from log import debug
+from vdlib.util.log import debug
 
-def show_similar():
+def show_similar() -> bool:
 	import xbmc, xbmcgui
 
 	#import vsdbg
@@ -12,14 +12,14 @@ def show_similar():
 	from context import get_path_name
 	path, name = get_path_name()
 
-	FileNameAndPath = path.decode('utf-8')
+	FileNameAndPath = path
 	dbtype = xbmc.getInfoLabel('ListItem.DBTYPE')
 
 	if dbtype == 'episode' or dbtype == 'tvshow':
 		type = 'tv'
 
 	if 'Anime' in path and not name:
-		import filesystem
+		from vdlib.util import filesystem
 		if filesystem.exists('special://home/addons/plugin.video.shikimori.2'):
 			import sys
 			it = sys.listitem.getVideoInfoTag()
@@ -34,7 +34,7 @@ def show_similar():
 
 						uri = 'plugin://plugin.video.shikimori.2/?action=similar&id={0}'.format(oo[0]['id'])
 						if wid == 10025:
-							xbmc.executebuiltin(b'Container.Update(\"%s\")' % uri)
+							xbmc.executebuiltin('Container.Update("%s")' % uri)
 						else:
 							xbmc.executebuiltin('ActivateWindow(10025,"%s")' % uri)
 			except ImportError:

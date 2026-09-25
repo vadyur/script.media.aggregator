@@ -1,20 +1,21 @@
 # -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from typing import Any, Dict, Optional
 
+from vdlib.util import log
+from vdlib.util.log import debug
+from vdlib.util.string import decode_string
 
 import os
 import xml.etree.ElementTree as ET
-import filesystem
+from vdlib.util import filesystem
 
-def ensure_utf8(string):
-	if isinstance(string, str):
-		string = string.encode('utf-8')
-	return string
+def ensure_utf8(string: Any) -> str:
+	# Историческое имя: теперь гарантирует str
+	return decode_string(string) if string is not None else ''
 
 class NFOReader(object):
-	def __init__(self, path, temp_path):
+	def __init__(self, path: str, temp_path: str):
 		self.__root = None
 		self.__path = path
 		self.__temp_path = temp_path
@@ -40,9 +41,8 @@ class NFOReader(object):
 		return self.__path
 		
 	@staticmethod
-	def make_path(base_path, rel_path, filename):
-		# params is utf-8
-		path = filesystem.join(base_path.decode('utf-8'), rel_path.decode('utf-8'), filename.decode('utf-8'))
+	def make_path(base_path: str, rel_path: str, filename: str) -> str:
+		path = filesystem.join(decode_string(base_path), decode_string(rel_path), decode_string(filename))
 
 		if path.startswith('/') or '://' in path:
 			path = path.replace('\\', '/')
@@ -63,7 +63,7 @@ class NFOReader(object):
 
 		return None
 		
-	def get_info(self):
+	def get_info(self) -> Dict[str, Any]:
 		
 		root = self.__root
 
@@ -132,9 +132,11 @@ class NFOReader(object):
 		return None
 		
 		
-	def get_art(self):
+	def get_art(self) -> Dict[str, str]:
 		root = self.__root
-		art = {}
+		art = {}  # type: Dict[str, str]
+		if root is None:
+			return art
 		
 		for child in root:
 			if child.tag == 'thumb':
@@ -142,7 +144,6 @@ class NFOReader(object):
 				if path != None:
 					art['thumb'] = path
 					art['poster'] = path
-					art['thumbnailImage'] = path
 
 			
 			if child.tag == 'fanart':
@@ -191,14 +192,15 @@ class NFOReader(object):
 
 		return art
 
-	def make_list_item(self, playable_url):
+	def make_list_item(self, playable_url: str):
 		import xbmcgui
 		list_item = xbmcgui.ListItem(path=playable_url)
 		list_item.setInfo('video', self.try_join_tvshow_info())
 
 		art = self.try_join_tvshow_art()
-		list_item.setThumbnailImage(art.get('poster', ''))
-		
+		if art:
+			list_item.setArt(art)
+
 		return list_item
 
 

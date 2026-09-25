@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from typing import Any, Dict, List, Optional
 
+from vdlib.util import log
+from vdlib.util.log import debug
 
 import os
-import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
-import filesystem
+from vdlib.util import filesystem
+from vdlib.kodi.compat import translatePath
+from vdlib.torrent.torrentplayer import TorrentPlayer
+from vdlib.torrent.bencodepy import bdecode, bencode, BencodeDecodeError
 
 class Runner(object):
 	def __init__(self, settings, params, playable_item, torrent_info, torrent_path, info_hash):
@@ -75,26 +79,23 @@ class Runner(object):
 
 			self.change_resume_file(self.settings.copy_video_path)
 
-	def change_resume_file(self, dest):
+	def change_resume_file(self, dest: str) -> None:
 		if filesystem.exists(self.resume_file):
 			data = None
 			with filesystem.fopen(self.resume_file, 'rb') as resume:
-				from bencode import BTFailure
 				try:
-					from bencode import bdecode, bencode
 					decoded = bdecode(resume.read())
-					decoded['save_path'] = dest.encode('utf-8')
+					decoded[b'save_path'] = dest.encode('utf-8')
 					data = bencode(decoded)
 
-				except BTFailure:
+				except BencodeDecodeError:
 					pass
 
 			if data:
 				with filesystem.fopen(self.resume_file, 'wb') as resume:
 					resume.write(data)
 
-	def all_torrent_files_exists(self):
-		from base import TorrentPlayer
+	def all_torrent_files_exists(self) -> bool:
 		tp = TorrentPlayer()
 		tp.AddTorrent(self.torrent)
 		data = tp.GetLastTorrentData()
@@ -114,9 +115,7 @@ class Runner(object):
 		return True
 
 
-	def get_relative_torrent_files_list(self):
-		from base import TorrentPlayer
-
+	def get_relative_torrent_files_list(self) -> List[str]:
 		tp = TorrentPlayer()
 		tp.AddTorrent(self.torrent)
 		data = tp.GetLastTorrentData()
@@ -125,12 +124,12 @@ class Runner(object):
 		return [filesystem.join(data['name'], item['name']) for item in files]
 
 	@staticmethod
-	def get_addon_path():
+	def get_addon_path() -> str:
 		try:
 			import xbmcaddon
 			_ADDON_NAME = 'script.media.aggregator'
 			_addon      = xbmcaddon.Addon(id=_ADDON_NAME)
-			path = _addon.getAddonInfo('path').decode('utf-8')
+			path = _addon.getAddonInfo('path')
 			if path == 'Unavailable':
 				raise Exception('Not in Kodi')
 			return path
@@ -143,11 +142,10 @@ class Runner(object):
 		return self.torrent_path
 
 	@property
-	def storage_path(self):
-		result = self.settings.storage_path
-		if result == '':
-			import xbmc
-			result = xbmc.translatePath('special://temp').decode('utf-8')
+	def storage_path(self) -> str:
+		result = getattr(self.settings, 'storage_path', '')
+		if not result:
+			result = translatePath('special://temp')
 		return result
 
 
@@ -156,8 +154,8 @@ class Runner(object):
 		return filesystem.join(self.storage_path, self.relativevideofile)
 
 	@property
-	def videotype(self):
-		base_path 		= self.settings.base_path().encode('utf-8')
+	def videotype(self) -> str:
+		base_path 		= self.settings.base_path()
 		rel_path 		= urllib.parse.unquote(self.params.get('path', ''))
 		nfoFilename 	= urllib.parse.unquote(self.params.get('nfo', ''))
 		from nforeader import NFOReader
@@ -177,63 +175,51 @@ class Runner(object):
 			return ''
 
 	@property
-	def relativevideofile(self):
+	def relativevideofile(self) -> str:
 		with filesystem.fopen(self.torrent_path, 'rb') as torr:
 			data = torr.read()
 
 			if data is None:
 				return self.playable_item['name']
 
-			from bencode import BTFailure
 			try:
-				from bencode import bdecode
 				decoded = bdecode(data)
-			except BTFailure:
+			except BencodeDecodeError:
 				debug("Can't decode torrent data (invalid torrent link?)")
 				return self.playable_item['name']
 
-			info = decoded['info']
+			info = decoded[b'info']
 
-			if 'files' in info:
-				from base import TorrentPlayer
-				return filesystem.join(TorrentPlayer.Name(info['name']), self.playable_item['name'])
+			if b'files' in info:
+				return filesystem.join(TorrentPlayer.Name(info[b'name']), self.playable_item['name'])
 
 		return self.playable_item['name']
 
 	@property
-	def torrent_source(self):
-		import urllib.request, urllib.parse, urllib.error
+	def torrent_source(self) -> str:
 		return urllib.parse.unquote(self.params['torrent'])
 
 	@property
-	def short_name(self):
+	def short_name(self) -> str:
 		if 'anidub' in self.torrent_source:
 			return 'anidub'
-		if 'nnm-club' in self.torrent_source:
+		if 'nnm-club' in self.torrent_source or 'nnmclub' in self.torrent_source:
 			return 'nnmclub'
-		if 'hdclub' in self.torrent_source:
-			return 'elitehd'
-		if 'bluebird' in self.torrent_source:
-			return 'bluebird'
 		if 'rutor' in self.torrent_source:
 			return 'rutor'
-		if 'soap4' in self.torrent_source:
-			return 'soap4me'
-		if 'kinohd' in self.torrent_source:
-			return 'kinohd'
-		return None
+		return ''
 
 	@property
-	def downloaded(self):
+	def downloaded(self) -> str:
 		info = self.torrent_info
 		if info is None:
-			return 0
+			return '0'
 
 		try:
 			return str(round(info['downloaded'] * 100 / info['size']))
 		except BaseException as e:
 			log.print_tb(e)
-			return 0
+			return '0'
 
 	def process_params(self):
 		for i, s in enumerate(self.command):
@@ -252,27 +238,23 @@ class Runner(object):
 			if '%v' in s:
 				self.command[i] = s.replace('%v', self.videotype)
 
-			self.command[i] = self.command[i].encode('utf-8')
-
-	def run(self):
+	def run(self) -> None:
 		debug(self.command)
 		import subprocess
 
+		# Python 3 передаёт юникодные аргументы сам, обёртка u8runner.exe больше не нужна
 		startupinfo = None
-		u8runner = None
-
 		if os.name == 'nt':
 			startupinfo = subprocess.STARTUPINFO()
 			startupinfo.dwFlags |= 1
 			startupinfo.wShowWindow = 0
-			u8runner = filesystem.abspath(filesystem.join(Runner.get_addon_path(), 'bin/u8runner.exe')).encode('mbcs')
 
 		shell = self.command[0].startswith('@')
 		if shell:
 			self.command[0] = self.command[0][1:]
 
 		try:
-			subprocess.call(executable=u8runner, args=self.command, startupinfo=startupinfo, shell=shell)
+			subprocess.call(self.command, startupinfo=startupinfo, shell=shell)
 		except OSError as e:
 			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:

@@ -1,11 +1,13 @@
 ﻿# -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from typing import Any, Dict, List, Optional
+
+from vdlib.util import log
+from vdlib.util.log import debug
 
 
 import re
-import urllib.request, urllib.error, urllib.parse
+import urllib.request, urllib.parse
 
 from bs4 import BeautifulSoup
 
@@ -13,7 +15,7 @@ import base
 import feedparser
 import requests
 
-import filesystem
+from vdlib.util import filesystem
 from base import DescriptionParserBase, clean_html, Informer
 from nfowriter import NFOWriter
 from settings import Settings
@@ -28,29 +30,33 @@ _NEXT_PAGE_SUFFIX = '&start='
 tvshow_ids = '1140,1141,1142,1144,1195,1196,1242,1265,1288,1289,1290,1300,768,770,771,772,773,774,775,776,777,778,779,782,783,784,785,786,787,788,803,804,922'
 movie_ids = '1296,227,954'
 
-def real_url(url, settings):
+# Старые домены трекера больше не работают, сайт переехал на nnmclub.to
+_DEAD_DOMAINS = ('', 'nnm-club.me', 'nnm-club.name', 'nnm-club.ws')
+_ACTUAL_DOMAIN = 'nnmclub.to'
 
-	protocol = 'http'
-	if settings.nnmclub_use_ssl:
-		protocol = 'https'
 
-	# nnm-club.name is not working now
-	settings.nnmclub_domain = settings.nnmclub_domain.replace('nnm-club.name', 'nnm-club.me')
+def actual_domain(settings) -> str:
+	domain = (getattr(settings, 'nnmclub_domain', '') or '').strip()
+	return _ACTUAL_DOMAIN if domain in _DEAD_DOMAINS else domain
 
-	import urlparse
-	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult(protocol, settings.nnmclub_domain, res.path, res.params, res.query, res.fragment)
-	res = urlparse.urlunparse(res)
+
+def real_url(url: str, settings) -> str:
+	protocol = 'https' if getattr(settings, 'nnmclub_use_ssl', True) else 'http'
+
+	res = urllib.parse.urlparse(url)
+	res = urllib.parse.ParseResult(protocol, actual_domain(settings), res.path, res.params, res.query, res.fragment)
+	res = urllib.parse.urlunparse(res)
 
 	debug(res)
 	return res
 
 
-def origin_url(url):
-	import urlparse
-	res = urlparse.urlparse(url)
-	res = urlparse.ParseResult('http', 'nnm-club.me', res.path, res.params, res.query, res.fragment)
-	res = urlparse.urlunparse(res)
+def origin_url(url: str) -> str:
+	# Канонический адрес для .strm/.alternative: совпадает со ссылками уже созданной медиатеки,
+	# реальный домен подставляется в real_url при запросе
+	res = urllib.parse.urlparse(url)
+	res = urllib.parse.ParseResult('http', 'nnm-club.me', res.path, res.params, res.query, res.fragment)
+	res = urllib.parse.urlunparse(res)
 	return res
 
 
@@ -87,9 +93,9 @@ class DescriptionParser(DescriptionParserBase):
 		try:
 			sep = '/'
 			if not ' / ' in full_title:
-				sep = '\('
+				sep = r'\('
 
-			found = re.search('^(.+?) ' + sep, full_title).group(1)
+			found = re.search(r'^(.+?) ' + sep, full_title).group(1)
 			return self.clean(found)
 		except AttributeError:
 			return full_title
@@ -99,14 +105,14 @@ class DescriptionParser(DescriptionParserBase):
 			return self.get_title(full_title)
 
 		try:
-			found = re.search('^.+? / (.+?) \(', full_title).group(1)
+			found = re.search(r'^.+? / (.+?) \(', full_title).group(1)
 			return self.clean(found)
 		except AttributeError:
 			return full_title
 
 	def get_year(self, full_title):
 		try:
-			found = re.search('\(([0-9]+)\)', full_title).group(1)
+			found = re.search(r'\(([0-9]+)\)', full_title).group(1)
 			return str(found)
 		except AttributeError:
 			return 0
@@ -138,7 +144,7 @@ class DescriptionParser(DescriptionParserBase):
 				return False
 
 			full_title = a.get_text().strip(' \t\n\r')
-			debug('full_title: ' + full_title.encode('utf-8'))
+			debug('full_title: ' + full_title)
 
 			self.parse_title(full_title)
 
@@ -174,7 +180,7 @@ class DescriptionParser(DescriptionParserBase):
 						self._dict[tag] = base.striphtml(str(span.next_sibling).strip())
 					else:
 						self._dict[tag] = base.striphtml(str(span.next_sibling.next_sibling).strip())
-					debug('%s (%s): %s' % (text.encode('utf-8'), tag.encode('utf-8'), self._dict[tag].encode('utf-8')))
+					debug('%s (%s): %s' % (text, tag, self._dict[tag]))
 			except:
 				pass
 		if 'genre' in self._dict:
@@ -237,7 +243,7 @@ class DescriptionParserTVShows(DescriptionParser):
 	def need_skipped(self, full_title):
 		for phrase in ['[EN]', '[EN / EN Sub]', '[Фильмография]', '[ISO]', 'DVD', 'стереопара', 'Half-SBS']:
 			if phrase in full_title:
-				debug('Skipped by: ' + phrase.encode('utf-8'))
+				debug('Skipped by: ' + phrase)
 				return True
 		return False
 
@@ -254,7 +260,7 @@ class DescriptionParserRSS(DescriptionParser):
 
 	def parse(self):
 		full_title = self._dict['full_title']
-		debug('full_title: ' + full_title.encode('utf-8'))
+		debug('full_title: ' + full_title)
 
 		if self.need_skipped(full_title):
 			return False
@@ -265,7 +271,7 @@ class DescriptionParserRSS(DescriptionParser):
 					<html>
 						<span class="postbody">
 					''' + \
-				   self.content.encode('utf-8') + \
+				   self.content + \
 				   '''
 						</span>
 					</html>'''
@@ -352,8 +358,8 @@ def write_movie(post, settings, tracker):
 		full_title = parser.get_value('full_title')
 		filename = parser.make_filename()
 		if filename:
-			debug('full_title: ' + full_title.encode('utf-8'))
-			debug('filename: ' + filename.encode('utf-8'))
+			debug('full_title: ' + full_title)
+			debug('filename: ' + filename)
 			debug('-------------------------------------------+')
 			STRMWriter(parser.link()).write(filename,
 											parser=parser,
@@ -443,7 +449,7 @@ def write_tvshows(rss_url, path, settings):
 
 		for item in d.entries:
 			try:
-				debug(item.title.encode('utf-8'))
+				debug(item.title)
 				write_tvshow(
 					fulltitle=item.title,
 					description=item.description,
@@ -451,10 +457,11 @@ def write_tvshows(rss_url, path, settings):
 					settings=settings,
 					path=path)
 			except:
+				log.print_tb()
 				continue
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
+			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)
 
 
 def write_movies_rss(rss_url, path, settings):
@@ -473,7 +480,7 @@ def write_movies_rss(rss_url, path, settings):
 
 		for item in d.entries:
 			try:
-				debug(item.title.encode('utf-8'))
+				debug(item.title)
 				write_movie_rss(
 					fulltitle=item.title,
 					description=item.description,
@@ -481,10 +488,11 @@ def write_movies_rss(rss_url, path, settings):
 					settings=settings,
 					path=path)
 			except:
+				log.print_tb()
 				continue
 
 			cnt += 1
-			settings.progress_dialog.update(cnt * 100 / len(d.entries), title(rss_url), path)
+			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)
 
 
 def get_uid(settings, session=None):
@@ -500,7 +508,7 @@ def get_uid(settings, session=None):
 				return None
 			'''
 			for a in soup.select('a.mainmenu'):
-				m = re.search('profile.php.+?u=(\d+)', a['href'])
+				m = re.search(r'profile.php.+?u=(\d+)', a['href'])
 				if m:
 					return m.group(1)
 		else:
@@ -512,12 +520,12 @@ def get_uid(settings, session=None):
 	return None
 
 
-def get_rss_url(f_id, passkey, settings):
+def get_rss_url(f_id, passkey: Optional[str], settings) -> str:
 	pkstr = '&uk=' + passkey if passkey else ''
 	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&h=' + str(settings.nnmclub_hours) + '&t=1' + pkstr + '&r'
 
 
-def get_fav_rss_url(f_id, passkey, uid):
+def get_fav_rss_url(f_id, passkey: Optional[str], uid) -> str:
 	pkstr = '&uk=' + passkey if passkey else ''
 	return 'http://nnm-club.me/forum/rss2.php?f=' + str(f_id) + '&dl=' + str(uid) + '&t=1'  + pkstr + '&r'
 
@@ -650,7 +658,7 @@ def find_direct_link(url, settings):
 	return None
 
 
-def download_torrent(url, path, settings):
+def download_torrent(url: str, path: str, settings) -> bool:
 	from base import save_hashes
 	save_hashes(path)
 	import shutil
@@ -669,7 +677,7 @@ def download_torrent(url, path, settings):
 		if len(a) > 0:
 			href = 'http://nnm-club.me/forum/' + a[0]['href']
 	else:
-		href = linkd
+		href = link
 		response = urllib.request.urlopen(real_url(link, settings))
 		#CHUNK = 256 * 1024
 		with filesystem.fopen(path, 'wb') as f:
@@ -706,15 +714,15 @@ def download_torrent(url, path, settings):
 			save_hashes(path)
 			return True
 		except:
-			pass
+			log.print_tb()
 
 	return False
 
 
-def make_search_url(what, IDs):
+def make_search_url(what: str, IDs) -> str:
 	url = 'http://nnm-club.me/forum/tracker.php'
 	url += '?f=' + str(IDs)+'&s=2'
-	url += '&nm=' + urllib.parse.quote(what.encode('utf-8'))
+	url += '&nm=' + urllib.parse.quote(what)
 	return url
 
 
@@ -752,7 +760,7 @@ def make_search_strms(result, settings, type, path, path_out):
 		link = item['link']
 		parser = item['parser']
 
-		settings.progress_dialog.update(count * 100 / len(result), 'NNM-Club', parser.get_value('full_title'))
+		settings.progress_dialog.update(count * 100 // len(result), 'NNM-Club', parser.get_value('full_title'))
 		if link:
 			if type == 'movie':
 				_path = movieapi.write_movie(parser.get_value('full_title'), link, settings, parser, path, skip_nfo_exists=True)
@@ -774,7 +782,7 @@ def search_results(imdb, session, settings, url, type='movie'):
 	enumerator = TrackerPostsEnumerator(session)
 	enumerator.settings = settings
 
-	from log import dump_context
+	from vdlib.util.log import dump_context
 	with dump_context('nnmclub.enumerator.process_page'):
 		enumerator.process_page(real_url(url, settings))
 	result = []

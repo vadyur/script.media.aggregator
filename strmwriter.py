@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import log
-from log import debug
+from typing import Optional
 
+from vdlib.util import log
+from vdlib.util.log import debug
+from vdlib.util import filesystem
 
 from base import *
-import os, urllib.request, urllib.error, urllib.parse, sys, filesystem
+import os, urllib.parse, sys
 
 class STRMWriter(STRMWriterBase):
-	def __init__(self, link):
+	def __init__(self, link: str):
 		self.link = link
-		
-	def write(self, filename, path, seasonNumber = None, episodeNumber = None, cutname = None, index = None, parser = None, settings = None):
+
+	def write(self, filename: str, path: str, seasonNumber: Optional[int] = None, episodeNumber: Optional[int] = None,
+	          cutname: Optional[str] = None, index: Optional[int] = None, parser = None, settings = None) -> None:
 
 		#------------------------------------------
 		# test for settings.update_paths
@@ -26,7 +29,7 @@ class STRMWriter(STRMWriterBase):
 		#------------------------------------------
 
 		link = 'plugin://script.media.aggregator/?action=play&torrent='
-		link += urllib.parse.quote(self.link.encode('utf-8'))
+		link += urllib.parse.quote(self.link)
 		if episodeNumber != None:
 			link += '&episodeNumber=' + str(episodeNumber - 1)
 		if seasonNumber != None:
@@ -48,27 +51,27 @@ class STRMWriter(STRMWriterBase):
 				
 		#------------------------------------------
 			
-		link += '&nfo=' + urllib.parse.quote(make_fullpath(filename, '.nfo').encode('utf-8'))
+		link += '&nfo=' + urllib.parse.quote(make_fullpath(filename, '.nfo'))
 		
 		#------------------------------------------
 		if settings != None:
 			path = filesystem.relpath(path, settings.base_path())
 			debug(path)
-			link += '&path=' + urllib.parse.quote(path.encode('utf-8'))
+			link += '&path=' + urllib.parse.quote(path)
 
 		#------------------------------------------
 		if filesystem.exists(strmFilename):
 			with filesystem.fopen(strmFilename, 'r') as f:
 				old_link = f.read()
-				if old_link.decode('utf-8') == link:
+				if old_link == link:
 					return
 		
 		#------------------------------------------
 		try:
 			with filesystem.fopen(strmFilename, 'w') as f:
-				f.write(link.encode('utf-8'))
+				f.write(link)
 		except IOError:
-			debug('Error write ' + strmFilename.encode('utf-8'))
+			debug('Error write ' + strmFilename)
 			return
 
 

@@ -1,11 +1,13 @@
-import urllib.request, urllib.parse, urllib.error, sys
+import urllib.parse, sys
+from typing import Any, Dict, Optional
 
-import log
-def make_url(params):
+from vdlib.util import log
+
+def make_url(params: Dict[str, Any]) -> str:
 	url = 'plugin://script.media.aggregator/?' + urllib.parse.urlencode(params)
 	return url
 
-def get_params():
+def get_params() -> Optional[Dict[str, str]]:
 	if len(sys.argv) < 3:
 		return None
 
@@ -86,11 +88,9 @@ def wait_for_update(timeout=1000, monitor=None):
 		time.sleep(1)
 
 
-def UpdateVideoLibrary(path=None, wait=False):
-	import xbmc, log
+def UpdateVideoLibrary(path: Optional[str] = None, wait: bool = False) -> None:
+	import xbmc
 	if path:
-		if isinstance(path,str):
-			path = path.encode('utf-8')
 		log.debug('UpdateLibrary: {}'.format(path))
 		command = 'UpdateLibrary(video, {})'.format(path)
 	else:
@@ -122,7 +122,7 @@ def string_to_ver(s):
 	if m:
 		return ( m.group(1), m.group(2) )
 
-def kodi_ver():
+def kodi_ver() -> Dict[str, int]:
 	import xbmc
 	bv = xbmc.getInfoLabel("System.BuildVersion")
 	BuildVersions = string_to_ver(bv)
