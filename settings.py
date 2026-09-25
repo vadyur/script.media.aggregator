@@ -89,9 +89,6 @@ class Settings(object):
 		self.run_script				= False
 		self.script_params			= ''
 		self.remeber_watched		= False
-		self.move_video				= False
-		self.remove_files			= False
-		self.copy_video_path		= ''
 		self.copy_torrent			= False
 		self.copy_torrent_path		= ''
 

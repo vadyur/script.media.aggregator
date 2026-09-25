@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Dict, List, Optional
-
 from vdlib.util import log
 from vdlib.util.log import debug
 
@@ -11,7 +9,7 @@ import urllib.parse
 from vdlib.util import filesystem
 from vdlib.kodi.compat import translatePath
 from vdlib.torrent.torrentplayer import TorrentPlayer
-from vdlib.torrent.bencodepy import bdecode, bencode, BencodeDecodeError
+from vdlib.torrent.bencodepy import bdecode, BencodeDecodeError
 
 class Runner(object):
 	def __init__(self, settings, params, playable_item, torrent_info, torrent_path, info_hash):
@@ -21,8 +19,6 @@ class Runner(object):
 		self.torrent_info = torrent_info
 		self.torrent_path = torrent_path
 		self.playable_item = playable_item
-
-		self.resume_file = filesystem.join(self.settings.torrents_path(), info_hash + '.resume')
 
 		debug('-' * 30 + ' Runner ' + '-' * 30)
 		debug('torrent: ' + self.torrent)
@@ -37,91 +33,18 @@ class Runner(object):
 			self.process_params()
 			self.run()
 
-		if settings.remove_files:
-			debug('Runner: remove_files')
-			if filesystem.exists(self.videofile):
-				filesystem.remove(self.videofile)
-
 		if settings.remeber_watched and float(self.downloaded) > 99:
 			choice_path = torrent_path.replace('.torrent', '.choice')
 			filesystem.touch(choice_path)
 
-		if float(self.downloaded) > 99 and self.all_torrent_files_exists():
-
-			if settings.move_video and settings.copy_video_path and filesystem.exists(settings.copy_video_path):
-				self.move_video_files()
-
+		if float(self.downloaded) > 99:
 			if settings.copy_torrent and settings.copy_torrent_path and filesystem.exists(settings.copy_torrent_path):
 				self.copy_torrent()
 
-	def copy_torrent(self):
+	def copy_torrent(self) -> None:
 		debug('Runner: copy torrent')
 		dest_path = filesystem.join(self.settings.copy_torrent_path, filesystem.basename(self.torrent_path))
 		filesystem.copyfile(self.torrent_path, dest_path)
-
-	def move_video_files(self):
-		debug('Runner: move video')
-		for file in self.get_relative_torrent_files_list():
-			dest_path = filesystem.join(self.settings.copy_video_path, file)
-
-			if not filesystem.exists(filesystem.dirname(dest_path)):
-				filesystem.makedirs(filesystem.dirname(dest_path))
-
-			src_path = filesystem.join(self.storage_path, file)
-			if not filesystem.exists(src_path):
-				continue
-
-			if not filesystem.exists(dest_path):
-				# Move file if no exists
-				filesystem.movefile(src_path, dest_path)
-			else:
-				filesystem.remove(src_path)
-
-			self.change_resume_file(self.settings.copy_video_path)
-
-	def change_resume_file(self, dest: str) -> None:
-		if filesystem.exists(self.resume_file):
-			data = None
-			with filesystem.fopen(self.resume_file, 'rb') as resume:
-				try:
-					decoded = bdecode(resume.read())
-					decoded[b'save_path'] = dest.encode('utf-8')
-					data = bencode(decoded)
-
-				except BencodeDecodeError:
-					pass
-
-			if data:
-				with filesystem.fopen(self.resume_file, 'wb') as resume:
-					resume.write(data)
-
-	def all_torrent_files_exists(self) -> bool:
-		tp = TorrentPlayer()
-		tp.AddTorrent(self.torrent)
-		data = tp.GetLastTorrentData()
-		files = data['files']
-
-		for item in files:
-			path = filesystem.join(self.storage_path, data['name'], item['name'])
-			debug('all_torrent_files_exists: ' + path)
-			if not filesystem.exists(path):
-				path = filesystem.join(self.settings.copy_video_path, data['name'], item['name'])
-				debug('all_torrent_files_exists: ' + path)
-				if not filesystem.exists(path):
-					debug('all_torrent_files_exists: not found')
-					return False
-
-		debug('all_torrent_files_exists: Ok')
-		return True
-
-
-	def get_relative_torrent_files_list(self) -> List[str]:
-		tp = TorrentPlayer()
-		tp.AddTorrent(self.torrent)
-		data = tp.GetLastTorrentData()
-		files = data['files']
-
-		return [filesystem.join(data['name'], item['name']) for item in files]
 
 	@staticmethod
 	def get_addon_path() -> str:
@@ -259,29 +182,3 @@ class Runner(object):
 			debug(("Can't start %s: %r" % (str(self.command), e)))
 		except BaseException as e:
 			log.print_tb(e)
-
-
-class TestRunner(Runner):
-	def __init__(self):
-		pass
-
-
-def test_resume(tr):
-	dest = '/mnt/videocache/фываолдж'
-	Runner.change_resume_file(tr, dest)
-
-
-def test_get_relative_torrent_files_list(tr):
-	l = Runner.get_relative_torrent_files_list(tr)
-	for f in l:
-		print(f)
-
-
-if __name__ == '__main__':
-	tr = TestRunner()
-	tr.resume_file = r'c:\Bin\626bbfbb61755200069486609d66e53146483ebe.resume'
-	tr.torrent_path = r'c:\Users\vd\AppData\Roaming\Kodi\userdata\addon_data\script.media.aggregator\nnmclub\507983.torrent'
-
-	test_resume(tr)
-
-	#test_get_relative_torrent_files_list(tr)

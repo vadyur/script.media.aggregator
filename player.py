@@ -94,10 +94,6 @@ def load_settings() -> 'Settings':
 
 	settings.remeber_watched		= getSetting('remeber_watched') == 'true'
 
-	settings.move_video				= getSetting('action_files') == 'переместить'
-	settings.remove_files			= getSetting('action_files') == 'удалить'
-	settings.copy_video_path		= getSetting('copy_video_path')
-
 	settings.copy_torrent			= getSetting('copy_torrent') == 'true'
 	settings.copy_torrent_path		= getSetting('copy_torrent_path')
 
@@ -419,8 +415,6 @@ def play_torrent_variant(path: str, info_dialog, episodeNumber, nfoReader, setti
 			UpdateVideoLibrary(UpdateLibrary_path)
 
 		if settings.run_script \
-		  or settings.remove_files \
-		  or settings.move_video \
 		  or settings.copy_torrent \
 		  or settings.remeber_watched:
 			import afteractions

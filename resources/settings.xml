@@ -41,8 +41,6 @@
         <setting label="    %s - короткое имя источника (anidub, nnmclub, rutor)" type="text" enable="false" visible="eq(-7,true)" />
         <setting label="    %p - количество загруженного (%)" type="text" enable="false" visible="eq(-8,true)" />
         <setting label="    %v - тип видео (movie, episode)" type="text" enable="false" visible="eq(-9,true)" />
-        <setting label="Видео файлы по завершению просмотра" type="select" id="action_files" values="оставить|переместить|удалить" default="оставить"/>
-        <setting label="Путь"	type="folder" id="copy_video_path" 	default="" visible="eq(-1,переместить)" />
         <setting label="Копировать торрент файлы в" type="bool"   id="copy_torrent" default="false"/>
         <setting label="Путь"	type="folder" id="copy_torrent_path" 	default="" visible="eq(-1,true)" />
     </category>
