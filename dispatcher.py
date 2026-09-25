@@ -105,6 +105,10 @@ def dispatch() -> None:
 		from backgrounds import clean_movies
 		clean_movies()
 
+	elif params.get('action') == 'clean_tvshows':
+		from backgrounds import clean_tvshows
+		clean_tvshows()
+
 	elif params.get('action') == 'select_source':
 		from context import main
 		#vsdbg._bp()

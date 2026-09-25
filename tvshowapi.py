@@ -52,6 +52,22 @@ def parse_torrent(data: bytes, season: Optional[int] = None) -> List[Dict[str, A
 	return _parse_torrent_info(info, season)
 
 
+def tvshow_name_from_api(api) -> Optional[str]:
+	"""'<оригинальное название> (<год>)' по данным MovieAPI (TMDB); None, если данных нет."""
+	from base import original_name
+
+	try:
+		title, originaltitle, year = api.get('title'), api.get('originaltitle'), api.get('year')
+	except Exception:
+		return None
+
+	if not (title or originaltitle):
+		return None
+
+	name = original_name(title, originaltitle)
+	return name + ' (%s)' % year if year else name
+
+
 def tvshow_dirname(parser, tvshow_api) -> str:
 	"""Имя папки сериала: '<оригинальное название> (<год>)'.
 
@@ -60,15 +76,9 @@ def tvshow_dirname(parser, tvshow_api) -> str:
 	"""
 	from base import original_name
 
-	api = parser.movie_api()
-	try:
-		title, originaltitle, year = api.get('title'), api.get('originaltitle'), api.get('year')
-	except Exception:
-		title = originaltitle = year = None
-
-	if title or originaltitle:
-		name = original_name(title, originaltitle)
-		return name + ' (%s)' % year if year else name
+	name = tvshow_name_from_api(parser.movie_api())
+	if name:
+		return name
 
 	name = original_name(parser.get_value('title'), parser.get_value('originaltitle'))
 	if not name:

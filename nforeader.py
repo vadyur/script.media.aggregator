@@ -57,8 +57,8 @@ class NFOReader(object):
 	def imdb_id(self):
 		root = self.__root
 
-		imdb = root.find('id')
-		if imdb is not None and imdb.text.startswith('tt'):
+		imdb = root.find('id') if root is not None else None
+		if imdb is not None and imdb.text and imdb.text.startswith('tt'):
 			return imdb.text
 
 		return None

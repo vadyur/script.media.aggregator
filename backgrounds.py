@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from vdlib.util import filesystem, log
 from vdlib.util.log import dump_context
@@ -84,6 +84,7 @@ def update_service(show_progress: bool = False) -> None:
 				return
 			if monitor.do_exit:
 				clean_movies()
+				clean_tvshows()
 				break
 
 
@@ -241,6 +242,7 @@ def add_media_process(title: str, imdb: str) -> None:
 				UpdateVideoLibrary()
 
 	clean_movies()
+	clean_tvshows()
 
 	path = filesystem.join(addon_data_path(), imdb + '.ended')
 	with filesystem.fopen(path, 'w') as f:
@@ -426,4 +428,232 @@ def clean_movies() -> None:
 
 	log.debug('*'*80)
 	log.debug('* End cleaning movies')
+	log.debug('*'*80)
+
+
+# ------------------------------------------------------------------------------------------------------------------- #
+# Чистка дублей сериалов
+#
+# Папка сериала называется '<оригинальное название> (<год>)' (см. tvshowapi.tvshow_dirname). Папки со старыми именами
+# или дубли одного сериала сливаются в папку с правильным именем, старый сериал удаляется из медиатеки,
+# а отметки о просмотре и позиции эпизодов переносятся на новый.
+# ------------------------------------------------------------------------------------------------------------------- #
+EpisodeKey = Tuple[int, int]
+
+
+def _norm_path(path: str) -> str:
+	import os
+	path = filesystem.normseps(path).rstrip('\\/')
+	return path.lower() if os.name == 'nt' else path
+
+
+def _rmtree(path: str) -> None:
+	import os
+	if filesystem.use_xbmcvfs:
+		import xbmcvfs
+		xbmcvfs.rmdir(filesystem.xbmcvfs_path(path.rstrip('\\/') + os.sep), True)
+	else:
+		import shutil
+		shutil.rmtree(filesystem.real_path(path), ignore_errors=True)
+
+
+def _fix_strm_path(strm_file: str, settings) -> None:
+	"""Параметр path в ссылке .strm - папка сезона относительно медиатеки; после переноса он другой."""
+	import urllib.parse
+	with filesystem.fopen(strm_file, 'r') as f:
+		link = f.read()
+
+	head, sep, tail = link.partition('&path=')
+	if not sep:
+		return
+
+	new_rel = filesystem.relpath(filesystem.dirname(strm_file), settings.base_path())
+	rest = tail.split('&', 1)
+	new_link = head + '&path=' + urllib.parse.quote(new_rel) + ('&' + rest[1] if len(rest) > 1 else '')
+	if new_link != link:
+		with filesystem.fopen(strm_file, 'w') as f:
+			f.write(new_link)
+
+
+def _merge_tvshow_dir(src: str, dst: str, settings) -> None:
+	"""Переносит файлы сериала из src в dst: недостающие копируются, списки раздач .alternative объединяются."""
+	from base import STRMWriterBase
+
+	if not filesystem.exists(dst):
+		filesystem.makedirs(dst)
+
+	for name in filesystem.listdir(src):
+		src_item = filesystem.join(src, name)
+		dst_item = filesystem.join(dst, name)
+
+		if not filesystem.isfile(src_item):
+			_merge_tvshow_dir(src_item, dst_item, settings)
+			continue
+
+		if not filesystem.exists(dst_item):
+			filesystem.copyfile(src_item, dst_item)
+			if name.endswith('.strm'):
+				_fix_strm_path(dst_item, settings)
+		elif name.endswith('.strm.alternative'):
+			strm_src = src_item[:-len('.alternative')]
+			strm_dst = dst_item[:-len('.alternative')]
+			links = STRMWriterBase.get_links_with_ranks(strm_dst, settings) + \
+					STRMWriterBase.get_links_with_ranks(strm_src, settings)
+			unique = {}  # type: Dict[str, Dict[str, Any]]
+			for item in links:
+				unique.setdefault(item['link'], item)
+			STRMWriterBase.write_alternative(strm_dst, list(unique.values()))
+
+
+def _library_tvshows() -> List[Dict[str, Any]]:
+	from vdlib.kodi.jsonrpc_requests import VideoLibrary
+	return VideoLibrary.GetTVShows(properties=['file', 'imdbnumber']).get('tvshows', [])
+
+
+def _find_tvshow_id(path: str, shows: List[Dict[str, Any]]) -> Optional[int]:
+	for show in shows:
+		if _norm_path(show.get('file', '')) == _norm_path(path):
+			return show['tvshowid']
+	return None
+
+
+def _episodes_state(tvshowid: int) -> Dict[EpisodeKey, Dict[str, Any]]:
+	from vdlib.kodi.jsonrpc_requests import VideoLibrary
+	result = VideoLibrary.GetEpisodes(tvshowid=tvshowid, properties=['season', 'episode', 'playcount', 'resume'])
+	state = {}  # type: Dict[EpisodeKey, Dict[str, Any]]
+	for e in result.get('episodes', []):
+		state[(e['season'], e['episode'])] = {'episodeid': e['episodeid'],
+											  'playcount': e.get('playcount', 0),
+											  'resume': e.get('resume', {})}
+	return state
+
+
+def _restore_episodes_state(tvshowid: int, saved: List[Dict[EpisodeKey, Dict[str, Any]]]) -> None:
+	from vdlib.kodi.jsonrpc_requests import VideoLibrary
+
+	for key, current in _episodes_state(tvshowid).items():
+		params = {}  # type: Dict[str, Any]
+		playcount = max([s[key].get('playcount', 0) for s in saved if key in s] + [0])
+		if playcount > current['playcount']:
+			params['playcount'] = playcount
+
+		if not current['resume'].get('position'):
+			for s in saved:
+				resume = s.get(key, {}).get('resume', {})
+				if resume.get('position') and resume.get('total'):
+					params['resume'] = {'position': resume['position'], 'total': resume['total']}
+					break
+
+		if params:
+			log.debug('    restore S{}E{}: {}'.format(key[0], key[1], params))
+			VideoLibrary.SetEpisodeDetails(episodeid=current['episodeid'], **params)
+
+
+def _tvshow_groups(root: str) -> Dict[Tuple[str, str], List[Tuple[str, Dict[str, Any]]]]:
+	"""Папки сериалов категории, сгруппированные по IMDb id (или по оригинальному названию, если id нет)."""
+	from nforeader import NFOReader
+	from base import original_name
+
+	groups = {}  # type: Dict[Tuple[str, str], List[Tuple[str, Dict[str, Any]]]]
+	for d in filesystem.listdir(root):
+		nfo = filesystem.join(root, d, 'tvshow.nfo')
+		if not filesystem.exists(nfo):
+			continue
+		try:
+			reader = NFOReader(nfo, '')
+			imdb = reader.imdb_id()
+			info = reader.get_info()
+		except Exception as e:
+			log.print_tb(e)
+			continue
+
+		if imdb:
+			key = ('imdb', imdb)
+		else:
+			name = original_name(info.get('title'), info.get('originaltitle'))
+			if not name:
+				continue
+			key = ('title', name.lower())
+		groups.setdefault(key, []).append((d, info))
+	return groups
+
+
+def _canonical_tvshow_dir(key: Tuple[str, str], info: Dict[str, Any]) -> Optional[str]:
+	import movieapi, tvshowapi
+	from base import original_name
+	from vdlib.util.base import make_fullpath
+
+	if key[0] == 'imdb':
+		name = tvshowapi.tvshow_name_from_api(movieapi.MovieAPI.get_by(imdb_id=key[1])[0])
+	else:
+		name = original_name(info.get('title'), info.get('originaltitle'))
+
+	return make_fullpath(name, '') if name else None
+
+
+def clean_tvshows() -> None:
+	from plugin import wait_for_update, UpdateVideoLibrary
+	from vdlib.kodi.jsonrpc_requests import VideoLibrary
+
+	wait_for_update()
+
+	log.debug('*'*80)
+	log.debug('* Start cleaning tvshows')
+	log.debug('*'*80)
+
+	settings = load_settings()
+	roots = [path for enabled, path in [
+				(settings.tvshows_save, settings.tvshow_path()),
+				(settings.animation_tvshows_save, settings.animation_tvshow_path()),
+				(settings.anime_save, settings.anime_tvshow_path())] if enabled and filesystem.exists(path)]
+
+	shows = None  # type: Optional[List[Dict[str, Any]]]
+	saved_states = {}  # type: Dict[str, List[Dict[EpisodeKey, Dict[str, Any]]]]
+
+	for root in roots:
+		for key, dirs in _tvshow_groups(root).items():
+			try:
+				canonical = _canonical_tvshow_dir(key, dirs[0][1])
+				if not canonical:
+					continue
+
+				old_dirs = [d for d, _ in dirs if d != canonical]
+				if not old_dirs:
+					continue
+
+				dst = filesystem.join(root, canonical)
+				if shows is None:
+					shows = _library_tvshows()
+
+				for d in old_dirs:
+					src = filesystem.join(root, d)
+					log.debug('merge tvshow: "{}" -> "{}"'.format(d, canonical))
+
+					tvshowid = _find_tvshow_id(src, shows)
+					if tvshowid is not None:
+						saved_states.setdefault(dst, []).append(_episodes_state(tvshowid))
+
+					_merge_tvshow_dir(src, dst, settings)
+					_rmtree(src)
+
+					if tvshowid is not None:
+						VideoLibrary.RemoveTVShow(tvshowid=tvshowid)
+
+				saved_states.setdefault(dst, [])
+			except BaseException as e:
+				log.print_tb(e)
+
+	for dst in saved_states:
+		log.debug('Scan for: {}'.format(dst))
+		UpdateVideoLibrary(path=dst, wait=True)
+
+	if any(saved_states.values()):
+		shows = _library_tvshows()
+		for dst, states in saved_states.items():
+			tvshowid = _find_tvshow_id(dst, shows)
+			if tvshowid is not None and states:
+				_restore_episodes_state(tvshowid, states)
+
+	log.debug('*'*80)
+	log.debug('* End cleaning tvshows')
 	log.debug('*'*80)
