@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from vdlib.util import filesystem, log
 from vdlib.util.log import dump_context
@@ -600,6 +600,8 @@ def _canonical_tvshow_dir(key: Tuple[str, str], info: Dict[str, Any]) -> Optiona
 		name = tvshowapi.tvshow_name_from_api(movieapi.MovieAPI.get_by(imdb_id=key[1])[0])
 	else:
 		name = original_name(info.get('title'), info.get('originaltitle'))
+		if name and info.get('year'):
+			name += ' (%s)' % info['year']
 
 	return make_fullpath(name, '') if name else None
 
@@ -622,6 +624,7 @@ def clean_tvshows() -> None:
 
 	shows = None  # type: Optional[List[Dict[str, Any]]]
 	saved_states = {}  # type: Dict[str, List[Dict[EpisodeKey, Dict[str, Any]]]]
+	roots_to_scan = set()  # type: Set[str]
 
 	for root in roots:
 		for key, dirs in _tvshow_groups(root).items():
@@ -656,13 +659,17 @@ def clean_tvshows() -> None:
 					if tvshowid is not None:
 						VideoLibrary.RemoveTVShow(tvshowid=tvshowid)
 
+				roots_to_scan.add(root)
 				saved_states.setdefault(dst, [])
 			except BaseException as e:
 				log.print_tb(e)
 
-	for dst in saved_states:
-		log.debug('Scan for: {}'.format(dst))
-		UpdateVideoLibrary(path=dst, wait=True)
+	# Kodi treats the path passed to UpdateLibrary(video, path) as a source root:
+	# it scans the child folders as TV shows. Passing the show folder itself makes
+	# Kodi scan its "Season N" folders as shows and fail with "No information found".
+	for root in roots_to_scan:
+		log.debug('Scan for: {}'.format(root))
+		UpdateVideoLibrary(path=root, wait=True)
 
 	if any(saved_states.values()):
 		shows = _library_tvshows()
