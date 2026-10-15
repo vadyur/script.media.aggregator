@@ -379,14 +379,18 @@ def write_tvshows(rss_url, path, settings):
 			if not is_tvshow(item.title):
 				continue
 
-			debug(item.title)
+			try:
+				debug(item.title)
 
-			write_tvshow(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(get_source_url(item.link), settings),
-				settings=settings,
-				path=path)
+				write_tvshow(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(get_source_url(item.link), settings),
+					settings=settings,
+					path=path)
+			except:
+				log.print_tb()
+				continue
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)
@@ -406,13 +410,17 @@ def write_movies_rss(rss_url, path, settings):
 			if is_tvshow(item.title):
 				continue
 
-			debug(item.title)
-			write_movie_rss(
-				fulltitle=item.title,
-				description=item.description,
-				link=origin_url(get_source_url(item.link), settings),
-				settings=settings,
-				path=path)
+			try:
+				debug(item.title)
+				write_movie_rss(
+					fulltitle=item.title,
+					description=item.description,
+					link=origin_url(get_source_url(item.link), settings),
+					settings=settings,
+					path=path)
+			except:
+				log.print_tb()
+				continue
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 // len(d.entries), title(rss_url), path)

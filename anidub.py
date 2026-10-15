@@ -2,7 +2,7 @@
 from typing import Any, Dict, List, Optional
 
 from vdlib.util import log
-from vdlib.util.log import debug
+from vdlib.util.log import debug, print_tb
 
 
 from settings import Settings
@@ -18,15 +18,28 @@ from vdlib.util import filesystem
 class DescriptionParser(DescriptionParserBase):
 	#==============================================================================================
 	def get_content(self, url):
-		page = urllib.request.urlopen(url)
-		return page
+		page = requests.get(url, timeout=30, headers={
+			'Host':							'tr.anidub.com',
+			'Referer':						'https://tr.anidub.com/',
+			'Upgrade-Insecure-Requests':	'1',
+			'User-Agent':					'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132'
+		})
+		page.raise_for_status()
+		return page.content
 	
 	#==============================================================================================
 	def __init__(self, url):
 		Informer.__init__(self)
 		
 		self._dict = dict()
-		self.content = self.get_content(url)
+		try:
+			self.content = self.get_content(url)
+		except BaseException as e:
+			print_tb(e)
+			self.content = None
+			self.soup = None
+			self.OK = False
+			return
 		#html_doc = '<?xml version="1.0" encoding="UTF-8" ?>\n<html>' + content.encode('utf-8') + '\n</html>'
 		self.soup = BeautifulSoup(self.content, 'html.parser')
 		self.OK = self.parse()
@@ -230,7 +243,11 @@ def write_tvshow(content, path, settings):
 		settings.progress_dialog.update(0, 'anidub', path)
 
 		for item in d.entries:
-			write_tvshow_item(item, path, settings)
+			try:
+				write_tvshow_item(item, path, settings)
+			except:
+				print_tb()
+				continue
 
 			cnt += 1
 			settings.progress_dialog.update(cnt * 100 // len(d.entries), 'anidub', path)
@@ -400,7 +417,11 @@ def write_pages(url, path, settings, params={}, filter_fn=None, dialog_title = N
 				if filter_fn and filter_fn(title):
 					continue
 
-				write_tvshow_item(Item(link, title), path, settings, path_out)
+				try:
+					write_tvshow_item(Item(link, title), path, settings, path_out)
+				except:
+					print_tb()
+					continue
 	
 				cnt += 1
 				settings.progress_dialog.update(cnt * 100 // len(selector), dialog_title, path)
